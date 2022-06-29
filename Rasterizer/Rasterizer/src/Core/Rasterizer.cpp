@@ -53,7 +53,7 @@ void Core::Rasterizer::DrawLine(const Geometry::Vertex& p_vertex0, const Geometr
 			xmax = p_vertex0.x;
 		}
 
-		const uint16_t slope = ydiff / xdiff;
+		const float slope = ydiff / xdiff;
 
 		for (uint16_t x = xmin; x <= xmax; x++)
 		{
@@ -84,7 +84,7 @@ void Core::Rasterizer::DrawLine(const Geometry::Vertex& p_vertex0, const Geometr
 			ymax = p_vertex0.y;
 		}
 
-		const uint16_t slope = xdiff / ydiff;
+		const float slope = xdiff / ydiff;
 
 		for (uint16_t y = ymin; y <= ymax; y++)
 		{
@@ -99,6 +99,13 @@ void Core::Rasterizer::DrawLine(const Geometry::Vertex& p_vertex0, const Geometr
 			m_textureBuffer.SetPixel(x, y, color);
 		}
 	}
+}
+
+void Core::Rasterizer::DrawWireFrameTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2) const
+{
+	DrawLine(p_vertex0, p_vertex1);
+	DrawLine(p_vertex1, p_vertex2);
+	DrawLine(p_vertex2, p_vertex0);
 }
 
 void Core::Rasterizer::DrawTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2) const

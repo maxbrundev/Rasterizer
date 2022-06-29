@@ -19,6 +19,7 @@ namespace Core
 		void SetScissorRect(int p_minX, int p_minY, int p_maxX, int p_maxY);
 
 		void DrawLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1) const;
+		void DrawWireFrameTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2) const;
 		void DrawTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2) const;
 
 		Buffers::TextureBuffer& GetTextureBuffer();
