@@ -113,29 +113,6 @@ int main()
 	vertex10.color.g = 255;
 	vertex10.color.b = 0;
 
-	//WireFrame Triangle
-	Geometry::Vertex vertex01;
-	Geometry::Vertex vertex11;
-	Geometry::Vertex vertex22;
-
-	vertex01.x = (1280 / 2) + 300;
-	vertex01.y = 100;
-	vertex01.color.r = 255;
-	vertex01.color.g = 0;
-	vertex01.color.b = 0;
-
-	vertex11.x = (1280 / 2) +100;
-	vertex11.y = 400;
-	vertex11.color.r = 0;
-	vertex11.color.g = 255;
-	vertex11.color.b = 0;
-
-	vertex22.x = (1280 / 2) + 500;
-	vertex22.y = 400;
-	vertex22.color.r = 0;
-	vertex22.color.g = 0;
-	vertex22.color.b = 255;
-
 	while (window.IsActive()) 
 	{
 		device.HandleEvent();
@@ -145,12 +122,13 @@ int main()
 		renderer.RenderClear();
 
 		rasterRizer.DrawTriangle(vertex0, vertex1, vertex2);
-		rasterRizer.DrawWireFrameTriangle(vertex01, vertex11, vertex22);
 
-		rasterRizer.DrawLine(vertex3, vertex4);
-		rasterRizer.DrawLine(vertex5, vertex6);
-		rasterRizer.DrawLine(vertex7, vertex8);
-		rasterRizer.DrawLine(vertex9, vertex10);
+		//rasterRizer.DrawWireFrameTriangle(vertex01, vertex11, vertex22);
+
+		//rasterRizer.DrawLine(vertex3, vertex4);
+		//rasterRizer.DrawLine(vertex5, vertex6);
+		//rasterRizer.DrawLine(vertex7, vertex8);
+		//rasterRizer.DrawLine(vertex9, vertex10);
 
 		rasterRizer.GetTextureBuffer().SendDataToGPU();
 

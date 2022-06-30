@@ -15,17 +15,6 @@ void Core::Rasterizer::SetScissorRect(int p_minX, int p_minY, int p_maxX, int p_
 	m_maxY = p_maxY;
 }
 
-Uint8 Core::Rasterizer::InterpolateColors(Uint8 p_color0, Uint8 p_color1, Uint8 p_color2, Geometry::Edge p_edge0, Geometry::Edge p_edge1, Geometry::Edge p_edge2, float p_area, float p_positionX, float p_positionY) const
-{
-	float factor = 1.0f / (2.0f * p_area);
-
-	const float a = factor * (p_color0 * p_edge0.a + p_color1 * p_edge1.a + p_color2 * p_edge2.a);
-	const float b = factor * (p_color0 * p_edge0.b + p_color1 * p_edge1.b + p_color2 * p_edge2.b);
-	const float c = factor * (p_color0 * p_edge0.c + p_color1 * p_edge1.c + p_color2 * p_edge2.c);
-
-	return a * p_positionX + b * p_positionY + c;
-}
-
 void Core::Rasterizer::DrawLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1) const
 {
 	const float xdiff = (p_vertex1.x - p_vertex0.x);
@@ -108,7 +97,14 @@ void Core::Rasterizer::DrawWireFrameTriangle(const Geometry::Vertex& p_vertex0, 
 	DrawLine(p_vertex2, p_vertex0);
 }
 
-void Core::Rasterizer::DrawTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2) const
+float Core::Rasterizer::ComputeEdge(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_point)
+{
+	return (p_point.x - p_vertex0.x) * (p_vertex1.y - p_vertex0.y) - (p_point.y - p_vertex0.y) * (p_vertex1.x - p_vertex0.x);
+
+	//return (p_vertex0.x - p_vertex1.x) * (p_vertex2.y - p_vertex0.y) - (p_vertex0.y - p_vertex1.y) * (p_vertex2.x - p_vertex0.x);
+}
+
+void Core::Rasterizer::DrawTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1,const Geometry::Vertex& p_vertex2)
 {
 	uint16_t minX = std::min(std::min(p_vertex0.x, p_vertex1.x), p_vertex2.x);
 	uint16_t maxX = std::max(std::max(p_vertex0.x, p_vertex1.x), p_vertex2.x);
@@ -120,24 +116,27 @@ void Core::Rasterizer::DrawTriangle(const Geometry::Vertex& p_vertex0, const Geo
 	minY = std::max(minY, m_minY);
 	maxY = std::min(maxY, m_maxY);
 
-	const Geometry::Edge edge0(p_vertex1, p_vertex2);
-	const Geometry::Edge edge1(p_vertex2, p_vertex0);
-	const Geometry::Edge edge2(p_vertex0, p_vertex1);
-
-	const float area = 0.5f * (edge0.c + edge1.c + edge2.c);
-
-	if (area < 0)
-		return;
+	const float area = ComputeEdge(p_vertex0, p_vertex1, p_vertex2);
 
 	for (uint16_t x = minX; x <= maxX; x++)
 	{
 		for (uint16_t y = minY; y <= maxY; y++)
 		{
-			if (edge0.IsInsideEdge(x, y) && edge1.IsInsideEdge(x, y) && edge2.IsInsideEdge(x, y))
+			Geometry::Vertex point = { x + 0.5f, y + 0.5f };
+
+			float w0 = ComputeEdge(p_vertex1, p_vertex2, point);
+			float w1 = ComputeEdge(p_vertex2, p_vertex0, point);
+			float w2 = ComputeEdge(p_vertex0, p_vertex1, point);
+
+			if (w0 >= 0 && w1 >= 0 && w2 >= 0) 
 			{
-				const Uint8 red   = InterpolateColors(p_vertex0.color.r, p_vertex1.color.r, p_vertex2.color.r, edge0, edge1, edge2, area, x, y);
-				const Uint8 green = InterpolateColors(p_vertex0.color.g, p_vertex1.color.g, p_vertex2.color.g, edge0, edge1, edge2, area, x, y);
-				const Uint8 blue  = InterpolateColors(p_vertex0.color.b, p_vertex1.color.b, p_vertex2.color.b, edge0, edge1, edge2, area, x, y);
+				w0 /= area;
+				w1 /= area;
+				w2 /= area;
+
+				float red   = w0 * p_vertex0.color.r + w1 * p_vertex1.color.r + w2 * p_vertex2.color.r;
+				float green = w0 * p_vertex0.color.g + w1 * p_vertex1.color.g + w2 * p_vertex2.color.g;
+				float blue  = w0 * p_vertex0.color.b + w1 * p_vertex1.color.b + w2 * p_vertex2.color.b;
 
 				Data::Color color(red, green, blue);
 

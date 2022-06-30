@@ -3,7 +3,6 @@
 #include "SDL.h"
 
 #include "Geometry/Vertex.h"
-#include "Geometry/Edge.h"
 #include "Core/Renderer.h"
 
 #include "Buffers/TextureBuffer.h"
@@ -20,12 +19,13 @@ namespace Core
 
 		void DrawLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1) const;
 		void DrawWireFrameTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2) const;
-		void DrawTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2) const;
+
+		void DrawTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2);
 
 		Buffers::TextureBuffer& GetTextureBuffer();
 
 	private:
-		Uint8 InterpolateColors(Uint8 p_color0, Uint8 p_color1, Uint8 p_color2, Geometry::Edge p_edge0, Geometry::Edge p_edge1, Geometry::Edge p_edge2, float p_area, float p_positionX, float p_positionY) const;
+		float ComputeEdge(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_point);
 
 	private:
 		Buffers::TextureBuffer m_textureBuffer;
