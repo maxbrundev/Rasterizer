@@ -20,12 +20,14 @@ namespace Core
 		void DrawLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1) const;
 		void DrawWireFrameTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2) const;
 
-		void DrawTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2);
+		void DrawTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2) const;
+
+		void DrawPoint(const Geometry::Vertex& p_vertex0) const;
 
 		Buffers::TextureBuffer& GetTextureBuffer();
 
 	private:
-		float ComputeEdge(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_point);
+		float ComputeEdge(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2) const;
 
 	private:
 		Buffers::TextureBuffer m_textureBuffer;

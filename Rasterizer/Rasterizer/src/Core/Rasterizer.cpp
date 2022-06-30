@@ -46,7 +46,7 @@ void Core::Rasterizer::DrawLine(const Geometry::Vertex& p_vertex0, const Geometr
 
 		for (uint16_t x = xmin; x <= xmax; x++)
 		{
-			const uint16_t y = p_vertex0.y + ((x - p_vertex0.x) * slope);
+			const uint16_t y = p_vertex0.y + (x - p_vertex0.x) * slope;
 
 			const Uint8 red   = p_vertex0.color.r + (p_vertex1.color.r - p_vertex0.color.r) * ((x - p_vertex0.x) / xdiff);
 			const Uint8 green = p_vertex0.color.g + (p_vertex1.color.g - p_vertex0.color.g) * ((x - p_vertex0.x) / xdiff);
@@ -77,7 +77,7 @@ void Core::Rasterizer::DrawLine(const Geometry::Vertex& p_vertex0, const Geometr
 
 		for (uint16_t y = ymin; y <= ymax; y++)
 		{
-			const uint16_t x = p_vertex0.x + ((y - p_vertex0.y) * slope);
+			const uint16_t x = p_vertex0.x + (y - p_vertex0.y) * slope;
 
 			const Uint8 red   = p_vertex0.color.r + (p_vertex1.color.r - p_vertex0.color.r) * ((y - p_vertex0.y) / ydiff);
 			const Uint8 green = p_vertex0.color.g + (p_vertex1.color.g - p_vertex0.color.g) * ((y - p_vertex0.y) / ydiff);
@@ -97,14 +97,12 @@ void Core::Rasterizer::DrawWireFrameTriangle(const Geometry::Vertex& p_vertex0, 
 	DrawLine(p_vertex2, p_vertex0);
 }
 
-float Core::Rasterizer::ComputeEdge(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_point)
+float Core::Rasterizer::ComputeEdge(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2) const
 {
-	return (p_point.x - p_vertex0.x) * (p_vertex1.y - p_vertex0.y) - (p_point.y - p_vertex0.y) * (p_vertex1.x - p_vertex0.x);
-
-	//return (p_vertex0.x - p_vertex1.x) * (p_vertex2.y - p_vertex0.y) - (p_vertex0.y - p_vertex1.y) * (p_vertex2.x - p_vertex0.x);
+	return (p_vertex2.x - p_vertex0.x) * (p_vertex1.y - p_vertex0.y) - (p_vertex2.y - p_vertex0.y) * (p_vertex1.x - p_vertex0.x);
 }
 
-void Core::Rasterizer::DrawTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1,const Geometry::Vertex& p_vertex2)
+void Core::Rasterizer::DrawTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1,const Geometry::Vertex& p_vertex2) const
 {
 	uint16_t minX = std::min(std::min(p_vertex0.x, p_vertex1.x), p_vertex2.x);
 	uint16_t maxX = std::max(std::max(p_vertex0.x, p_vertex1.x), p_vertex2.x);
@@ -116,6 +114,7 @@ void Core::Rasterizer::DrawTriangle(const Geometry::Vertex& p_vertex0, const Geo
 	minY = std::max(minY, m_minY);
 	maxY = std::min(maxY, m_maxY);
 
+	//Area of the triangle
 	const float area = ComputeEdge(p_vertex0, p_vertex1, p_vertex2);
 
 	for (uint16_t x = minX; x <= maxX; x++)
@@ -124,19 +123,21 @@ void Core::Rasterizer::DrawTriangle(const Geometry::Vertex& p_vertex0, const Geo
 		{
 			Geometry::Vertex point = { x + 0.5f, y + 0.5f };
 
+			// Compute Barycentric Coordinates
 			float w0 = ComputeEdge(p_vertex1, p_vertex2, point);
 			float w1 = ComputeEdge(p_vertex2, p_vertex0, point);
 			float w2 = ComputeEdge(p_vertex0, p_vertex1, point);
 
-			if (w0 >= 0 && w1 >= 0 && w2 >= 0) 
+			if (w0 >= 0 && w1 >= 0 && w2 >= 0)
 			{
 				w0 /= area;
 				w1 /= area;
 				w2 /= area;
 
-				float red   = w0 * p_vertex0.color.r + w1 * p_vertex1.color.r + w2 * p_vertex2.color.r;
-				float green = w0 * p_vertex0.color.g + w1 * p_vertex1.color.g + w2 * p_vertex2.color.g;
-				float blue  = w0 * p_vertex0.color.b + w1 * p_vertex1.color.b + w2 * p_vertex2.color.b;
+				// Interpolate colors using Barycentric Coordinates
+				const float red   = w0 * p_vertex0.color.r + w1 * p_vertex1.color.r + w2 * p_vertex2.color.r;
+				const float green = w0 * p_vertex0.color.g + w1 * p_vertex1.color.g + w2 * p_vertex2.color.g;
+				const float blue  = w0 * p_vertex0.color.b + w1 * p_vertex1.color.b + w2 * p_vertex2.color.b;
 
 				Data::Color color(red, green, blue);
 
@@ -144,6 +145,11 @@ void Core::Rasterizer::DrawTriangle(const Geometry::Vertex& p_vertex0, const Geo
 			}
 		}
 	}
+}
+
+void Core::Rasterizer::DrawPoint(const Geometry::Vertex& p_vertex0) const
+{
+	m_textureBuffer.SetPixel(p_vertex0.x, p_vertex0.y, p_vertex0.color);
 }
 
 Buffers::TextureBuffer& Core::Rasterizer::GetTextureBuffer()

@@ -9,16 +9,19 @@ namespace Geometry
 		Vertex a;
 		Vertex b;
 
-		float w;
+		Vertex edge;
+
+		float area = 0.0f;
 
 		Edge(Vertex p_vertex0, Vertex p_vertex1) : a(p_vertex0), b(p_vertex1)
 		{
-			w = (p_vertex1.y - p_vertex0.y) - (p_vertex1.x - p_vertex0.x);
+			edge.x = b.x - a.x;
+			edge.y = b.y - a.y;
 		}
 
-		void Compute(Vertex p_point)
+		void ComputeArea(Vertex p_point)
 		{
-			w *= (p_point.x - a.x) - (p_point.y - a.y);
+			area = (p_point.x - a.x) * edge.y - (p_point.y - a.y) * edge.x;
 		}
 	};
 }

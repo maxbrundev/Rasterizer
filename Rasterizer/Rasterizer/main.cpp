@@ -123,12 +123,12 @@ int main()
 
 		rasterRizer.DrawTriangle(vertex0, vertex1, vertex2);
 
-		//rasterRizer.DrawWireFrameTriangle(vertex01, vertex11, vertex22);
+		rasterRizer.DrawWireFrameTriangle({ vertex0.x + 400, vertex0.y, vertex0.color}, { vertex1.x + 400, vertex1.y,  vertex1.color }, { vertex2.x + 400, vertex2.y,  vertex2.color });
 
-		//rasterRizer.DrawLine(vertex3, vertex4);
-		//rasterRizer.DrawLine(vertex5, vertex6);
-		//rasterRizer.DrawLine(vertex7, vertex8);
-		//rasterRizer.DrawLine(vertex9, vertex10);
+		rasterRizer.DrawLine(vertex3, vertex4);
+		rasterRizer.DrawLine(vertex5, vertex6);
+		rasterRizer.DrawLine(vertex7, vertex8);
+		rasterRizer.DrawLine(vertex9, vertex10);
 
 		rasterRizer.GetTextureBuffer().SendDataToGPU();
 
