@@ -1,43 +1,40 @@
 #include "Core/Renderer.h"
 
-#include <SDL.h>
-
-Core::Renderer::Renderer(Context::Window& p_window, const Settings::DriverSettings& p_driverSettings) : m_window(p_window),
-m_sdlRenderer(nullptr)
+Core::Renderer::Renderer(Context::Driver& p_driver, Context::Window& p_window) : m_driver(p_driver)
 {
-	m_flags = p_driverSettings.vsync ? m_flags | SDL_RENDERER_PRESENTVSYNC : 0;
-	m_flags |= SDL_RENDERER_ACCELERATED;
-
-	InitRenderer();
+	m_rasterizer = std::make_unique<Rasterizer>(p_window, m_driver.GetRenderer());
 }
 
-Core::Renderer::~Renderer()
+void Core::Renderer::Clear(const Data::Color& p_color)
 {
-	SDL_DestroyRenderer(m_sdlRenderer);
+	m_rasterizer->Clear(p_color);
 }
 
-void Core::Renderer::InitRenderer()
+void Core::Renderer::ClearDepth()
 {
-	m_sdlRenderer = SDL_CreateRenderer(m_window.GetSDLWindow(), -1, m_flags);
-	if (!m_sdlRenderer)
-	{
-		SDL_Quit();
-		throw std::runtime_error("Failed to Init SDL Renderer");
-	}
+	m_rasterizer->ClearDepth();
 }
 
-
-void Core::Renderer::RenderClear() const
+void Core::Renderer::Draw(const Resources::Mesh& p_mesh, const glm::mat4& p_mvp, const glm::mat4& p_model) const
 {
-	SDL_RenderClear(m_sdlRenderer);
+	m_rasterizer->RasterizeMesh(p_mesh, p_mvp, p_model);
 }
 
-void Core::Renderer::RenderCopy(const Buffers::TextureBuffer& p_texture) const
+void Core::Renderer::Render() const
 {
-	SDL_RenderCopy(m_sdlRenderer, p_texture.GetSDLTexture(), nullptr, nullptr);
+	m_rasterizer->SendDataToGPU();
+
+	m_driver.RenderCopy(m_rasterizer->GetTextureBuffer().GetSDLTexture());
+
+	m_driver.RenderPresent();
 }
 
-void Core::Renderer::RenderPresent() const
+void Core::Renderer::Clear() const
 {
-	SDL_RenderPresent(m_sdlRenderer);
+	m_driver.RenderClear();
+}
+
+SDL_Renderer* Core::Renderer::GetSDLRenderer() const
+{
+	return m_driver.GetRenderer();
 }

@@ -7,21 +7,21 @@ m_device(p_device),
 m_sdlWindow(nullptr),
 m_surface(nullptr),
 m_title(p_windowSettings.title),
-m_size(p_windowSettings.width, p_windowSettings.height),
-m_fullscreen(p_windowSettings.fullScreen),
+m_size{p_windowSettings.width, p_windowSettings.height},
+m_aspectRatio(static_cast<float>(p_windowSettings.width) / static_cast<float>(p_windowSettings.height)),
+m_isFullscreen(p_windowSettings.fullScreen),
 m_isActive(false),
 m_cursorMode(ECursorMode::NORMAL)
 {
 
-	m_flags = m_fullscreen ? m_flags | SDL_WINDOW_FULLSCREEN : 0;
+	m_flags = m_isFullscreen ? m_flags | SDL_WINDOW_FULLSCREEN : 0;
 	m_flags = p_windowSettings.resizable ? m_flags | SDL_WINDOW_RESIZABLE : 0;
 
 	CreateSDLWindow();
-	UpdateSize();
 	SetCursorMode(ECursorMode::NORMAL);
 
 	p_device.CloseEvent.AddListener(std::bind(&Window::SetClose, this));
-	p_device.ResizeEvent.AddListener(std::bind(&Window::UpdateSize, this));
+	p_device.ResizeEvent.AddListener(std::bind(&Window::OnResizeWindow, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 Context::Window::~Window()
@@ -45,6 +45,19 @@ void Context::Window::CreateSDLWindow()
 	m_isActive = true;
 }
 
+void Context::Window::OnResizeWindow(uint16_t p_width, uint16_t p_height)
+{
+	int width;
+	int height;
+
+	SDL_GetWindowSize(m_sdlWindow, &width, &height);
+
+	m_size.first  = width;
+	m_size.second = height;
+
+	m_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+}
+
 void Context::Window::UpdateWindowSurface() const
 {
 	SDL_UpdateWindowSurface(m_sdlWindow);
@@ -61,7 +74,7 @@ void Context::Window::SetCursorMode(ECursorMode p_cursorMode)
 	SDL_ShowCursor(static_cast<int>(p_cursorMode));
 }
 
-SDL_Surface* Context::Window::GetWindowSurface()
+SDL_Surface* Context::Window::GetWindowSurface() const
 {
 	return m_surface;
 }
@@ -71,7 +84,15 @@ Context::ECursorMode Context::Window::GetCursorMode() const
 	return m_cursorMode;
 }
 
-uint32_t Context::Window::GetWindowFlags()
+void Context::Window::SetSize(uint16_t p_width, uint16_t p_height)
+{
+	m_size.first = p_width;
+	m_size.second = p_height;
+
+	SDL_SetWindowSize(m_sdlWindow, p_width, p_height);
+}
+
+uint32_t Context::Window::GetWindowFlags() const
 {
 	return SDL_GetWindowFlags(m_sdlWindow);
 }
@@ -93,7 +114,7 @@ bool Context::Window::IsActive() const
 
 bool Context::Window::isFullscreen() const
 {
-	return m_fullscreen;
+	return m_isFullscreen;
 }
 
 SDL_Window* Context::Window::GetSDLWindow() const
@@ -101,20 +122,9 @@ SDL_Window* Context::Window::GetSDLWindow() const
 	return m_sdlWindow;
 }
 
-void Context::Window::UpdateSize()
+float Context::Window::GetAspectRatio() const
 {
-	int realWidth;
-	int realHeight;
-	
-	SDL_GetWindowSize(m_sdlWindow, &realWidth, &realHeight);
-	
-	m_size.first  = realWidth;
-	m_size.second = realHeight;
-	
-	m_halfSize.first  = m_size.first / 2;
-	m_halfSize.second = m_size.second / 2;
-
-	m_aspectRatio = static_cast<float>(m_size.first) / static_cast<float>(m_size.second);
+	return m_aspectRatio;
 }
 
 std::pair<uint16_t, uint16_t> Context::Window::GetSize() const

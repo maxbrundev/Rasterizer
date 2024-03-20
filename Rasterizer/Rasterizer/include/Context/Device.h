@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SDL_events.h>
+#include <SDL.h>
 
 #include "Eventing/Event.h"
 
@@ -9,19 +9,23 @@ namespace Context
 	class Device
 	{
 	public:
+		Eventing::Event<int> KeyPressedEvent;
+		Eventing::Event<int> KeyReleasedEvent;
+		Eventing::Event<int> MouseButtonPressedEvent;
+		Eventing::Event<int> MouseButtonReleasedEvent;
+
+		Eventing::Event<> CloseEvent;
+
+		Eventing::Event<uint16_t, uint16_t> ResizeEvent;
+
 		Device();
 		~Device();
 
-		void PushSDLEvent(SDL_Event p_event) const;
-		void HandleEvent();
+		void PollEvents();
 
-		uint32_t GetElapsedTime() const;
-
-	public:
-		Eventing::Event<> CloseEvent;
-		Eventing::Event<uint16_t, uint16_t> ResizeEvent;
+		uint32_t GetTicks() const;
 
 	private:
-		void InitSDL() const;
+		void InitializeSDL();
 	};
 }

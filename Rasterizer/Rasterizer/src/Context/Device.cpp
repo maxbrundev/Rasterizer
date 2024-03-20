@@ -1,65 +1,68 @@
 #include "Context/Device.h"
 
-#include <stdexcept>
-
-#include <SDL.h>
-
 Context::Device::Device()
 {
-	InitSDL();
+	InitializeSDL();
 }
 
+void Context::Device::InitializeSDL()
+{
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)
+	{
+		SDL_Quit();
+
+		throw std::runtime_error("Failed to Init SDL");
+	}
+}
+	
 Context::Device::~Device()
 {
 	SDL_Quit();
 }
 
-void Context::Device::InitSDL() const
-{
-	const int8_t initializationCode = SDL_Init(SDL_INIT_VIDEO);
-	
-	if (initializationCode < 0)
-	{
-		SDL_Quit();
-		throw std::runtime_error("Failed to Init SDL");
-	}
-}
-
-void Context::Device::PushSDLEvent(SDL_Event p_event) const
-{
-	SDL_PushEvent(&p_event);
-}
-
-void Context::Device::HandleEvent()
+void Context::Device::PollEvents()
 {
 	SDL_Event event;
 
 	while (SDL_PollEvent(&event))
 	{
-		if(event.type == SDL_WINDOWEVENT)
+		switch (event.type) 
 		{
-			if(event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+		case SDL_KEYDOWN:
+			KeyPressedEvent.Invoke(event.key.keysym.scancode);
+			break;
+
+		case SDL_KEYUP:
+			KeyReleasedEvent.Invoke(event.key.keysym.sym);
+			break;
+
+		case SDL_MOUSEBUTTONDOWN:
+			MouseButtonPressedEvent.Invoke(event.button.button);
+			break;
+
+		case SDL_MOUSEBUTTONUP:
+			MouseButtonReleasedEvent.Invoke(event.button.button);
+			break;
+
+		case SDL_QUIT:
+			CloseEvent.Invoke();
+			break;
+
+		case SDL_WINDOWEVENT:
+			if (event.window.event == SDL_WINDOWEVENT_RESIZED) 
 			{
 				ResizeEvent.Invoke(event.window.data1, event.window.data2);
 			}
-		}
+			break;
 
-		if (event.type == SDL_KEYDOWN)
-		{
-			if(event.key.keysym.sym == SDLK_ESCAPE)
-			{
-				CloseEvent.Invoke();
-			}
-		}
-
-		if (event.type == SDL_QUIT)
-		{
-			CloseEvent.Invoke();
+		default: 
+			break;
 		}
 	}
 }
 
-uint32_t Context::Device::GetElapsedTime() const
+uint32_t Context::Device::GetTicks() const
 {
 	return SDL_GetTicks();
 }
+

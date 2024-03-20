@@ -18,7 +18,7 @@ namespace Buffers
 
 		void Clear(const Data::Color& p_color) const;
 
-		void SetPixel(uint32_t p_x, uint32_t p_y, const Data::Color& p_color) const;
+		void SetPixel(int p_x, int p_y, const Data::Color& p_color) const;
 		uint32_t GetPixel(uint32_t p_x, uint32_t p_y) const;
 
 		SDL_Texture* GetSDLTexture() const;
@@ -26,10 +26,12 @@ namespace Buffers
 	private:
 		SDL_Texture* m_sdlTexture;
 		
-		const uint32_t m_bufferWidth;
-		const uint32_t m_bufferHeight;
-		const uint32_t m_pixelBufferRowSize;
-		const uint32_t m_bufferSize;
-		uint32_t* m_pixelBuffer;
+		const uint32_t m_width;
+		const uint32_t m_height;
+		const uint32_t m_size;
+		const uint32_t m_rowSize;
+		const uint32_t m_sizeInByte;
+
+		uint32_t* m_data;
 	};
 }

@@ -7,6 +7,11 @@ namespace Data
 {
 	struct Color
 	{
+		static const Color Red;
+		static const Color Green;
+		static const Color Blue;
+		static const Color White;
+
 		uint8_t r;
 		uint8_t g;
 		uint8_t b;

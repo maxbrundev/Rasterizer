@@ -2,157 +2,409 @@
 
 #include <algorithm>
 
-Core::Rasterizer::Rasterizer(Renderer& p_renderer, uint16_t p_textureBufferWidth, uint16_t p_textureBufferHeight) :
-	m_textureBuffer(p_renderer.m_sdlRenderer, p_textureBufferWidth, p_textureBufferHeight, SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING)
+#include "Geometry/Triangle.h"
+
+Core::Rasterizer::Rasterizer(Context::Window& p_window, SDL_Renderer* p_sdlRenderer) :
+m_window(p_window),
+m_textureBuffer(p_sdlRenderer, m_window.GetSize().first, m_window.GetSize().second, SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING),
+m_depthBuffer(m_window.GetSize().first, m_window.GetSize().second)
 {
 }
 
-void Core::Rasterizer::SetScissorRect(int p_minX, int p_minY, int p_maxX, int p_maxY)
+void Core::Rasterizer::DrawLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Data::Color& p_color) const
 {
-	m_minX = p_minX;
-	m_minY = p_minY;
-	m_maxX = p_maxX;
-	m_maxY = p_maxY;
-}
+	int delta_x = (p_vertex1.position.x - p_vertex0.position.x);
+	int delta_y = (p_vertex1.position.y - p_vertex0.position.y);
 
-void Core::Rasterizer::DrawLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1) const
-{
-	const float xdiff = (p_vertex1.x - p_vertex0.x);
-	const float ydiff = (p_vertex1.y - p_vertex0.y);
+	int longest_side_length = (abs(delta_x) >= abs(delta_y)) ? abs(delta_x) : abs(delta_y);
 
-	if (xdiff == 0.0f && ydiff == 0.0f)
+	float x_inc = delta_x / (float)longest_side_length;
+	float y_inc = delta_y / (float)longest_side_length;
+
+	float current_x = p_vertex0.position.x;
+	float current_y = p_vertex0.position.y;
+
+	//Data::Color color_step;
+	//if (longest_side_length > 0)
+	//{
+	//	color_step.r = (p_vertex1.color.r - p_vertex0.color.r) / longest_side_length;
+	//	color_step.g = (p_vertex1.color.g - p_vertex0.color.g) / longest_side_length;
+	//	color_step.b = (p_vertex1.color.b - p_vertex0.color.b) / longest_side_length;
+	//}
+
+	for (int i = 0; i <= longest_side_length; i++)
 	{
-		m_textureBuffer.SetPixel(p_vertex0.x, p_vertex0.y, p_vertex0.color);
-		return;
-	}
+		//Data::Color interpolatedColor(
+		//	p_vertex0.color.r + i * color_step.r,
+		//	p_vertex0.color.g + i * color_step.g,
+		//	p_vertex0.color.b + i * color_step.b
+		//);
 
-	if (fabs(xdiff) > fabs(ydiff))
-	{
-		uint16_t xmin;
-		uint16_t xmax;
+		m_textureBuffer.SetPixel(std::round(current_x), std::round(current_y), p_color);
 
-		if (p_vertex0.x < p_vertex1.x) 
-		{
-			xmin = p_vertex0.x;
-			xmax = p_vertex1.x;
-		}
-		else
-		{
-			xmin = p_vertex1.x;
-			xmax = p_vertex0.x;
-		}
-
-		const float slope = ydiff / xdiff;
-
-		for (uint16_t x = xmin; x <= xmax; x++)
-		{
-			const uint16_t y = p_vertex0.y + (x - p_vertex0.x) * slope;
-
-			const Uint8 red   = p_vertex0.color.r + (p_vertex1.color.r - p_vertex0.color.r) * ((x - p_vertex0.x) / xdiff);
-			const Uint8 green = p_vertex0.color.g + (p_vertex1.color.g - p_vertex0.color.g) * ((x - p_vertex0.x) / xdiff);
-			const Uint8 blue  = p_vertex0.color.b + (p_vertex1.color.b - p_vertex0.color.b) * ((x - p_vertex0.x) / xdiff);
-
-			Data::Color color(red, green, blue);
-
-			m_textureBuffer.SetPixel(x, y, color);
-		}
-	}
-	else
-	{
-		uint16_t ymin;
-		uint16_t ymax;
-
-		if (p_vertex0.y < p_vertex1.y)
-		{
-			ymin = p_vertex0.y;
-			ymax = p_vertex1.y;
-		}
-		else
-		{
-			ymin = p_vertex1.y;
-			ymax = p_vertex0.y;
-		}
-
-		const float slope = xdiff / ydiff;
-
-		for (uint16_t y = ymin; y <= ymax; y++)
-		{
-			const uint16_t x = p_vertex0.x + (y - p_vertex0.y) * slope;
-
-			const Uint8 red   = p_vertex0.color.r + (p_vertex1.color.r - p_vertex0.color.r) * ((y - p_vertex0.y) / ydiff);
-			const Uint8 green = p_vertex0.color.g + (p_vertex1.color.g - p_vertex0.color.g) * ((y - p_vertex0.y) / ydiff);
-			const Uint8 blue  = p_vertex0.color.b + (p_vertex1.color.b - p_vertex0.color.b) * ((y - p_vertex0.y) / ydiff);
-
-			Data::Color color(red, green, blue);
-
-			m_textureBuffer.SetPixel(x, y, color);
-		}
+		current_x += x_inc;
+		current_y += y_inc;
 	}
 }
 
-void Core::Rasterizer::DrawWireFrameTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2) const
+void Core::Rasterizer::DrawWireFrameTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, const Data::Color& p_color) const
 {
-	DrawLine(p_vertex0, p_vertex1);
-	DrawLine(p_vertex1, p_vertex2);
-	DrawLine(p_vertex2, p_vertex0);
+	DrawLine(p_vertex0, p_vertex1, p_color);
+	DrawLine(p_vertex1, p_vertex2, p_color);
+	DrawLine(p_vertex2, p_vertex0, p_color);
 }
 
 float Core::Rasterizer::ComputeEdge(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2) const
 {
-	return (p_vertex2.x - p_vertex0.x) * (p_vertex1.y - p_vertex0.y) - (p_vertex2.y - p_vertex0.y) * (p_vertex1.x - p_vertex0.x);
+	return (p_vertex2.position.x - p_vertex0.position.x) * (p_vertex1.position.y - p_vertex0.position.y) - (p_vertex2.position.y - p_vertex0.position.y) * (p_vertex1.position.x - p_vertex0.position.x);
 }
 
-void Core::Rasterizer::DrawTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1,const Geometry::Vertex& p_vertex2) const
+void Core::Rasterizer::DrawTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2)
 {
-	uint16_t minX = std::min(std::min(p_vertex0.x, p_vertex1.x), p_vertex2.x);
-	uint16_t maxX = std::max(std::max(p_vertex0.x, p_vertex1.x), p_vertex2.x);
-	uint16_t minY = std::min(std::min(p_vertex0.y, p_vertex1.y), p_vertex2.y);
-	uint16_t maxY = std::max(std::max(p_vertex0.y, p_vertex1.y), p_vertex2.y);
+	uint16_t minX = std::min(std::min(p_vertex0.position.x, p_vertex1.position.x), p_vertex2.position.x);
+	uint16_t maxX = std::max(std::max(p_vertex0.position.x, p_vertex1.position.x), p_vertex2.position.x);
+	uint16_t minY = std::min(std::min(p_vertex0.position.y, p_vertex1.position.y), p_vertex2.position.y);
+	uint16_t maxY = std::max(std::max(p_vertex0.position.y, p_vertex1.position.y), p_vertex2.position.y);
 
 	minX = std::max(minX, m_minX);
 	maxX = std::min(maxX, m_maxX);
 	minY = std::max(minY, m_minY);
 	maxY = std::min(maxY, m_maxY);
 
-	//Area of the triangle
-	const float area = ComputeEdge(p_vertex0, p_vertex1, p_vertex2);
-
 	for (uint16_t x = minX; x <= maxX; x++)
 	{
 		for (uint16_t y = minY; y <= maxY; y++)
 		{
-			Geometry::Vertex point = { x + 0.5f, y + 0.5f };
+			Geometry::Vertex point = {(float)x, (float)y, 0.0f};
 
-			// Compute Barycentric Coordinates
-			float w0 = ComputeEdge(p_vertex1, p_vertex2, point);
-			float w1 = ComputeEdge(p_vertex2, p_vertex0, point);
-			float w2 = ComputeEdge(p_vertex0, p_vertex1, point);
+			// Compute barycentric coordinates
+			glm::vec3 weights = GetBarycentricWeights(p_vertex0, p_vertex1, p_vertex2, point);
 
-			if (w0 >= 0 && w1 >= 0 && w2 >= 0)
+			if (weights.x >= 0 && weights.y >= 0 && weights.z >= 0)
 			{
-				w0 /= area;
-				w1 /= area;
-				w2 /= area;
-
-				// Interpolate colors using Barycentric Coordinates
-				const float red   = w0 * p_vertex0.color.r + w1 * p_vertex1.color.r + w2 * p_vertex2.color.r;
-				const float green = w0 * p_vertex0.color.g + w1 * p_vertex1.color.g + w2 * p_vertex2.color.g;
-				const float blue  = w0 * p_vertex0.color.b + w1 * p_vertex1.color.b + w2 * p_vertex2.color.b;
-
-				Data::Color color(red, green, blue);
-
+				// Interpolate color using barycentric coordinates
+				Data::Color color = InterpolateColors(p_vertex0.color, p_vertex1.color, p_vertex2.color, weights);
 				m_textureBuffer.SetPixel(x, y, color);
 			}
 		}
 	}
 }
 
+void Core::Rasterizer::ClearDepth()
+{
+	m_depthBuffer.Clear();
+}
+
+void Core::Rasterizer::RasterizeMesh(const Resources::Mesh& p_mesh, const glm::mat4& p_mvp, const glm::mat4& p_model)
+{
+	const auto& vertices = p_mesh.GetVertices();
+	const auto& indices  = p_mesh.GetIndices();
+
+	if (!indices.empty())
+	{
+		for (uint32_t i = 0; i < indices.size(); i += 3)
+		{
+			RasterizeTriangle(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]], p_mvp, p_model);
+		}
+	}
+	else if (vertices.size() % 3 == 0)
+	{
+		for (uint32_t i = 0; i < vertices.size(); i += 3)
+		{
+			RasterizeTriangle(vertices[i], vertices[i + 1], vertices[i + 2], p_mvp, p_model);
+		}
+	}
+}
+
+void Core::Rasterizer::RasterizeTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, const glm::mat4& p_mvp, const glm::mat4& p_model)
+{
+	glm::vec4 vertexWorldPosition0 = p_mvp * glm::vec4(p_vertex0.position, 1.0f);
+	glm::vec4 vertexWorldPosition1 = p_mvp * glm::vec4(p_vertex1.position, 1.0f);
+	glm::vec4 vertexWorldPosition2 = p_mvp * glm::vec4(p_vertex2.position, 1.0f);
+
+	glm::vec3 vertexScreenPosition0 = ComputeScreenSpaceCoordinate(vertexWorldPosition0);
+	glm::vec3 vertexScreenPosition1 = ComputeScreenSpaceCoordinate(vertexWorldPosition1);
+	glm::vec3 vertexScreenPosition2 = ComputeScreenSpaceCoordinate(vertexWorldPosition2);
+	
+	glm::vec2 vertexNormalizedPosition0 = ComputeNormalizedDeviceCoordinate(vertexScreenPosition0);
+	glm::vec2 vertexNormalizedPosition1 = ComputeNormalizedDeviceCoordinate(vertexScreenPosition1);
+	glm::vec2 vertexNormalizedPosition2 = ComputeNormalizedDeviceCoordinate(vertexScreenPosition2);
+	
+	glm::vec2 vertexRasterPosition0 = ComputeRasterSpaceCoordinate(vertexNormalizedPosition0);
+	glm::vec2 vertexRasterPosition1 = ComputeRasterSpaceCoordinate(vertexNormalizedPosition1);
+	glm::vec2 vertexRasterPosition2 = ComputeRasterSpaceCoordinate(vertexNormalizedPosition2);
+
+	glm::vec3 normal0 = glm::mat3(glm::transpose(glm::inverse(p_model))) * p_vertex0.normal;
+	glm::vec3 normal1 = glm::mat3(glm::transpose(glm::inverse(p_model))) * p_vertex1.normal;
+	glm::vec3 normal2 = glm::mat3(glm::transpose(glm::inverse(p_model))) * p_vertex2.normal;
+
+	normal0 = glm::normalize(normal0);
+	normal1 = glm::normalize(normal1);
+	normal2 = glm::normalize(normal2);
+
+	glm::vec3 color0 = (normal0 * 0.5f + glm::vec3(0.5f, 0.5f, 0.5f) ) * 255.0f;
+	glm::vec3 color1 = (normal1 * 0.5f + glm::vec3(0.5f, 0.5f, 0.5f) ) * 255.0f;
+	glm::vec3 color2 = (normal2 * 0.5f + glm::vec3(0.5f, 0.5f, 0.5f) ) * 255.0f;
+
+	Geometry::Triangle triangle(vertexRasterPosition0, vertexRasterPosition1, vertexRasterPosition2);
+
+	if (triangle.ComputeArea() >= 0.0f)
+		return;
+
+	const auto xMin = std::max(0, triangle.BoundingBox2D.Min.x);
+	const auto yMin = std::max(0, triangle.BoundingBox2D.Min.y);
+
+	const auto xMax = std::min(triangle.BoundingBox2D.Max.x, m_window.GetSize().first - 1);
+	const auto yMax = std::min(triangle.BoundingBox2D.Max.y, m_window.GetSize().second - 1);
+
+	for (int32_t x = xMin; x < xMax; x++)
+	{
+		for (int32_t y = yMin; y < yMax; y++)
+		{
+			const glm::vec3 barycentricCoords = triangle.GetBarycentricCoordinates({ x, y });
+			const Data::Color interpolatedColor = InterpolateColors(Data::Color{ (uint8_t)color0.x, (uint8_t)color0 .y, (uint8_t)color0 .z}, Data::Color{ (uint8_t)color1.x, (uint8_t)color1.y, (uint8_t)color1.z }, Data::Color{ (uint8_t)color2.x, (uint8_t)color2.y, (uint8_t)color2.z }, barycentricCoords);
+			if (barycentricCoords.x >= 0.0f && barycentricCoords.y >= 0.0f && barycentricCoords.x + barycentricCoords.y <= 1.0f)
+			{
+				const float depth = vertexScreenPosition0.z * barycentricCoords.z + vertexScreenPosition2.z * barycentricCoords.x + barycentricCoords.y * vertexScreenPosition1.z;
+
+				if (depth <= m_depthBuffer.GetElement(x, y))
+				{
+					m_textureBuffer.SetPixel(x, y, interpolatedColor);
+					m_depthBuffer.SetElement(x, y, depth);
+				}
+			}
+		}
+	}
+}
+
+glm::vec3 Core::Rasterizer::ComputeScreenSpaceCoordinate(const glm::vec4& p_vertexWorldPosition)
+{
+	return p_vertexWorldPosition / p_vertexWorldPosition.w;
+}
+
+glm::vec2 Core::Rasterizer::ComputeNormalizedDeviceCoordinate(const glm::vec3& p_vertexScreenSpacePosition) const
+{
+	glm::vec2 normalizedCoordinate;
+
+	normalizedCoordinate.x = (p_vertexScreenSpacePosition.x + 1.0f) * 0.5f;
+	normalizedCoordinate.y = (1.0f - p_vertexScreenSpacePosition.y) * 0.5f;
+
+	return normalizedCoordinate;
+}
+
+glm::vec2 Core::Rasterizer::ComputeRasterSpaceCoordinate(glm::vec2 p_vertexNormalizedPosition) const
+{
+	p_vertexNormalizedPosition.x = std::round(p_vertexNormalizedPosition.x * m_window.GetSize().first);
+	p_vertexNormalizedPosition.y = std::round(p_vertexNormalizedPosition.y * m_window.GetSize().second);
+
+	return p_vertexNormalizedPosition;
+}
+
+glm::vec3 Core::Rasterizer::GetBarycentricWeights(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, const Geometry::Vertex& p_point)
+{
+	float areaABC = ComputeEdge(p_vertex0, p_vertex1, p_vertex2);
+	float areaPBC = ComputeEdge(p_point, p_vertex1, p_vertex2);
+	float areaPCA = ComputeEdge(p_vertex0, p_point, p_vertex2);
+
+	float alpha = areaPBC / areaABC;
+	float beta = areaPCA / areaABC;
+	float gamma = 1.0f - alpha - beta;
+
+	return glm::vec3(alpha, beta, gamma);
+}
+
+Data::Color Core::Rasterizer::InterpolateColors(const Data::Color& c0, const Data::Color& c1, const Data::Color& c2,
+                                                const glm::vec3& weights)
+{
+	float r = weights.x * c0.r + weights.y * c1.r + weights.z * c2.r;
+	float g = weights.x * c0.g + weights.y * c1.g + weights.z * c2.g;
+	float b = weights.x * c0.b + weights.y * c1.b + weights.z * c2.b;
+
+	return Data::Color(r, g, b);
+}
+
 void Core::Rasterizer::DrawPoint(const Geometry::Vertex& p_vertex0) const
 {
-	m_textureBuffer.SetPixel(p_vertex0.x, p_vertex0.y, p_vertex0.color);
+	m_textureBuffer.SetPixel(p_vertex0.position.x, p_vertex0.position.y, p_vertex0.color);
 }
 
 Buffers::TextureBuffer& Core::Rasterizer::GetTextureBuffer()
 {
 	return m_textureBuffer;
+}
+
+void Core::Rasterizer::Clear(const Data::Color& p_color)
+{
+	m_textureBuffer.Clear(p_color);
+}
+
+void Core::Rasterizer::SendDataToGPU()
+{
+	m_textureBuffer.SendDataToGPU();
+}
+
+void Core::Rasterizer::DrawTriangleTest(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1,
+                                        const Geometry::Vertex& p_vertex2)
+{
+	// Find the two slopes (two triangle legs)
+	float inv_slope_1 = (p_vertex1.position.x - p_vertex0.position.x) / (float)(p_vertex1.position.y - p_vertex0.position.y);
+	float inv_slope_2 = (p_vertex2.position.x - p_vertex0.position.x) / (float)(p_vertex2.position.y - p_vertex0.position.y);
+
+	// Start x_start and x_end from the top vertex (p_vertex0.x, p_vertex0.y)
+	float x_start = p_vertex0.position.x;
+	float x_end = p_vertex0.position.x;
+
+	// Loop all the scanlines from top to bottom
+	for (int y = p_vertex0.position.y; y <= p_vertex2.position.y; y++)
+	{
+		// Calculate starting and ending x coordinates for the current scanline
+		int start_x = std::round(x_start);
+		int end_x = std::round(x_end);
+
+		// Ensure start_x is less than or equal to end_x
+		if (start_x > end_x)
+			std::swap(start_x, end_x);
+
+		// Loop through each pixel in the current scanline
+		for (int x = start_x; x <= end_x; x++)
+		{
+			// Compute barycentric coordinates for color interpolation
+			glm::vec3 weights = GetBarycentricWeights(p_vertex0, p_vertex1, p_vertex2, { static_cast<float>(x), static_cast<float>(y), 0.0f });
+
+			// Interpolate color using barycentric coordinates
+			Data::Color color = InterpolateColors(p_vertex0.color, p_vertex1.color, p_vertex2.color, weights);
+
+			// Draw the pixel with the interpolated color
+			m_textureBuffer.SetPixel(x, y, color);
+		}
+
+		// Move to the next scanline by updating x_start and x_end
+		x_start += inv_slope_1;
+		x_end += inv_slope_2;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Draw a filled a triangle with a flat top
+///////////////////////////////////////////////////////////////////////////////
+//
+//  (p_vertex0.x,p_vertex0.y)------(p_vertex1.x,p_vertex1.y)
+//      \         /
+//       \       /
+//        \     /
+//         \   /
+//          \ /
+//        (p_vertex2.x,p_vertex2.y)
+//
+///////////////////////////////////////////////////////////////////////////////
+void Core::Rasterizer::fill_flat_top_triangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1,
+                                              const Geometry::Vertex& p_vertex2, const Data::Color& p_color)
+{
+	// Find the two slopes (two triangle legs)
+	float inv_slope_1 = (float)(p_vertex2.position.x - p_vertex0.position.x) / (p_vertex2.position.y - p_vertex0.position.y);
+	float inv_slope_2 = (float)(p_vertex2.position.x - p_vertex1.position.x) / (p_vertex2.position.y - p_vertex1.position.y);
+
+	// Start x_start and x_end from the bottom vertex (p_vertex2.x,p_vertex2.y)
+	float x_start = p_vertex2.position.x;
+	float x_end = p_vertex2.position.x;
+
+	// Loop all the scanlines from bottom to top
+	for (int y = p_vertex2.position.y; y >= p_vertex0.position.y; y--)
+	{
+		Geometry::Vertex point = { x_start, static_cast<float>(y), 0.0f };
+		Geometry::Vertex point2 = { x_end, static_cast<float>(y), 0.0f };
+
+		DrawLine(point, point2, p_color);
+		x_start -= inv_slope_1;
+		x_end -= inv_slope_2;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Draw a filled triangle with the flat-top/flat-bottom method
+// We split the original triangle in two, half flat-bottom and half flat-top
+///////////////////////////////////////////////////////////////////////////////
+//
+//          (p_vertex0.x,p_vertex0.y)
+//            / \
+//           /   \
+//          /     \
+//         /       \
+//        /         \
+//   (p_vertex1.x,p_vertex1.y)------(Mx,My)
+//       \_           \
+//          \_         \
+//             \_       \
+//                \_     \
+//                   \    \
+//                     \_  \
+//                        \_\
+//                           \
+//                         (p_vertex2.x,p_vertex2.y)
+//
+///////////////////////////////////////////////////////////////////////////////
+void Core::Rasterizer::draw_filled_triangle(Geometry::Vertex& p_vertex0, Geometry::Vertex& p_vertex1,
+                                            Geometry::Vertex& p_vertex2, const Data::Color& p_color)
+{
+	// Sort vertices by y-coordinate ascending
+	std::vector<Geometry::Vertex> vertices{ p_vertex0, p_vertex1, p_vertex2 };
+	std::sort(vertices.begin(), vertices.end(), [](const Geometry::Vertex& a, const Geometry::Vertex& b) {
+		return a.position.y < b.position.y;
+	});
+
+	const Geometry::Vertex& v0 = vertices[0];
+	const Geometry::Vertex& v1 = vertices[1];
+	const Geometry::Vertex& v2 = vertices[2];
+
+	if (v1.position.y == v2.position.y) {
+		fill_flat_bottom_triangle(v0, v1, v2, p_color);
+	}
+	else if (v0.position.y == v1.position.y) {
+		fill_flat_top_triangle(v0, v1, v2, p_color);
+	}
+	else {
+		// Calculate the new vertex (midpoint_x, midpoint_y) using triangle similarity
+		float midpoint_y = v1.position.y;
+		float midpoint_x = (v2.position.x - v0.position.x) * (v1.position.y - v0.position.y) /
+			(v2.position.y - v0.position.y) + v0.position.x;
+
+		fill_flat_bottom_triangle(v0, v1, { midpoint_x, midpoint_y, 0.0f }, p_color);
+		fill_flat_top_triangle(v1, { midpoint_x, midpoint_y, 0.0f }, v2, p_color);
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Draw a filled a triangle with a flat bottom
+///////////////////////////////////////////////////////////////////////////////
+//
+//        (p_vertex0.x,p_vertex0.y)
+//          / \
+//         /   \
+//        /     \
+//       /       \
+//      /         \
+//  (p_vertex1.x,p_vertex1.y)------(p_vertex2.x,p_vertex2.y)
+//
+///////////////////////////////////////////////////////////////////////////////
+void Core::Rasterizer::fill_flat_bottom_triangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, const Data::Color& p_color)
+{
+	// Find the two slopes (two triangle legs)
+	float inv_slope_1 = (float)(p_vertex1.position.x - p_vertex0.position.x) / (p_vertex1.position.y - p_vertex0.position.y);
+	float inv_slope_2 = (float)(p_vertex2.position.x - p_vertex0.position.x) / (p_vertex2.position.y - p_vertex0.position.y);
+
+	// Start x_start and x_end from the top vertex (p_vertex0.x,p_vertex0.y)
+	float x_start = p_vertex0.position.x;
+	float x_end = p_vertex0.position.x;
+
+	// Loop all the scanlines from top to bottom
+	for (int y = p_vertex0.position.y; y <= p_vertex2.position.y; y++)
+	{
+		Geometry::Vertex point = { x_start, static_cast<float>(y), 0.0f };
+		Geometry::Vertex point2 = { x_end, static_cast<float>(y), 0.0f };
+
+		DrawLine(point, point2, p_color);
+
+		x_start += inv_slope_1;
+		x_end += inv_slope_2;
+	}
 }

@@ -1,5 +1,10 @@
 #include "Data/Color.h"
 
+const Data::Color Data::Color::Red   = { 255, 0, 0 };
+const Data::Color Data::Color::Green = { 0, 255, 0 };
+const Data::Color Data::Color::Blue  = { 0, 0, 255 };
+const Data::Color Data::Color::White = { 255, 255, 255 };
+
 Data::Color::Color(uint8_t p_r, uint8_t p_g, uint8_t p_b, uint8_t p_a) : r(p_r), g(p_g), b(p_b), a(p_a)
 {
 }
