@@ -20,6 +20,11 @@ void Core::Renderer::Draw(const Resources::Mesh& p_mesh, const glm::mat4& p_mvp,
 	m_rasterizer->RasterizeMesh(p_mesh, p_mvp, p_model);
 }
 
+void Core::Renderer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const glm::mat4& p_mvp, const Data::Color& p_color)
+{
+	m_rasterizer->RasterizeLine({ p_point0 }, { p_point1 }, p_mvp, p_color);
+}
+
 void Core::Renderer::Render() const
 {
 	m_rasterizer->SendDataToGPU();

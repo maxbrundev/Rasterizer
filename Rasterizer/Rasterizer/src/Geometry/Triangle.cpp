@@ -1,5 +1,7 @@
 #include "Geometry/Triangle.h"
 
+#include <utility>
+
 Geometry::Triangle::Triangle(const glm::vec2& p_vertex0, const glm::vec2& p_vertex1, const glm::vec2& p_vertex2) : Vertices{ p_vertex0, p_vertex1, p_vertex2 }
 {
 	PreComputeBarycentricCoordinates();

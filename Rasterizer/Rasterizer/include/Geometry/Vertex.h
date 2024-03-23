@@ -15,10 +15,7 @@ namespace Geometry
 		Data::Color color;
 
 		Vertex() = default;
-		Vertex(glm::vec3 p_position, glm::vec2 p_uv, glm::vec3 p_normal,Data::Color p_color = Data::Color::Red) : position(p_position), textCoords(p_uv), normal(p_normal)
-		{
-		}
-		Vertex(float p_x, float p_y, float p_z, Data::Color p_color = Data::Color::Red) : position(p_x, p_y, p_z)
+		Vertex(glm::vec3 p_position, glm::vec2 p_uv = glm::vec3(0.0f), glm::vec3 p_normal = glm::vec3(0.0f)) : position(p_position), textCoords(p_uv), normal(p_normal)
 		{
 		}
 	};

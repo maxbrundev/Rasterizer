@@ -14,6 +14,7 @@ namespace Core
 		void Clear(const Data::Color& p_color);
 		void ClearDepth();
 		void Draw(const Resources::Mesh& p_mesh, const glm::mat4& p_mvp, const glm::mat4& p_model) const;
+		void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const glm::mat4& p_mvp, const Data::Color& p_color);
 		void Render() const;
 		void Clear() const;
 
