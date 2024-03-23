@@ -14,12 +14,14 @@ namespace Buffers
 
 		void Clear() const;
 
-	private:
-		float* data;
+		void Resize(uint32_t p_width, uint32_t p_height);
 
-		const uint32_t m_width;
-		const uint32_t m_height;
-		const uint32_t m_bufferSize;
-		const uint32_t m_bufferSizeInBytes;
+	private:
+		uint32_t m_width;
+		uint32_t m_height;
+		uint32_t m_size;
+		uint32_t m_sizeInByte;
+
+		float* m_data;
 	};
 }

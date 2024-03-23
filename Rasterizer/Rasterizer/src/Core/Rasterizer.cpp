@@ -9,6 +9,7 @@ m_window(p_window),
 m_textureBuffer(p_sdlRenderer, m_window.GetSize().first, m_window.GetSize().second, SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING),
 m_depthBuffer(m_window.GetSize().first, m_window.GetSize().second)
 {
+	m_window.ResizeEvent.AddListener(std::bind(&Rasterizer::OnResize, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 float Core::Rasterizer::ComputeEdge(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2) const
@@ -226,4 +227,10 @@ void Core::Rasterizer::Clear(const Data::Color& p_color)
 void Core::Rasterizer::SendDataToGPU()
 {
 	m_textureBuffer.SendDataToGPU();
+}
+
+void Core::Rasterizer::OnResize(uint16_t p_width, uint16_t p_height)
+{
+	m_textureBuffer.Resize(p_width, p_height);
+	m_depthBuffer.Resize(p_width, p_height);
 }

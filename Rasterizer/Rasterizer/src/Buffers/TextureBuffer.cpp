@@ -1,13 +1,16 @@
 #include "Buffers/TextureBuffer.h"
 
+#include <algorithm>
+
 Buffers::TextureBuffer::TextureBuffer(SDL_Renderer* p_sdlRenderer, uint32_t p_width, uint32_t p_height, uint32_t p_pixelFormat, uint32_t p_textureAccess) :
-	m_sdlTexture(nullptr),
-	m_width(p_width),
-	m_height(p_height),
-	m_size(m_width * m_height),
-	m_rowSize(m_width * sizeof(uint32_t)),
-	m_sizeInByte(m_size * sizeof(uint32_t)),
-	m_data(new uint32_t[m_size])
+m_sdlTexture(nullptr),
+m_width(p_width),
+m_height(p_height),
+m_size(m_width * m_height),
+m_rowSize(m_width * sizeof(uint32_t)),
+m_sizeInByte(m_size * sizeof(uint32_t)),
+m_data(new uint32_t[m_size]),
+m_sdlRenderer(p_sdlRenderer)
 {
 	m_sdlTexture = SDL_CreateTexture(p_sdlRenderer, p_pixelFormat, p_textureAccess, static_cast<int>(m_width), static_cast<int>(m_height));
 }
@@ -44,4 +47,30 @@ uint32_t Buffers::TextureBuffer::GetPixel(uint32_t p_x, uint32_t p_y) const
 SDL_Texture* Buffers::TextureBuffer::GetSDLTexture() const
 {
 	return m_sdlTexture;
+}
+
+void Buffers::TextureBuffer::Resize(uint32_t p_width, uint32_t p_height)
+{
+	uint32_t* newArray = new uint32_t[p_width * p_height];
+
+	for (size_t i = 0; i < std::min(m_size, p_width * p_height); i++)
+	{
+		newArray[i] = m_data[i];
+	}
+
+	delete[] m_data;
+
+	m_data = newArray;
+
+	m_width      = p_width;
+	m_height     = p_height;
+	m_size       = m_width * m_height;
+	m_rowSize    = m_width * sizeof(uint32_t);
+	m_sizeInByte = m_size * sizeof(uint32_t);
+
+	SDL_DestroyTexture(m_sdlTexture);
+
+	m_sdlTexture = SDL_CreateTexture(m_sdlRenderer, SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(m_width), static_cast<int>(m_height));
+
+	Clear({ 0, 0, 0 });
 }

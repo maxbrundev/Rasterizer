@@ -33,7 +33,7 @@ Context::Window::~Window()
 void Context::Window::CreateSDLWindow()
 {
 	m_sdlWindow = SDL_CreateWindow(m_title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, m_size.first, m_size.second, m_flags);
-
+	
 	if (!m_sdlWindow)
 	{
 		SDL_Quit();
@@ -56,6 +56,8 @@ void Context::Window::OnResizeWindow(uint16_t p_width, uint16_t p_height)
 	m_size.second = height;
 
 	m_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+
+	ResizeEvent.Invoke(width, height);
 }
 
 void Context::Window::UpdateWindowSurface() const

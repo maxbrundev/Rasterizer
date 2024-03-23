@@ -29,6 +29,8 @@ namespace Core
 		void ClearDepth();
 		void SendDataToGPU();
 
+		void OnResize(uint16_t p_width, uint16_t p_height);
+
 		Buffers::TextureBuffer& GetTextureBuffer();
 
 	private:

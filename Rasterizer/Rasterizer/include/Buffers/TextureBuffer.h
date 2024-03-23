@@ -23,15 +23,19 @@ namespace Buffers
 
 		SDL_Texture* GetSDLTexture() const;
 
+		void Resize(uint32_t p_width, uint32_t p_height);
+
 	private:
 		SDL_Texture* m_sdlTexture;
 		
-		const uint32_t m_width;
-		const uint32_t m_height;
-		const uint32_t m_size;
-		const uint32_t m_rowSize;
-		const uint32_t m_sizeInByte;
+		uint32_t m_width;
+		uint32_t m_height;
+		uint32_t m_size;
+		uint32_t m_rowSize;
+		uint32_t m_sizeInByte;
 
 		uint32_t* m_data;
+
+		SDL_Renderer* m_sdlRenderer;
 	};
 }

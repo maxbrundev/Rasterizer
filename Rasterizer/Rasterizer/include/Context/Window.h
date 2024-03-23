@@ -10,6 +10,8 @@ namespace Context
 	class Window
 	{
 	public:
+		Eventing::Event<uint16_t, uint16_t> ResizeEvent;
+
 		Window(Device& p_device, const Settings::WindowSettings& p_windowSettings);
 		~Window();
 
