@@ -43,7 +43,7 @@ void Core::Rasterizer::RasterizeMesh(const Resources::Mesh& p_mesh, const glm::m
 		}
 	}
 }
-//LiangBarsky / bresenham / scan line
+
 void Core::Rasterizer::RasterizeTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, const glm::mat4& p_mvp, const glm::mat4& p_model)
 {
 	glm::vec4 vertexWorldPosition0 = p_mvp * glm::vec4(p_vertex0.position, 1.0f);
