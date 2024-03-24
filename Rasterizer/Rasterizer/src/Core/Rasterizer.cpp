@@ -43,7 +43,7 @@ void Core::Rasterizer::RasterizeMesh(const Resources::Mesh& p_mesh, const glm::m
 		}
 	}
 }
-
+//LiangBarsky / bresenham / scan line
 void Core::Rasterizer::RasterizeTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, const glm::mat4& p_mvp, const glm::mat4& p_model)
 {
 	glm::vec4 vertexWorldPosition0 = p_mvp * glm::vec4(p_vertex0.position, 1.0f);
@@ -76,8 +76,9 @@ void Core::Rasterizer::RasterizeTriangle(const Geometry::Vertex& p_vertex0, cons
 
 	Geometry::Triangle triangle(vertexRasterPosition0, vertexRasterPosition1, vertexRasterPosition2);
 
-	if (triangle.ComputeArea() >= 0.0f)
-		return;
+	if ((m_state.CullFace == ECullFace::BACK && triangle.ComputeArea() >= 0.0f)
+		|| (m_state.CullFace == ECullFace::FRONT && triangle.ComputeArea() <= 0.0f))
+			return;
 
 	const auto xMin = std::max(0, triangle.BoundingBox2D.Min.x);
 	const auto yMin = std::max(0, triangle.BoundingBox2D.Min.y);
@@ -91,14 +92,19 @@ void Core::Rasterizer::RasterizeTriangle(const Geometry::Vertex& p_vertex0, cons
 		{
 			const glm::vec3 barycentricCoords = triangle.GetBarycentricCoordinates({ x, y });
 			const Data::Color interpolatedColor = InterpolateColors(Data::Color{ (uint8_t)color0.x, (uint8_t)color0 .y, (uint8_t)color0 .z}, Data::Color{ (uint8_t)color1.x, (uint8_t)color1.y, (uint8_t)color1.z }, Data::Color{ (uint8_t)color2.x, (uint8_t)color2.y, (uint8_t)color2.z }, barycentricCoords);
+
 			if (barycentricCoords.x >= 0.0f && barycentricCoords.y >= 0.0f && barycentricCoords.x + barycentricCoords.y <= 1.0f)
 			{
 				const float depth = vertexScreenPosition0.z * barycentricCoords.z + vertexScreenPosition2.z * barycentricCoords.x + barycentricCoords.y * vertexScreenPosition1.z;
 
-				if (depth <= m_depthBuffer.GetElement(x, y))
+				if (!m_state.DepthTest || depth <= m_depthBuffer.GetElement(x, y))
 				{
 					m_textureBuffer.SetPixel(x, y, interpolatedColor);
-					m_depthBuffer.SetElement(x, y, depth);
+
+					if (m_state.DepthWrite)
+					{
+						m_depthBuffer.SetElement(x, y, depth);
+					}
 				}
 			}
 		}
@@ -147,9 +153,17 @@ void Core::Rasterizer::RasterizeLine(const Geometry::Vertex& p_vertex0, const Ge
 
 		float depth = vertexScreenPosition0.z * ((totalDistance - currentDistance) / totalDistance) + vertexScreenPosition1.z * (currentDistance / totalDistance);
 
-		if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height && depth <= m_depthBuffer.GetElement(x0, y0))
+		if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
 		{
-			m_textureBuffer.SetPixel(x0, y0, p_color);
+			if(!m_state.DepthTest || depth <= m_depthBuffer.GetElement(x0, y0))
+			{
+				m_textureBuffer.SetPixel(x0, y0, p_color);
+
+				if(m_state.DepthWrite)
+				{
+					m_depthBuffer.SetElement(x0, y0, depth);
+				}
+			}
 		}
 
 		int e2 = (err << 1);
@@ -217,6 +231,11 @@ Data::Color Core::Rasterizer::InterpolateColors(const Data::Color& c0, const Dat
 Buffers::TextureBuffer& Core::Rasterizer::GetTextureBuffer()
 {
 	return m_textureBuffer;
+}
+
+Core::RenderState& Core::Rasterizer::GetRenderState()
+{
+	return m_state;
 }
 
 void Core::Rasterizer::Clear(const Data::Color& p_color)

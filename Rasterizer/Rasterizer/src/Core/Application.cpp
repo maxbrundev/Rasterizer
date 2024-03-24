@@ -43,14 +43,15 @@ void Core::Application::Run()
 		std::vector<Geometry::Vertex> verticesToRender;
 
 		m_context.renderer->Draw(cubeMesh, MVP, model);
+		m_context.renderer->SetDepthTest(false);
 		m_context.renderer->DrawLine({ 0.0f, 0.0f, 0.0f }, { 10.0f, 0.0f, 0.0f }, MVP, Data::Color::Red);
+		m_context.renderer->SetDepthTest(true);
 		m_context.renderer->Render();
-
 		m_context.inputManager->ClearEvents();
 
 		clock.Update();
 	}
-}
+} 
 
 bool Core::Application::IsRunning() const
 {

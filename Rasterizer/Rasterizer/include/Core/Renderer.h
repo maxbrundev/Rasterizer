@@ -18,11 +18,14 @@ namespace Core
 		void Render() const;
 		void Clear() const;
 
+		void SetCullFace(ECullFace p_cullFace) const;
+		void SetDepthTest(bool p_depthTest) const;
+		void SetDepthWrite(bool p_depthWrite) const;
+
 		SDL_Renderer* GetSDLRenderer() const;
 
 	private:
 		Context::Driver& m_driver;
-
 		std::unique_ptr<Rasterizer> m_rasterizer;
 	};
 }

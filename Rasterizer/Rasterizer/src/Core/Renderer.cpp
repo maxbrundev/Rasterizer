@@ -39,6 +39,21 @@ void Core::Renderer::Clear() const
 	m_driver.RenderClear();
 }
 
+void Core::Renderer::SetCullFace(ECullFace p_cullFace) const
+{
+	m_rasterizer->GetRenderState().CullFace = p_cullFace;
+}
+
+void Core::Renderer::SetDepthTest(bool p_depthTest) const
+{
+	m_rasterizer->GetRenderState().DepthTest = p_depthTest;
+}
+
+void Core::Renderer::SetDepthWrite(bool p_depthWrite) const
+{
+	m_rasterizer->GetRenderState().DepthWrite = p_depthWrite;
+}
+
 SDL_Renderer* Core::Renderer::GetSDLRenderer() const
 {
 	return m_driver.GetRenderer();

@@ -14,6 +14,24 @@
 
 namespace Core
 {
+	enum class ECullFace : uint8_t
+	{
+		FRONT,
+		BACK,
+		FRONT_AND_BACK
+	};
+
+	struct RenderState
+	{
+		uint8_t DepthTest  : 1;
+		uint8_t DepthWrite : 1;
+		ECullFace CullFace : 2;
+
+		RenderState() : DepthTest(true), DepthWrite(true), CullFace(ECullFace::BACK)
+		{
+		}
+	};
+
 	class Rasterizer
 	{
 	public:
@@ -33,6 +51,8 @@ namespace Core
 
 		Buffers::TextureBuffer& GetTextureBuffer();
 
+		RenderState& GetRenderState();
+
 	private:
 		glm::vec3 ComputeScreenSpaceCoordinate(const glm::vec4& p_vertexWorldPosition);
 		glm::vec2 ComputeNormalizedDeviceCoordinate(const glm::vec3& p_vertexScreenSpacePosition) const;
@@ -50,9 +70,6 @@ namespace Core
 		Buffers::TextureBuffer m_textureBuffer;
 		Buffers::DepthBuffer m_depthBuffer;
 
-		uint16_t m_minX = 0;
-		uint16_t m_maxX = 0;
-		uint16_t m_minY = 0;
-		uint16_t m_maxY = 0;
+		RenderState m_state;
 	};
 }
