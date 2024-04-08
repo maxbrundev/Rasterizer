@@ -10,10 +10,10 @@ namespace Resources::Parsers
 	class OBJParser
 	{
 	public:
-		void LoadOBJ(const std::string& p_filePath, Mesh* p_mesh);
+		bool LoadOBJ(const std::string& p_filePath, std::vector<Mesh*>& p_meshes);
 
 	private:
-		void ParseFile(const std::string& p_filePath, Mesh* p_mesh);
+		bool ParseFile(const std::string& p_filePath, std::vector<Mesh*>& p_meshes);
 
 		template<typename T>
 		void ParseLine(const std::string_view& p_line, const std::string_view& p_header, std::vector<T>& p_values);

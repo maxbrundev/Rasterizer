@@ -11,8 +11,9 @@
 #include "Resources/Mesh.h"
 
 #include "Context/Window.h"
+#include "Rendering/AShader.h"
 
-namespace Core
+namespace Rendering
 {
 	enum class ECullFace : uint8_t
 	{
@@ -35,14 +36,14 @@ namespace Core
 	class Rasterizer
 	{
 	public:
-		Rasterizer(Context::Window& p_window, SDL_Renderer* p_sdlRenderer);
+		Rasterizer(Context::Window& p_window, SDL_Renderer* p_sdlRenderer, uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight);
 		~Rasterizer() = default;
 
-		void RasterizeMesh(const Resources::Mesh& p_mesh, const glm::mat4& p_mvp, const glm::mat4& p_model);
-		void RasterizeTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, const glm::mat4& p_mvp, const glm::mat4& p_model);
+		void RasterizeMesh(const Resources::Mesh& p_mesh, AShader& p_shader);
+		void RasterizeTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, AShader& p_shader);
 
 		void DrawPoint(const Geometry::Vertex& p_vertex0) const;
-		void RasterizeLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const glm::mat4& p_mvp, const Data::Color& p_color);
+		void RasterizeLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, AShader& p_shader, const Data::Color& p_color);
 		void Clear(const Data::Color& p_color);
 		void ClearDepth();
 		void SendDataToGPU();

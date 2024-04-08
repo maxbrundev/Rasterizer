@@ -1,25 +1,35 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 
-#include "Geometry/Vertex.h"
+#include "Resources/IMesh.h"
+
+#include "Buffers/VertexBuffer.h"
+#include "Buffers/IndexBuffer.h"
 
 namespace Resources
 {
-	class Mesh final
+	class Mesh final : IMesh
 	{
 	public:
-		Mesh() = default;
-
-		void AddVertex(const Geometry::Vertex& p_vertex);
-		void AddIndice(uint32_t p_indice);
+		Mesh(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices);
+		virtual ~Mesh() override = default;
 
 		const std::vector<Geometry::Vertex>& GetVertices() const;
-
 		const std::vector<uint32_t>& GetIndices() const;
 
+		virtual uint32_t GetVertexCount() override;
+		virtual uint32_t GetIndexCount() override;
+
 	private:
-		std::vector<Geometry::Vertex> m_vertices;
-		std::vector<uint32_t> m_indices;
+		void InitializeBuffers(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices);
+
+	private:
+		const uint32_t m_vertexCount;
+		const uint32_t m_indicesCount;
+
+		std::unique_ptr<Buffers::VertexBuffer> m_vertexBuffer;
+		std::unique_ptr<Buffers::IndexBuffer> m_indexBuffer;
 	};
 }

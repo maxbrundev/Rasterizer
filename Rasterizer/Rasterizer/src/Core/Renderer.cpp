@@ -1,31 +1,39 @@
 #include "Core/Renderer.h"
 
-Core::Renderer::Renderer(Context::Driver& p_driver, Context::Window& p_window) : m_driver(p_driver)
+Rendering::Renderer::Renderer(Context::Driver& p_driver, Context::Window& p_window) : m_driver(p_driver)
 {
-	m_rasterizer = std::make_unique<Rasterizer>(p_window, m_driver.GetRenderer());
+	m_rasterizer = std::make_unique<Rasterizer>(p_window, m_driver.GetRenderer(), 800, 600);
 }
 
-void Core::Renderer::Clear(const Data::Color& p_color)
+void Rendering::Renderer::Clear(const Data::Color& p_color)
 {
 	m_rasterizer->Clear(p_color);
 }
 
-void Core::Renderer::ClearDepth()
+void Rendering::Renderer::ClearDepth()
 {
 	m_rasterizer->ClearDepth();
 }
 
-void Core::Renderer::Draw(const Resources::Mesh& p_mesh, const glm::mat4& p_mvp, const glm::mat4& p_model) const
+void Rendering::Renderer::Draw(Resources::Model& p_model, AShader& p_shader) const
 {
-	m_rasterizer->RasterizeMesh(p_mesh, p_mvp, p_model);
+	for (const auto mesh : p_model.GetMeshes())
+	{
+		DrawMesh(*mesh, p_shader);
+	}
 }
 
-void Core::Renderer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const glm::mat4& p_mvp, const Data::Color& p_color)
+void Rendering::Renderer::DrawMesh(Resources::Mesh& p_mesh, AShader& p_shader) const
 {
-	m_rasterizer->RasterizeLine({ p_point0 }, { p_point1 }, p_mvp, p_color);
+	m_rasterizer->RasterizeMesh(p_mesh, p_shader);
 }
 
-void Core::Renderer::Render() const
+void Rendering::Renderer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, AShader& p_shader, const Data::Color& p_color)
+{
+	m_rasterizer->RasterizeLine({ p_point0 }, { p_point1 }, p_shader, p_color);
+}
+
+void Rendering::Renderer::Render() const
 {
 	m_rasterizer->SendDataToGPU();
 
@@ -34,27 +42,27 @@ void Core::Renderer::Render() const
 	m_driver.RenderPresent();
 }
 
-void Core::Renderer::Clear() const
+void Rendering::Renderer::Clear() const
 {
 	m_driver.RenderClear();
 }
 
-void Core::Renderer::SetCullFace(ECullFace p_cullFace) const
+void Rendering::Renderer::SetCullFace(ECullFace p_cullFace) const
 {
 	m_rasterizer->GetRenderState().CullFace = p_cullFace;
 }
 
-void Core::Renderer::SetDepthTest(bool p_depthTest) const
+void Rendering::Renderer::SetDepthTest(bool p_depthTest) const
 {
 	m_rasterizer->GetRenderState().DepthTest = p_depthTest;
 }
 
-void Core::Renderer::SetDepthWrite(bool p_depthWrite) const
+void Rendering::Renderer::SetDepthWrite(bool p_depthWrite) const
 {
 	m_rasterizer->GetRenderState().DepthWrite = p_depthWrite;
 }
 
-SDL_Renderer* Core::Renderer::GetSDLRenderer() const
+SDL_Renderer* Rendering::Renderer::GetSDLRenderer() const
 {
 	return m_driver.GetRenderer();
 }

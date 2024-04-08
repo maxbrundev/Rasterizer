@@ -6,12 +6,12 @@
 
 #include <glm/glm.hpp>
 
-void Resources::Parsers::OBJParser::LoadOBJ(const std::string& p_filePath, Mesh* p_mesh)
+bool Resources::Parsers::OBJParser::LoadOBJ(const std::string& p_filePath, std::vector<Mesh*>& p_meshes)
 {
-	ParseFile(p_filePath, p_mesh);
+	return ParseFile(p_filePath, p_meshes);
 }
 
-void Resources::Parsers::OBJParser::ParseFile(const std::string& p_filePath, Mesh* p_mesh)
+bool Resources::Parsers::OBJParser::ParseFile(const std::string& p_filePath, std::vector<Mesh*>& p_meshes)
 {
 	std::ifstream file(p_filePath);
 
@@ -61,7 +61,13 @@ void Resources::Parsers::OBJParser::ParseFile(const std::string& p_filePath, Mes
 		}
 	}
 
+	if (tempVertices.empty())
+		return false;
+
 	std::vector<std::tuple<glm::vec3, glm::vec2, glm::vec3>> vertexData;
+
+	std::vector<Geometry::Vertex> vertices;
+	std::vector<uint32_t> indices;
 
 	for (size_t i = 0; i < Indices.size(); i++)
 	{
@@ -75,11 +81,11 @@ void Resources::Parsers::OBJParser::ParseFile(const std::string& p_filePath, Mes
 		{
 			vertexData.push_back(vertex);
 
-			p_mesh->AddIndice(vertexData.size() - 1);
+			indices.emplace_back(vertexData.size() - 1);
 		}
 		else
 		{
-			p_mesh->AddIndice(std::distance(vertexData.begin(), it));
+			indices.emplace_back(std::distance(vertexData.begin(), it));
 		}
 	}
 
@@ -90,8 +96,12 @@ void Resources::Parsers::OBJParser::ParseFile(const std::string& p_filePath, Mes
 		vertex.textCoords = textCoords;
 		vertex.normal     = normal;
 
-		p_mesh->AddVertex(vertex);
+		vertices.emplace_back(vertex);
 	}
+
+	p_meshes.push_back(new Mesh(vertices, indices));
+
+	return true;
 }
 
 void Resources::Parsers::OBJParser::ParseIndices(const std::string_view& p_line, std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& p_indices)
@@ -123,7 +133,7 @@ void Resources::Parsers::OBJParser::ParseIndices(const std::string_view& p_line,
 	{
 		indexValue--;
 	});
-	
+
 	p_indices.emplace_back(indices[0], indices[1], indices[2]);
 	p_indices.emplace_back(indices[3], indices[4], indices[5]);
 	p_indices.emplace_back(indices[6], indices[7], indices[8]);

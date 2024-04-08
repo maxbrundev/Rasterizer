@@ -74,3 +74,13 @@ void Buffers::TextureBuffer::Resize(uint32_t p_width, uint32_t p_height)
 
 	Clear({ 0, 0, 0 });
 }
+
+uint32_t Buffers::TextureBuffer::GetWidth() const
+{
+	return m_width;
+}
+
+uint32_t Buffers::TextureBuffer::GetHeight() const
+{
+	return m_height;
+}

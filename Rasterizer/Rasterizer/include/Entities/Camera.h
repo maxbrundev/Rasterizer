@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+
 #include <glm/glm.hpp>
 
 namespace Entities
@@ -12,7 +13,7 @@ namespace Entities
 		~Camera() = default;
 		
 		void UpdateCameraVectors();
-		void CalculateMatrices(uint16_t p_windowWidth, uint16_t p_windowHeight, const glm::vec3& p_position);
+		void ComputeMatrices(uint16_t p_windowWidth, uint16_t p_windowHeight, const glm::vec3& p_position);
 		
 		void SetFov(float p_value);
 		void SetNear(float p_value);
@@ -34,8 +35,8 @@ namespace Entities
 		glm::mat4& GetProjectionMatrix();
 		
 	private:
-		void CalculateViewMatrix(const glm::vec3& p_position, const  glm::vec3& p_up);
-		void CalculateProjectionMatrix(uint16_t p_windowWidth, uint16_t p_windowHeight);
+		void ComputeViewMatrix(const glm::vec3& p_position, const  glm::vec3& p_up);
+		void ComputeProjectionMatrix(uint16_t p_windowWidth, uint16_t p_windowHeight);
 
 	private:
 		glm::mat4 m_viewMatrix;

@@ -9,9 +9,10 @@
 #include "Inputs/InputManager.h"
 
 #include "Core/Renderer.h"
+#include "Resources/Loaders/ModelLoader.h"
 #include "Resources/Parsers/OBJParser.h"
 
-namespace Core
+namespace Rendering
 {
 	class ContextCore
 	{
@@ -24,8 +25,6 @@ namespace Core
 		std::unique_ptr<Context::Window>      window;
 		std::unique_ptr<Context::Driver>      driver;
 		std::unique_ptr<Inputs::InputManager> inputManager;
-		std::unique_ptr<Core::Renderer>       renderer;
-
-		Resources::Parsers::OBJParser objParser;
+		std::unique_ptr<Rendering::Renderer>       renderer;
 	};
 }

@@ -4,26 +4,26 @@
 
 #include "Geometry/Triangle.h"
 
-Core::Rasterizer::Rasterizer(Context::Window& p_window, SDL_Renderer* p_sdlRenderer) :
+Rendering::Rasterizer::Rasterizer(Context::Window& p_window, SDL_Renderer* p_sdlRenderer, uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight) :
 m_window(p_window),
-m_textureBuffer(p_sdlRenderer, m_window.GetSize().first, m_window.GetSize().second, SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING),
-m_depthBuffer(m_window.GetSize().first, m_window.GetSize().second)
+m_textureBuffer(p_sdlRenderer, p_rasterizationBufferWidth, p_rasterizationBufferHeight, SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING),
+m_depthBuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight)
 {
 	m_window.ResizeEvent.AddListener(std::bind(&Rasterizer::OnResize, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-float Core::Rasterizer::ComputeEdge(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2) const
+float Rendering::Rasterizer::ComputeEdge(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2) const
 {
 	return (p_vertex2.position.x - p_vertex0.position.x) * (p_vertex1.position.y - p_vertex0.position.y) - (p_vertex2.position.y - p_vertex0.position.y) * (p_vertex1.position.x - p_vertex0.position.x);
 }
 
 
-void Core::Rasterizer::ClearDepth()
+void Rendering::Rasterizer::ClearDepth()
 {
 	m_depthBuffer.Clear();
 }
 
-void Core::Rasterizer::RasterizeMesh(const Resources::Mesh& p_mesh, const glm::mat4& p_mvp, const glm::mat4& p_model)
+void Rendering::Rasterizer::RasterizeMesh(const Resources::Mesh& p_mesh, AShader& p_shader)
 {
 	const auto& vertices = p_mesh.GetVertices();
 	const auto& indices  = p_mesh.GetIndices();
@@ -32,23 +32,23 @@ void Core::Rasterizer::RasterizeMesh(const Resources::Mesh& p_mesh, const glm::m
 	{
 		for (uint32_t i = 0; i < indices.size(); i += 3)
 		{
-			RasterizeTriangle(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]], p_mvp, p_model);
+			RasterizeTriangle(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]], p_shader);
 		}
 	}
 	else if (vertices.size() % 3 == 0)
 	{
 		for (uint32_t i = 0; i < vertices.size(); i += 3)
 		{
-			RasterizeTriangle(vertices[i], vertices[i + 1], vertices[i + 2], p_mvp, p_model);
+			RasterizeTriangle(vertices[i], vertices[i + 1], vertices[i + 2], p_shader);
 		}
 	}
 }
 
-void Core::Rasterizer::RasterizeTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, const glm::mat4& p_mvp, const glm::mat4& p_model)
+void Rendering::Rasterizer::RasterizeTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, AShader& p_shader)
 {
-	glm::vec4 vertexWorldPosition0 = p_mvp * glm::vec4(p_vertex0.position, 1.0f);
-	glm::vec4 vertexWorldPosition1 = p_mvp * glm::vec4(p_vertex1.position, 1.0f);
-	glm::vec4 vertexWorldPosition2 = p_mvp * glm::vec4(p_vertex2.position, 1.0f);
+	glm::vec4 vertexWorldPosition0 = p_shader.ProcessVertex(p_vertex0, 0);
+	glm::vec4 vertexWorldPosition1 = p_shader.ProcessVertex(p_vertex1, 1);
+	glm::vec4 vertexWorldPosition2 = p_shader.ProcessVertex(p_vertex2, 2);
 
 	glm::vec3 vertexScreenPosition0 = ComputeScreenSpaceCoordinate(vertexWorldPosition0);
 	glm::vec3 vertexScreenPosition1 = ComputeScreenSpaceCoordinate(vertexWorldPosition1);
@@ -62,18 +62,6 @@ void Core::Rasterizer::RasterizeTriangle(const Geometry::Vertex& p_vertex0, cons
 	glm::vec2 vertexRasterPosition1 = ComputeRasterSpaceCoordinate(vertexNormalizedPosition1);
 	glm::vec2 vertexRasterPosition2 = ComputeRasterSpaceCoordinate(vertexNormalizedPosition2);
 
-	glm::vec3 normal0 = glm::mat3(glm::transpose(glm::inverse(p_model))) * p_vertex0.normal;
-	glm::vec3 normal1 = glm::mat3(glm::transpose(glm::inverse(p_model))) * p_vertex1.normal;
-	glm::vec3 normal2 = glm::mat3(glm::transpose(glm::inverse(p_model))) * p_vertex2.normal;
-
-	normal0 = glm::normalize(normal0);
-	normal1 = glm::normalize(normal1);
-	normal2 = glm::normalize(normal2);
-
-	glm::vec3 color0 = (normal0 * 0.5f + glm::vec3(0.5f, 0.5f, 0.5f) ) * 255.0f;
-	glm::vec3 color1 = (normal1 * 0.5f + glm::vec3(0.5f, 0.5f, 0.5f) ) * 255.0f;
-	glm::vec3 color2 = (normal2 * 0.5f + glm::vec3(0.5f, 0.5f, 0.5f) ) * 255.0f;
-
 	Geometry::Triangle triangle(vertexRasterPosition0, vertexRasterPosition1, vertexRasterPosition2);
 
 	if ((m_state.CullFace == ECullFace::BACK && triangle.ComputeArea() >= 0.0f)
@@ -83,15 +71,14 @@ void Core::Rasterizer::RasterizeTriangle(const Geometry::Vertex& p_vertex0, cons
 	const auto xMin = std::max(0, triangle.BoundingBox2D.Min.x);
 	const auto yMin = std::max(0, triangle.BoundingBox2D.Min.y);
 
-	const auto xMax = std::min(triangle.BoundingBox2D.Max.x, m_window.GetSize().first - 1);
-	const auto yMax = std::min(triangle.BoundingBox2D.Max.y, m_window.GetSize().second - 1);
+	const auto xMax = std::min(triangle.BoundingBox2D.Max.x, static_cast<int32_t>(m_textureBuffer.GetWidth()));
+	const auto yMax = std::min(triangle.BoundingBox2D.Max.y, static_cast<int32_t>(m_textureBuffer.GetHeight()));
 
 	for (int32_t x = xMin; x < xMax; x++)
 	{
 		for (int32_t y = yMin; y < yMax; y++)
 		{
 			const glm::vec3 barycentricCoords = triangle.GetBarycentricCoordinates({ x, y });
-			const Data::Color interpolatedColor = InterpolateColors(Data::Color{ (uint8_t)color0.x, (uint8_t)color0 .y, (uint8_t)color0 .z}, Data::Color{ (uint8_t)color1.x, (uint8_t)color1.y, (uint8_t)color1.z }, Data::Color{ (uint8_t)color2.x, (uint8_t)color2.y, (uint8_t)color2.z }, barycentricCoords);
 
 			if (barycentricCoords.x >= 0.0f && barycentricCoords.y >= 0.0f && barycentricCoords.x + barycentricCoords.y <= 1.0f)
 			{
@@ -99,7 +86,11 @@ void Core::Rasterizer::RasterizeTriangle(const Geometry::Vertex& p_vertex0, cons
 
 				if (!m_state.DepthTest || depth <= m_depthBuffer.GetElement(x, y))
 				{
-					m_textureBuffer.SetPixel(x, y, interpolatedColor);
+					p_shader.ProcessInterpolation(barycentricCoords, vertexWorldPosition0.w, vertexWorldPosition1.w, vertexWorldPosition2.w);
+
+					Data::Color color = p_shader.ProcessFragment();
+
+					m_textureBuffer.SetPixel(x, y, color);
 
 					if (m_state.DepthWrite)
 					{
@@ -111,15 +102,15 @@ void Core::Rasterizer::RasterizeTriangle(const Geometry::Vertex& p_vertex0, cons
 	}
 }
 
-void Core::Rasterizer::DrawPoint(const Geometry::Vertex& p_vertex0) const
+void Rendering::Rasterizer::DrawPoint(const Geometry::Vertex& p_vertex0) const
 {
 	m_textureBuffer.SetPixel(p_vertex0.position.x, p_vertex0.position.y, p_vertex0.color);
 }
 
-void Core::Rasterizer::RasterizeLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const glm::mat4& p_mvp, const Data::Color& p_color)
+void Rendering::Rasterizer::RasterizeLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, AShader& p_shader, const Data::Color& p_color)
 {
-	glm::vec4 vertexWorldPosition0 = p_mvp * glm::vec4(p_vertex0.position, 1.0f);
-	glm::vec4 vertexWorldPosition1 = p_mvp * glm::vec4(p_vertex1.position, 1.0f);
+	glm::vec4 vertexWorldPosition0 = p_shader.ProcessVertex(p_vertex0, 0);
+	glm::vec4 vertexWorldPosition1 = p_shader.ProcessVertex(p_vertex1, 1);
 
 	glm::vec3 vertexScreenPosition0 = ComputeScreenSpaceCoordinate(vertexWorldPosition0);
 	glm::vec3 vertexScreenPosition1 = ComputeScreenSpaceCoordinate(vertexWorldPosition1);
@@ -142,8 +133,8 @@ void Core::Rasterizer::RasterizeLine(const Geometry::Vertex& p_vertex0, const Ge
 	int sy = y0 < y1 ? 1 : -1;
 	int err = dx - dy;
 
-	int width  = m_window.GetSize().first;
-	int height = m_window.GetSize().second;
+	int width  = static_cast<int>(m_textureBuffer.GetWidth());
+	int height = static_cast<int>(m_textureBuffer.GetHeight());
 
 	float totalDistance = sqrt(dx * dx + dy * dy);
 
@@ -182,12 +173,12 @@ void Core::Rasterizer::RasterizeLine(const Geometry::Vertex& p_vertex0, const Ge
 	}
 }
 
-glm::vec3 Core::Rasterizer::ComputeScreenSpaceCoordinate(const glm::vec4& p_vertexWorldPosition)
+glm::vec3 Rendering::Rasterizer::ComputeScreenSpaceCoordinate(const glm::vec4& p_vertexWorldPosition)
 {
 	return p_vertexWorldPosition / p_vertexWorldPosition.w;
 }
 
-glm::vec2 Core::Rasterizer::ComputeNormalizedDeviceCoordinate(const glm::vec3& p_vertexScreenSpacePosition) const
+glm::vec2 Rendering::Rasterizer::ComputeNormalizedDeviceCoordinate(const glm::vec3& p_vertexScreenSpacePosition) const
 {
 	glm::vec2 normalizedCoordinate;
 
@@ -197,15 +188,15 @@ glm::vec2 Core::Rasterizer::ComputeNormalizedDeviceCoordinate(const glm::vec3& p
 	return normalizedCoordinate;
 }
 
-glm::vec2 Core::Rasterizer::ComputeRasterSpaceCoordinate(glm::vec2 p_vertexNormalizedPosition) const
+glm::vec2 Rendering::Rasterizer::ComputeRasterSpaceCoordinate(glm::vec2 p_vertexNormalizedPosition) const
 {
-	p_vertexNormalizedPosition.x = std::round(p_vertexNormalizedPosition.x * m_window.GetSize().first);
-	p_vertexNormalizedPosition.y = std::round(p_vertexNormalizedPosition.y * m_window.GetSize().second);
+	p_vertexNormalizedPosition.x = std::round(p_vertexNormalizedPosition.x * m_textureBuffer.GetWidth());
+	p_vertexNormalizedPosition.y = std::round(p_vertexNormalizedPosition.y * m_textureBuffer.GetHeight());
 
 	return p_vertexNormalizedPosition;
 }
 
-glm::vec3 Core::Rasterizer::GetBarycentricWeights(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, const Geometry::Vertex& p_point)
+glm::vec3 Rendering::Rasterizer::GetBarycentricWeights(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, const Geometry::Vertex& p_point)
 {
 	float areaABC = ComputeEdge(p_vertex0, p_vertex1, p_vertex2);
 	float areaPBC = ComputeEdge(p_point, p_vertex1, p_vertex2);
@@ -218,7 +209,7 @@ glm::vec3 Core::Rasterizer::GetBarycentricWeights(const Geometry::Vertex& p_vert
 	return glm::vec3(alpha, beta, gamma);
 }
 
-Data::Color Core::Rasterizer::InterpolateColors(const Data::Color& c0, const Data::Color& c1, const Data::Color& c2,
+Data::Color Rendering::Rasterizer::InterpolateColors(const Data::Color& c0, const Data::Color& c1, const Data::Color& c2,
                                                 const glm::vec3& weights)
 {
 	float r = weights.x * c0.r + weights.y * c1.r + weights.z * c2.r;
@@ -228,28 +219,28 @@ Data::Color Core::Rasterizer::InterpolateColors(const Data::Color& c0, const Dat
 	return Data::Color(r, g, b);
 }
 
-Buffers::TextureBuffer& Core::Rasterizer::GetTextureBuffer()
+Buffers::TextureBuffer& Rendering::Rasterizer::GetTextureBuffer()
 {
 	return m_textureBuffer;
 }
 
-Core::RenderState& Core::Rasterizer::GetRenderState()
+Rendering::RenderState& Rendering::Rasterizer::GetRenderState()
 {
 	return m_state;
 }
 
-void Core::Rasterizer::Clear(const Data::Color& p_color)
+void Rendering::Rasterizer::Clear(const Data::Color& p_color)
 {
 	m_textureBuffer.Clear(p_color);
 }
 
-void Core::Rasterizer::SendDataToGPU()
+void Rendering::Rasterizer::SendDataToGPU()
 {
 	m_textureBuffer.SendDataToGPU();
 }
 
-void Core::Rasterizer::OnResize(uint16_t p_width, uint16_t p_height)
+void Rendering::Rasterizer::OnResize(uint16_t p_width, uint16_t p_height)
 {
-	m_textureBuffer.Resize(p_width, p_height);
-	m_depthBuffer.Resize(p_width, p_height);
+	//m_textureBuffer.Resize(p_width, p_height);
+	//m_depthBuffer.Resize(p_width, p_height);
 }

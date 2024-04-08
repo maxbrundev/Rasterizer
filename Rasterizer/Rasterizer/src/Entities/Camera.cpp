@@ -18,15 +18,14 @@ void Entities::Camera::UpdateCameraVectors()
 	front.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
 
 	m_forward = glm::normalize(front);
-
-	m_right = glm::normalize(glm::cross(m_forward, glm::vec3(0.0f, 1.0f, 0.0f)));
-	m_up = glm::normalize(glm::cross(m_right, m_forward));
+	m_right   = glm::normalize(glm::cross(m_forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+	m_up      = glm::normalize(glm::cross(m_right, m_forward));
 }
 
-void Entities::Camera::CalculateMatrices(uint16_t p_windowWidth, uint16_t p_windowHeight, const glm::vec3& p_position)
+void Entities::Camera::ComputeMatrices(uint16_t p_windowWidth, uint16_t p_windowHeight, const glm::vec3& p_position)
 {
-	CalculateViewMatrix(p_position, m_up);
-	CalculateProjectionMatrix(p_windowWidth, p_windowHeight);
+	ComputeViewMatrix(p_position, m_up);
+	ComputeProjectionMatrix(p_windowWidth, p_windowHeight);
 }
 
 glm::mat4& Entities::Camera::GetViewMatrix()
@@ -94,15 +93,15 @@ const glm::vec3& Entities::Camera::GetClearColor() const
 	return m_clearColor;
 }
 
-void Entities::Camera::CalculateViewMatrix(const glm::vec3& p_position, const  glm::vec3& p_up)
+void Entities::Camera::ComputeViewMatrix(const glm::vec3& p_position, const  glm::vec3& p_up)
 {
 	m_viewMatrix = glm::lookAt(p_position, p_position + m_forward, p_up);
 }
 
-void Entities::Camera::CalculateProjectionMatrix(uint16_t p_windowWidth, uint16_t p_windowHeight)
+void Entities::Camera::ComputeProjectionMatrix(uint16_t p_windowWidth, uint16_t p_windowHeight)
 {
 	if(p_windowHeight > 0)
 	{
-		m_projectionMatrix = glm::perspective(glm::radians(m_fov), p_windowWidth / static_cast<float>(p_windowHeight), m_near, m_far);
+		m_projectionMatrix = glm::perspective(glm::radians(m_fov), static_cast<float>(p_windowWidth) / static_cast<float>(p_windowHeight), m_near, m_far);
 	}
 }

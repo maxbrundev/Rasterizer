@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Core/Rasterizer.h"
-#include "Resources/Mesh.h"
 #include "Context/Driver.h"
+#include "Rendering/AShader.h"
+#include "Resources/Model.h"
 
-namespace Core
+namespace Rendering
 {
 	class Renderer
 	{
@@ -13,8 +14,9 @@ namespace Core
 		~Renderer() = default;
 		void Clear(const Data::Color& p_color);
 		void ClearDepth();
-		void Draw(const Resources::Mesh& p_mesh, const glm::mat4& p_mvp, const glm::mat4& p_model) const;
-		void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const glm::mat4& p_mvp, const Data::Color& p_color);
+		void Draw(Resources::Model& p_model, AShader& p_shader) const;
+		void DrawMesh(Resources::Mesh& p_mesh, AShader& p_shader) const;
+		void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, AShader& p_shader, const Data::Color& p_color);
 		void Render() const;
 		void Clear() const;
 

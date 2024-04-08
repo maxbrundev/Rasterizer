@@ -22,6 +22,9 @@ Context::Device::~Device()
 
 void Context::Device::PollEvents()
 {
+	MouseMovedEvent.Invoke(std::make_pair(0, 0));
+	MouseWheelEvent.Invoke(0);
+
 	SDL_Event event;
 
 	while (SDL_PollEvent(&event))
@@ -55,10 +58,28 @@ void Context::Device::PollEvents()
 			}
 			break;
 
+		case SDL_MOUSEMOTION:
+			MouseMovedEvent.Invoke(std::make_pair(event.motion.xrel, event.motion.yrel));
+			break;
+
+		case SDL_MOUSEWHEEL:
+			MouseWheelEvent.Invoke(event.wheel.y);
+			break;
+
 		default: 
 			break;
 		}
 	}
+}
+
+void Context::Device::SetRelativeMouseMode(bool p_value)
+{
+	SDL_SetRelativeMouseMode(p_value ? SDL_TRUE : SDL_FALSE);
+}
+
+bool Context::Device::GetRelativeMouseMode()
+{
+	return SDL_GetRelativeMouseMode();
 }
 
 uint32_t Context::Device::GetTicks() const

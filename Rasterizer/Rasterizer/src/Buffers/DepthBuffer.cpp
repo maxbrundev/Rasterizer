@@ -33,7 +33,7 @@ void Buffers::DepthBuffer::Clear() const
 {
 	for (uint32_t i = 0; i < m_size; ++i)
 	{
-		m_data[i] = std::numeric_limits<float>::infinity();
+		m_data[i] = std::numeric_limits<float>::max();
 	}
 }
 
@@ -56,4 +56,14 @@ void Buffers::DepthBuffer::Resize(uint32_t p_width, uint32_t p_height)
 	m_sizeInByte = m_size * sizeof(uint32_t);
 
 	Clear();
+}
+
+uint32_t Buffers::DepthBuffer::GetWidth() const
+{
+	return m_width;
+}
+
+uint32_t Buffers::DepthBuffer::GetHeight() const
+{
+	return m_height;
 }

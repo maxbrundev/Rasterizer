@@ -6,13 +6,13 @@ int main()
 {
 	Settings::WindowSettings windowSettings;
 	windowSettings.title = "Rasterizer";
-	windowSettings.width = 1920;
-	windowSettings.height = 1080;
+	windowSettings.width = 800;
+	windowSettings.height = 600;
 	
 	Settings::DriverSettings driverSettings;
 	driverSettings.vsync = true;
 
-	Core::Application application(windowSettings, driverSettings);
+	Rendering::Application application(windowSettings, driverSettings);
 	application.Initialize();
 	application.Run();
 

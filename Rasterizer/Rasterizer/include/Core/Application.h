@@ -5,7 +5,7 @@
 #include "Settings/WindowSettings.h"
 #include "Settings/DriverSettings.h"
 
-namespace Core
+namespace Rendering
 {
 	class Application
 	{
@@ -22,7 +22,7 @@ namespace Core
 		ContextCore m_context;
 		
 		Entities::Camera m_camera;
-		Core::CameraController m_cameraController;
+		Rendering::CameraController m_cameraController;
 
 		glm::vec3 m_cameraPosition;
 

@@ -13,6 +13,8 @@ namespace Context
 		Eventing::Event<int> KeyReleasedEvent;
 		Eventing::Event<int> MouseButtonPressedEvent;
 		Eventing::Event<int> MouseButtonReleasedEvent;
+		Eventing::Event<std::pair<int, int>> MouseMovedEvent;
+		Eventing::Event<int> MouseWheelEvent;
 
 		Eventing::Event<> CloseEvent;
 
@@ -22,6 +24,9 @@ namespace Context
 		~Device();
 
 		void PollEvents();
+
+		void SetRelativeMouseMode(bool p_value);
+		bool GetRelativeMouseMode();
 
 		uint32_t GetTicks() const;
 

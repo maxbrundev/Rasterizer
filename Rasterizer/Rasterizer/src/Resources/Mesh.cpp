@@ -1,21 +1,34 @@
 #include "Resources/Mesh.h"
 
-void Resources::Mesh::AddVertex(const Geometry::Vertex& p_vertex)
+Resources::Mesh::Mesh(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices) :
+m_vertexCount(static_cast<uint32_t>(p_vertices.size())),
+m_indicesCount(static_cast<uint32_t>(p_indices.size()))
 {
-	m_vertices.emplace_back(p_vertex);
-}
-
-void Resources::Mesh::AddIndice(uint32_t p_indice)
-{
-	m_indices.emplace_back(p_indice);
+	InitializeBuffers(p_vertices, p_indices);
 }
 
 const std::vector<Geometry::Vertex>& Resources::Mesh::GetVertices() const
 {
-	return m_vertices;
+	return m_vertexBuffer->Vertices;
 }
 
 const std::vector<uint32_t>& Resources::Mesh::GetIndices() const
 {
-	return m_indices;
+	return m_indexBuffer->Indices;
+}
+
+uint32_t Resources::Mesh::GetVertexCount()
+{
+	return m_vertexCount;
+}
+
+uint32_t Resources::Mesh::GetIndexCount()
+{
+	return m_indicesCount;
+}
+
+void Resources::Mesh::InitializeBuffers(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices)
+{
+	m_vertexBuffer = std::make_unique<Buffers::VertexBuffer>(p_vertices);
+	m_indexBuffer  = std::make_unique<Buffers::IndexBuffer>(p_indices);
 }

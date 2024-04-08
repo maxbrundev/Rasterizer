@@ -16,6 +16,9 @@ namespace Buffers
 
 		void Resize(uint32_t p_width, uint32_t p_height);
 
+		uint32_t GetWidth() const;
+		uint32_t GetHeight() const;
+
 	private:
 		uint32_t m_width;
 		uint32_t m_height;

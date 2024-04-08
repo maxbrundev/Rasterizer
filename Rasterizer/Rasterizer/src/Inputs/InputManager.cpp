@@ -6,6 +6,8 @@ Inputs::InputManager::InputManager(Context::Device& p_device) : m_device(p_devic
 	m_keyReleasedListener = m_device.KeyReleasedEvent.AddListener(std::bind(&InputManager::OnKeyReleased, this, std::placeholders::_1));
 	m_mouseButtonPressedListener = m_device.MouseButtonPressedEvent.AddListener(std::bind(&InputManager::OnMouseButtonPressed, this, std::placeholders::_1));
 	m_mouseButtonReleasedListener = m_device.MouseButtonReleasedEvent.AddListener(std::bind(&InputManager::OnMouseButtonReleased, this, std::placeholders::_1));
+	m_mouseMovedListener = m_device.MouseMovedEvent.AddListener(std::bind(&InputManager::OnMouseMoved, this, std::placeholders::_1));
+	m_device.MouseWheelEvent.AddListener(std::bind(&InputManager::OnMouseWheel, this, std::placeholders::_1));
 }
 
 Inputs::InputManager::~InputManager()
@@ -14,6 +16,7 @@ Inputs::InputManager::~InputManager()
 	m_device.KeyReleasedEvent.RemoveListener(m_keyReleasedListener);
 	m_device.MouseButtonPressedEvent.RemoveListener(m_mouseButtonPressedListener);
 	m_device.MouseButtonReleasedEvent.RemoveListener(m_mouseButtonReleasedListener);
+	m_device.MouseMovedEvent.RemoveListener(m_mouseMovedListener);
 }
 
 Inputs::EKeyState Inputs::InputManager::GetKeyState(EKey p_key) const
@@ -70,6 +73,31 @@ std::pair<int, int> Inputs::InputManager::GetMousePosition() const
 	return result;
 }
 
+std::pair<int, int> Inputs::InputManager::GetMouseRelativeMovement() const
+{
+	return m_mouseRelativeMovement;
+}
+
+int Inputs::InputManager::GetMouseWheel() const
+{
+	return m_mouseWheel;
+}
+
+void Inputs::InputManager::LockMouse() const
+{
+	m_device.SetRelativeMouseMode(true);
+}
+
+void Inputs::InputManager::UnlockMouse() const
+{
+	m_device.SetRelativeMouseMode(false);
+}
+
+bool Inputs::InputManager::IsMouseLocked() const
+{
+	return m_device.GetRelativeMouseMode();
+}
+
 void Inputs::InputManager::ClearEvents()
 {
 	m_keyEvents.clear();
@@ -94,4 +122,14 @@ void Inputs::InputManager::OnMouseButtonPressed(int p_button)
 void Inputs::InputManager::OnMouseButtonReleased(int p_button)
 {
 	m_mouseButtonEvents[static_cast<EMouseButton>(p_button)] = EMouseButtonState::MOUSE_UP;
+}
+
+void Inputs::InputManager::OnMouseMoved(std::pair<int, int> p_motion)
+{
+	m_mouseRelativeMovement = p_motion;
+}
+
+void Inputs::InputManager::OnMouseWheel(int p_wheel)
+{
+	m_mouseWheel = p_wheel;
 }
