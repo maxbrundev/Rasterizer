@@ -13,11 +13,11 @@ Basic and Advanced Rendering learning project.
 - Depth Test
 - Texturing
 - OBJ Parsing
-- 
+
 ## To implement
 - Improve architecture to mimic OpenGL API
 - Optimize code
-- Implement profiling tools
+- Implement profiling tools  
 ...
 
 ## Software
