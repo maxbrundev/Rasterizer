@@ -211,8 +211,8 @@ copy $(SolutionDir)..\Dependencies\SDL2\lib\$(Platform)\*.lib $(OutDir)</Command
     <ClCompile Include="src\Core\Application.cpp" />
     <ClCompile Include="src\Core\CameraController.cpp" />
     <ClCompile Include="src\Core\ContextCore.cpp" />
-    <ClCompile Include="src\Core\Rasterizer.cpp" />
-    <ClCompile Include="src\Core\Renderer.cpp" />
+    <ClCompile Include="src\Rendering\Rasterizer.cpp" />
+    <ClCompile Include="src\Rendering\Renderer.cpp" />
     <ClCompile Include="src\Data\Color.cpp" />
     <ClCompile Include="src\Entities\Camera.cpp" />
     <ClCompile Include="src\Geometry\Triangle.cpp" />
@@ -241,7 +241,7 @@ copy $(SolutionDir)..\Dependencies\SDL2\lib\$(Platform)\*.lib $(OutDir)</Command
     <ClInclude Include="include\Core\Application.h" />
     <ClInclude Include="include\Core\CameraController.h" />
     <ClInclude Include="include\Core\ContextCore.h" />
-    <ClInclude Include="include\Core\Renderer.h" />
+    <ClInclude Include="include\Rendering\Renderer.h" />
     <ClInclude Include="include\Data\Color.h" />
     <ClInclude Include="include\Entities\Camera.h" />
     <ClInclude Include="include\Eventing\Event.h" />
@@ -249,7 +249,7 @@ copy $(SolutionDir)..\Dependencies\SDL2\lib\$(Platform)\*.lib $(OutDir)</Command
     <ClInclude Include="include\Geometry\Edge.h" />
     <ClInclude Include="include\Geometry\Triangle.h" />
     <ClInclude Include="include\Geometry\Vertex.h" />
-    <ClInclude Include="include\Core\Rasterizer.h" />
+    <ClInclude Include="include\Rendering\Rasterizer.h" />
     <ClInclude Include="include\Inputs\EKey.h" />
     <ClInclude Include="include\Inputs\EKeyState.h" />
     <ClInclude Include="include\Inputs\EMouseButton.h" />
@@ -258,6 +258,8 @@ copy $(SolutionDir)..\Dependencies\SDL2\lib\$(Platform)\*.lib $(OutDir)</Command
     <ClInclude Include="include\Rendering\AShader.h" />
     <ClInclude Include="include\Rendering\DefaultShader.h" />
     <ClInclude Include="include\Rendering\Uniform.h" />
+    <ClInclude Include="include\Resources\ETextureFilteringMode.h" />
+    <ClInclude Include="include\Resources\ETextureWrapMode.h" />
     <ClInclude Include="include\Resources\IMesh.h" />
     <ClInclude Include="include\Resources\Loaders\ModelLoader.h" />
     <ClInclude Include="include\Resources\Loaders\TextureLoader.h" />

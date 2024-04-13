@@ -77,10 +77,41 @@ void Rendering::AShader::SetSample(const std::string& p_name, Resources::Texture
 
 glm::vec4 Rendering::AShader::Texture(const Resources::Texture& p_texture, const glm::vec2& p_textCoords) const
 {
-	int uvX = abs(static_cast<int>((p_textCoords.x / m_interpolatedReciprocal) * p_texture.width)) % p_texture.width;
-	int uvY = abs(static_cast<int>((p_textCoords.y / m_interpolatedReciprocal) * p_texture.height)) % p_texture.height;
+	float uvX = abs(p_textCoords.x / m_interpolatedReciprocal);
+	float uvY = abs(p_textCoords.y / m_interpolatedReciprocal);
 
-	const int index = (uvY * p_texture.width + uvX) * 4;
+	if (p_texture.Wrapping == CLAMP) 
+	{
+		uvX = glm::clamp(uvX, 0.0f, 1.0f);
+		uvY = glm::clamp(uvY, 0.0f, 1.0f);
+	}
+	else if (p_texture.Wrapping == REPEAT) 
+	{
+		uvX = glm::mod(uvX, 1.0f);
+		uvY = glm::mod(uvY, 1.0f);
+	}
+
+	float texelX = uvX * p_texture.width - 0.5f;
+	float texelY = uvY * p_texture.height - 0.5f;
+
+	if (p_texture.Filter == Resources::ETextureFilteringMode::NEAREST) 
+	{
+		texelX = std::round(texelX);
+		texelY = std::round(texelY);
+	}
+	else if (p_texture.Filter == Resources::ETextureFilteringMode::LINEAR) 
+	{
+		texelX = std::floor(texelX);
+		texelY = std::floor(texelY);
+	}
+
+	int x = static_cast<int>(texelX);
+	int y = static_cast<int>(texelY);
+
+	x = glm::clamp(x, 0, static_cast<int>(p_texture.width) - 1);
+	y = glm::clamp(y, 0, static_cast<int>(p_texture.height) - 1);
+
+	const uint32_t index = (y * p_texture.width + x) * 4;
 
 	return glm::vec4(glm::vec3(p_texture.data[index] / 255.0f, p_texture.data[index + 1] / 255.0f, p_texture.data[index + 2] / 255.0f), 1.0f);
 }

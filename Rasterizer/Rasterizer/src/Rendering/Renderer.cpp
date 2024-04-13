@@ -1,4 +1,4 @@
-#include "Core/Renderer.h"
+#include "Rendering/Renderer.h"
 
 Rendering::Renderer::Renderer(Context::Driver& p_driver, Context::Window& p_window) : m_driver(p_driver)
 {

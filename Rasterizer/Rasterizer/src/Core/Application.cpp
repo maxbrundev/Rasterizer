@@ -9,6 +9,7 @@
 #include "Buffers/IndexBuffer.h"
 #include "Rendering/DefaultShader.h"
 #include "Resources/Mesh.h"
+#include "Resources/Loaders/ModelLoader.h"
 #include "Resources/Loaders/TextureLoader.h"
 
 Rendering::Application::Application(const Settings::WindowSettings& p_windowSettings, const Settings::DriverSettings& p_driverSettings) :
@@ -46,9 +47,9 @@ void Rendering::Application::Run()
 
 	Resources::Mesh planeMesh(vertices.Vertices, indices.Indices);
 
-	auto texture = Resources::Loaders::TextureLoader::Create("Resources/Textures/Terriermon.png", true);
-	auto texture2 = Resources::Loaders::TextureLoader::Create("Resources/Textures/WarGreymon.png", true);
-	auto texture3 = Resources::Loaders::TextureLoader::Create("Resources/Textures/Gabumon.png", true);
+	auto texture = Resources::Loaders::TextureLoader::Create("Resources/Textures/Terriermon.png", true, Resources::ETextureFilteringMode::NEAREST, ETextureWrapMode::CLAMP);
+	auto texture2 = Resources::Loaders::TextureLoader::Create("Resources/Textures/WarGreymon.png", true, Resources::ETextureFilteringMode::NEAREST, ETextureWrapMode::CLAMP);
+	auto texture3 = Resources::Loaders::TextureLoader::Create("Resources/Textures/Gabumon.png", true, Resources::ETextureFilteringMode::LINEAR, ETextureWrapMode::REPEAT);
 	
 	while (IsRunning())
 	{

@@ -8,7 +8,7 @@
 
 std::string Resources::Loaders::TextureLoader::FILE_TRACE;
 
-Resources::Texture* Resources::Loaders::TextureLoader::Create(std::string p_filePath, bool p_flipVertically)
+Resources::Texture* Resources::Loaders::TextureLoader::Create(std::string p_filePath, bool p_flipVertically, ETextureFilteringMode p_filter, ETextureWrapMode p_wrapping)
 {
 	FILE_TRACE = p_filePath;
 
@@ -20,7 +20,7 @@ Resources::Texture* Resources::Loaders::TextureLoader::Create(std::string p_file
 
 	if (unsigned char* dataBuffer = stbi_load(p_filePath.c_str(), &textureWidth, &textureHeight, &bitsPerPixel, 4); dataBuffer)
 	{
-		Texture* texture = new Texture(std::move(p_filePath), textureWidth, textureHeight, bitsPerPixel, dataBuffer);
+		Texture* texture = new Texture(std::move(p_filePath), textureWidth, textureHeight, bitsPerPixel, dataBuffer, p_filter, p_wrapping);
 
 		return texture;
 	}

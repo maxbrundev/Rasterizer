@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/Rasterizer.h"
+#include "Rendering/Rasterizer.h"
 #include "Context/Driver.h"
 #include "Rendering/AShader.h"
 #include "Resources/Model.h"

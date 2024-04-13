@@ -8,9 +8,7 @@
 
 #include "Inputs/InputManager.h"
 
-#include "Core/Renderer.h"
-#include "Resources/Loaders/ModelLoader.h"
-#include "Resources/Parsers/OBJParser.h"
+#include "Rendering/Renderer.h"
 
 namespace Rendering
 {
