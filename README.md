@@ -15,6 +15,7 @@ Basic and Advanced Rendering learning project.
 - OBJ Parsing
 
 ## To implement
+- Texture Mipmaps
 - Improve architecture to mimic OpenGL API
 - Optimize code
 - Implement profiling tools  
