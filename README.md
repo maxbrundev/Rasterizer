@@ -36,3 +36,6 @@ This project is licenced under an MIT Licence.
 # Screenshots
 ![TextureFilter](https://github.com/maxbrundev/Rasterizer/assets/32653095/b9a5a633-657d-4205-8575-53fdfb76b4b3)
 *Texture Filter: Left Linear, Right Nearest.*
+
+![mimapoff](https://github.com/maxbrundev/Rasterizer/assets/32653095/4110ee74-1f90-492d-bc4a-c98fcbeafa58) ![mipmapon](https://github.com/maxbrundev/Rasterizer/assets/32653095/4f075d55-ae92-4060-b5e6-8686088ee709)
+*WIP Texture mipmaps: Left mipmaps off, Right mipmaps on.*
