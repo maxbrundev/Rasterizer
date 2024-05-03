@@ -7,19 +7,24 @@ Basic and Advanced Rendering learning project.
 ## Features
 - Triangle Rasterization
 - Line Rasterization
+- Texture Mapping
+- Clipping (Currently Cleaning)
+- Mipmapping (Currently Cleaning)
+- MSAA (Currently Cleaning)
 - Vertex pass
 - Fragment pass
 - Depth Writting
-- Depth Test
-- Texturing
+- Depth Testing
 - OBJ Parsing
 
 ## To implement
-- Texture Mipmaps
 - Improve architecture to mimic OpenGL API
-- Optimize code
-- Implement profiling tools  
+- Profiling tools
+- Bump solution to Visual Studio 2022
+- Project generation with Premake  
 ...
+
+⚠️ Optimization pass, architecture update and global project improvement is planned as soon as Mipmaps / Clipping / MSAA will be cleaned and pushed.
 
 ## Software
 - Visual Studio 2017
@@ -38,7 +43,7 @@ This project is licenced under an MIT Licence.
 *Texture Filter: Left Linear, Right Nearest.*
 
 ![mipmaps](https://github.com/maxbrundev/Rasterizer/assets/32653095/2aae379f-106f-4db3-85b7-4c7882392c71)
-*WIP Texture mipmaps: Left mipmaps off, Right mipmaps on.*
+*Mipmapping: Left mipmaps off, Right mipmaps on.*
 
-![clipping](https://github.com/maxbrundev/Rasterizer/assets/32653095/c23a9317-4718-475e-8232-5d0f201bc953)
+![clipping](https://github.com/maxbrundev/Rasterizer/assets/32653095/c23a9317-4718-475e-8232-5d0f201bc953)  
 *WIP Clipping*
