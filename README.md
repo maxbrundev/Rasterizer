@@ -39,3 +39,6 @@ This project is licenced under an MIT Licence.
 
 ![mipmaps](https://github.com/maxbrundev/Rasterizer/assets/32653095/2aae379f-106f-4db3-85b7-4c7882392c71)
 *WIP Texture mipmaps: Left mipmaps off, Right mipmaps on.*
+
+![clipping](https://github.com/maxbrundev/Rasterizer/assets/32653095/c23a9317-4718-475e-8232-5d0f201bc953)
+*WIP Clipping*
