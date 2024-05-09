@@ -8,9 +8,9 @@ Basic and Advanced Rendering learning project.
 - Triangle Rasterization
 - Line Rasterization
 - Texture Mapping
-- Clipping (Currently Cleaning)
-- Mipmapping (Currently Cleaning)
-- MSAA (Currently Cleaning)
+- Clipping (WIP need cleaning)
+- Mipmapping (WIP need cleaning)
+- MSAA (WIP need cleaning)
 - Vertex pass
 - Fragment pass
 - Depth Writting
@@ -24,7 +24,7 @@ Basic and Advanced Rendering learning project.
 - Project generation with Premake  
 ...
 
-⚠️ Optimization pass, architecture update and global project improvement is planned as soon as Mipmaps / Clipping / MSAA will be cleaned and pushed.
+⚠️ Optimization pass, architecture update and global project improvement is planned as soon as Mipmaps / Clipping / MSAA will be cleaned.
 
 ## Software
 - Visual Studio 2017
@@ -45,5 +45,6 @@ This project is licenced under an MIT Licence.
 ![mipmaps](https://github.com/maxbrundev/Rasterizer/assets/32653095/2aae379f-106f-4db3-85b7-4c7882392c71)
 *Mipmapping: Left mipmaps off, Right mipmaps on.*
 
-![clipping](https://github.com/maxbrundev/Rasterizer/assets/32653095/c23a9317-4718-475e-8232-5d0f201bc953)  
+![clipping](https://github.com/maxbrundev/Rasterizer/assets/32653095/c23a9317-4718-475e-8232-5d0f201bc953)
+![clipping](https://github.com/maxbrundev/Rasterizer/assets/32653095/f02a9ab8-7133-46ac-8207-5ba1e4d35e77)   
 *WIP Clipping*
