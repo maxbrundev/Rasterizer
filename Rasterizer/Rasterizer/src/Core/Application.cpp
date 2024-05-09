@@ -43,17 +43,38 @@ void Rendering::Application::Run()
 	};
 
 	Buffers::IndexBuffer indices;
-	indices.Indices = {0, 1, 2, 2, 3, 0};
+	indices.Indices = { 0, 1, 2, 2, 3, 0 };
 
 	Resources::Mesh planeMesh(vertices.Vertices, indices.Indices);
 
-	auto texture = Resources::Loaders::TextureLoader::Create("Resources/Textures/Terriermon.png", true, Resources::ETextureFilteringMode::NEAREST, ETextureWrapMode::CLAMP);
-	auto texture2 = Resources::Loaders::TextureLoader::Create("Resources/Textures/WarGreymon.png", true, Resources::ETextureFilteringMode::NEAREST, ETextureWrapMode::CLAMP);
-	auto texture3 = Resources::Loaders::TextureLoader::Create("Resources/Textures/Gabumon.png", true, Resources::ETextureFilteringMode::LINEAR, ETextureWrapMode::REPEAT);
-	
+	auto texture = Resources::Loaders::TextureLoader::Create("Resources/Textures/Terriermon.png", true, Resources::ETextureFilteringMode::NEAREST, ETextureWrapMode::CLAMP, true);
+	auto texture2 = Resources::Loaders::TextureLoader::Create("Resources/Textures/WarGreymon.png", true, Resources::ETextureFilteringMode::NEAREST, ETextureWrapMode::CLAMP, true);
+	auto texture3 = Resources::Loaders::TextureLoader::Create("Resources/Textures/Gabumon.png", true, Resources::ETextureFilteringMode::LINEAR, ETextureWrapMode::REPEAT, true);
+	int samples = 0;
 	while (IsRunning())
 	{
 		m_context.device->PollEvents();
+
+		if (m_context.inputManager->IsKeyPressed(Inputs::EKey::KEY_2))
+		{
+			samples = 2;
+
+			m_context.renderer->SetSamples(samples);
+		}
+
+		if (m_context.inputManager->IsKeyPressed(Inputs::EKey::KEY_4))
+		{
+			samples = 4;
+
+			m_context.renderer->SetSamples(samples);
+		}
+
+		if (m_context.inputManager->IsKeyPressed(Inputs::EKey::KEY_8))
+		{
+			samples = 8;
+
+			m_context.renderer->SetSamples(samples);
+		}
 
 		m_context.renderer->Clear();
 
@@ -66,24 +87,23 @@ void Rendering::Application::Run()
 
 		glm::mat4 model(1.0f);
 
-		glm::mat4 MVP = m_camera.GetProjectionMatrix() * m_camera.GetViewMatrix() * model;
+		const auto& view = m_camera.GetViewMatrix();
+		const auto& projection = m_camera.GetProjectionMatrix();
 
-		basicShader.SetUniform("mvp", MVP);
 		basicShader.SetUniform("u_Model", model);
+		basicShader.SetUniform("u_View", view);
+		basicShader.SetUniform("u_Projection", projection);
+		basicShader.SetUniform("u_ViewPos", m_cameraPosition);
 
 		basicShader.SetSample("u_DiffuseMap", texture);
 		m_context.renderer->Draw(*modelCube, basicShader);
 
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
-		MVP = m_camera.GetProjectionMatrix() * m_camera.GetViewMatrix() * model;
-		basicShader.SetUniform("mvp", MVP);
 		basicShader.SetUniform("u_Model", model);
 		basicShader.SetSample("u_DiffuseMap", texture2);
 		m_context.renderer->Draw(*modelCube2, basicShader);
 
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.0f, 0.0f));
-		MVP = m_camera.GetProjectionMatrix() * m_camera.GetViewMatrix() * model;
-		basicShader.SetUniform("mvp", MVP);
 		basicShader.SetUniform("u_Model", model);
 		basicShader.SetSample("u_DiffuseMap", texture3);
 
@@ -93,7 +113,7 @@ void Rendering::Application::Run()
 		//m_context.renderer->DrawMesh(planeMesh, basicShader);
 		m_context.renderer->SetDepthTest(true);
 		m_context.renderer->DrawLine({ 0.0f, 0.0f, 0.0f }, { 5.0f, 0.0f, 0.0f }, basicShader, Data::Color::Red);
-	
+
 		m_context.renderer->Render();
 		m_context.inputManager->ClearEvents();
 
@@ -101,7 +121,7 @@ void Rendering::Application::Run()
 	}
 
 	Resources::Loaders::ModelLoader::Destroy(modelCube);
-} 
+}
 
 bool Rendering::Application::IsRunning() const
 {

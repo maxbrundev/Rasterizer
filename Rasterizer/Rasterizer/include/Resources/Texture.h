@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "Resources/ETextureFilteringMode.h"
 #include "Resources/ETextureWrapMode.h"
@@ -16,17 +17,33 @@ namespace Resources
 	{
 		friend class Loaders::TextureLoader;
 
-	public:
-		Texture(std::string p_filePath, uint32_t p_width, uint32_t p_height, uint32_t p_bitsPerPixel, unsigned char* p_data, ETextureFilteringMode p_filter, ETextureWrapMode p_wrapping);
-		~Texture();
+		struct MipmapsData
+		{
+			uint8_t* Data;
+			uint32_t Width;
+			uint32_t Height;
+
+			MipmapsData(uint8_t* p_data, uint32_t p_width, uint32_t p_height) : Data(p_data), Width(p_width), Height(p_height)
+			{
+			}
+		};
 
 	public:
-		const std::string path;
-		const uint32_t width;
-		const uint32_t height;
-		const uint32_t bitsPerPixel;
-		uint8_t* data;
+		Texture(std::string p_filePath, uint32_t p_width, uint32_t p_height, uint32_t p_bitsPerPixel, unsigned char* p_data, ETextureFilteringMode p_filter, ETextureWrapMode p_wrapping, bool p_generateMipmap);
+		~Texture();
+
+	private:
+		void GenerateMipmaps();
+
+	public:
+		const std::string Path;
+		const uint32_t Width;
+		const uint32_t Height;
+		const uint32_t BitsPerPixel;
+		uint8_t* Data;
 		const ETextureFilteringMode Filter;
 		const ETextureWrapMode Wrapping;
+		bool HasMipmaps;
+		std::vector<MipmapsData> Mipmaps;
 	};
 }

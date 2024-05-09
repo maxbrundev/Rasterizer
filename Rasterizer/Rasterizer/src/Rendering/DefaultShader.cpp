@@ -2,24 +2,29 @@
 
 glm::vec4 Rendering::DefaultShader::VertexPass(const Geometry::Vertex& p_vertex)
 {
-	const glm::mat4 mvp = GetUniform<glm::mat4>("mvp");
-	const glm::mat4 modelMatrix = GetUniform<glm::mat4>("u_Model");
+	const glm::mat4 u_Model      = GetUniform<glm::mat4>("u_Model");
+	const glm::mat4 u_View       = GetUniform<glm::mat4>("u_View");
+	const glm::mat4 u_Projection = GetUniform<glm::mat4>("u_Projection");
 
-	const glm::vec4 vertexWorldPosition = mvp * glm::vec4(p_vertex.position, 1.0f);
+	glm::vec3 fragPos = glm::vec3(u_Model * glm::vec4(p_vertex.position, 1.0));
+	SetVarying("v_FragPos", fragPos);
 
-	glm::vec3 vertexNormal = glm::mat3(transpose(inverse(modelMatrix))) * p_vertex.normal;
+	glm::vec3 normal = glm::mat3(glm::transpose(glm::inverse(u_Model))) * p_vertex.normal;
+	SetVarying("v_Normal", normal);
 
-	vertexNormal = glm::normalize(vertexNormal);
+	glm::vec2 texCoords = p_vertex.textCoords;
+	SetVarying("v_TextCoords", texCoords);
 
-	SetVarying("v_TextCoords", p_vertex.textCoords);
-	SetVarying("v_Normal", vertexNormal);
-
-	return vertexWorldPosition;
+	return  u_Projection * u_View * glm::vec4(fragPos, 1.0);
 }
 
 Data::Color Rendering::DefaultShader::FragmentPass()
 {
+	glm::vec3 normal     = glm::normalize(GetVarying<glm::vec3>("v_Normal"));
 	glm::vec2 textCoords = GetVarying<glm::vec2>("v_TextCoords");
+
+	//return glm::vec4(((normal * 0.5f) + 0.5f), 1.0f);
+
 	auto texture = GetSample<Resources::Texture>("u_DiffuseMap");
 
 	glm::vec4 diffuse = Texture(*texture, textCoords);

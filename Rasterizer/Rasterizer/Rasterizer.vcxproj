@@ -204,6 +204,7 @@ copy $(SolutionDir)..\Dependencies\SDL2\lib\$(Platform)\*.lib $(OutDir)</Command
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Buffers\DepthBuffer.cpp" />
+    <ClCompile Include="src\Buffers\MSAABuffer.cpp" />
     <ClCompile Include="src\Buffers\TextureBuffer.cpp" />
     <ClCompile Include="src\Context\Device.cpp" />
     <ClCompile Include="src\Context\Driver.cpp" />
@@ -232,6 +233,7 @@ copy $(SolutionDir)..\Dependencies\SDL2\lib\$(Platform)\*.lib $(OutDir)</Command
   <ItemGroup>
     <ClInclude Include="include\Buffers\DepthBuffer.h" />
     <ClInclude Include="include\Buffers\IndexBuffer.h" />
+    <ClInclude Include="include\Buffers\MSAABuffer.h" />
     <ClInclude Include="include\Buffers\TextureBuffer.h" />
     <ClInclude Include="include\Buffers\VertexBuffer.h" />
     <ClInclude Include="include\Context\Device.h" />
@@ -241,6 +243,7 @@ copy $(SolutionDir)..\Dependencies\SDL2\lib\$(Platform)\*.lib $(OutDir)</Command
     <ClInclude Include="include\Core\Application.h" />
     <ClInclude Include="include\Core\CameraController.h" />
     <ClInclude Include="include\Core\ContextCore.h" />
+    <ClInclude Include="include\Geometry\Plane.h" />
     <ClInclude Include="include\Rendering\Renderer.h" />
     <ClInclude Include="include\Data\Color.h" />
     <ClInclude Include="include\Entities\Camera.h" />

@@ -25,6 +25,7 @@ namespace Rendering
 		void SetUniform(const std::string& p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value);
 		void SetFlat(const std::string& p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value);
 		void SetVarying(const std::string& p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value);
+		void SetVarying(const std::string& p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value, uint8_t p_index);
 		void SetSample(const std::string& p_name, Resources::Texture* p_texture);
 
 		template<typename T>

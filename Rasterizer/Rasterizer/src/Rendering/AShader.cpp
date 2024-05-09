@@ -1,7 +1,5 @@
 #include "Rendering/AShader.h"
 
-#include <algorithm>
-
 glm::vec4 Rendering::AShader::ProcessVertex(const Geometry::Vertex& p_vertex, uint8_t p_vertexID)
 {
 	m_vertexIndex = p_vertexID;
@@ -70,6 +68,12 @@ void Rendering::AShader::SetVarying(const std::string& p_name, std::variant<int,
 	m_varying[m_vertexIndex][p_name] = p_value;
 }
 
+void Rendering::AShader::SetVarying(const std::string& p_name,
+	std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value, uint8_t p_index)
+{
+	m_varying[p_index][p_name] = p_value;
+}
+
 void Rendering::AShader::SetSample(const std::string& p_name, Resources::Texture* p_texture)
 {
 	m_samples[p_name] = p_texture;
@@ -77,6 +81,23 @@ void Rendering::AShader::SetSample(const std::string& p_name, Resources::Texture
 
 glm::vec4 Rendering::AShader::Texture(const Resources::Texture& p_texture, const glm::vec2& p_textCoords) const
 {
+	auto u_ViewPos = GetUniform<glm::vec3>("u_ViewPos");
+	auto v_FragPos = GetVarying<glm::vec3>("v_FragPos");
+
+	const float maxDistance = 20.0f;
+	const float minDistance = 0.0f;
+	const float maxLevel = static_cast<float>(p_texture.Mipmaps.size() - 1);
+	
+	auto test = glm::vec3(v_FragPos - u_ViewPos);
+	float distanceRatio = glm::clamp((glm::length(test) - minDistance) / (maxDistance - minDistance), 0.0f, 1.0f);
+
+	float levelOfDetail = maxLevel * distanceRatio;
+
+	int level = static_cast<int>(levelOfDetail);
+
+	int width = p_texture.HasMipmaps ? p_texture.Mipmaps[level].Width : p_texture.Width;
+	int height = p_texture.HasMipmaps ? p_texture.Mipmaps[level].Height : p_texture.Height;
+
 	float uvX = abs(p_textCoords.x / m_interpolatedReciprocal);
 	float uvY = abs(p_textCoords.y / m_interpolatedReciprocal);
 
@@ -91,8 +112,8 @@ glm::vec4 Rendering::AShader::Texture(const Resources::Texture& p_texture, const
 		uvY = glm::mod(uvY, 1.0f);
 	}
 
-	float texelX = uvX * p_texture.width - 0.5f;
-	float texelY = uvY * p_texture.height - 0.5f;
+	float texelX = uvX * width - 0.5f;
+	float texelY = uvY * height - 0.5f;
 
 	if (p_texture.Filter == Resources::ETextureFilteringMode::NEAREST) 
 	{
@@ -108,10 +129,15 @@ glm::vec4 Rendering::AShader::Texture(const Resources::Texture& p_texture, const
 	int x = static_cast<int>(texelX);
 	int y = static_cast<int>(texelY);
 
-	x = glm::clamp(x, 0, static_cast<int>(p_texture.width) - 1);
-	y = glm::clamp(y, 0, static_cast<int>(p_texture.height) - 1);
+	x = glm::clamp(x, 0, width - 1);
+	y = glm::clamp(y, 0, height - 1);
 
-	const uint32_t index = (y * p_texture.width + x) * 4;
+	const uint32_t index = (y * width + x) * 4;
 
-	return glm::vec4(glm::vec3(p_texture.data[index] / 255.0f, p_texture.data[index + 1] / 255.0f, p_texture.data[index + 2] / 255.0f), 1.0f);
+	if(p_texture.HasMipmaps)
+	{
+		return glm::vec4(glm::vec3(p_texture.Mipmaps[level].Data[index] / 255.0f, p_texture.Mipmaps[level].Data[index + 1] / 255.0f, p_texture.Mipmaps[level].Data[index + 2] / 255.0f), 1.0f);
+	}
+
+	return glm::vec4(glm::vec3(p_texture.Data[index] / 255.0f, p_texture.Data[index + 1] / 255.0f, p_texture.Data[index + 2] / 255.0f), 1.0f);
 }

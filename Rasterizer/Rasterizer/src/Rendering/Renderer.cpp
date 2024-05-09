@@ -47,6 +47,11 @@ void Rendering::Renderer::Clear() const
 	m_driver.RenderClear();
 }
 
+void Rendering::Renderer::SetSamples(uint8_t p_samples)
+{
+	m_rasterizer->SetSamples(p_samples);
+}
+
 void Rendering::Renderer::SetCullFace(ECullFace p_cullFace) const
 {
 	m_rasterizer->GetRenderState().CullFace = p_cullFace;
@@ -60,6 +65,10 @@ void Rendering::Renderer::SetDepthTest(bool p_depthTest) const
 void Rendering::Renderer::SetDepthWrite(bool p_depthWrite) const
 {
 	m_rasterizer->GetRenderState().DepthWrite = p_depthWrite;
+}
+
+void Rendering::Renderer::UpdateFrustum(const glm::mat4& vp)
+{
 }
 
 SDL_Renderer* Rendering::Renderer::GetSDLRenderer() const
