@@ -47,4 +47,4 @@ This project is licenced under an MIT Licence.
 
 ![clipping](https://github.com/maxbrundev/Rasterizer/assets/32653095/c23a9317-4718-475e-8232-5d0f201bc953)
 ![clipping](https://github.com/maxbrundev/Rasterizer/assets/32653095/f02a9ab8-7133-46ac-8207-5ba1e4d35e77)   
-*WIP Clipping*
+*WIP Clipping black triangles are caused by back face culling, new generated vertices need to be re ordered*
