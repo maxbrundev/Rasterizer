@@ -48,7 +48,7 @@ namespace Rendering
 	public:
 		Rasterizer(Context::Window& p_window, SDL_Renderer* p_sdlRenderer, uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight);
 		~Rasterizer() = default;
-		void NormalizePlane(Geometry::Plane& p_plane);
+
 		void RasterizeMesh(const Resources::Mesh& p_mesh, AShader& p_shader);
 		void RasterizeTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, AShader& p_shader);
 		void DrawPoint(const Geometry::Vertex& p_vertex0) const;

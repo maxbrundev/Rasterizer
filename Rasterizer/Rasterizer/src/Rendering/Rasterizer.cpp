@@ -27,54 +27,37 @@ void Rendering::Rasterizer::ClearDepth()
 	m_depthBuffer.Clear();
 }
 
-void Rendering::Rasterizer::NormalizePlane(Geometry::Plane& p_plane)
-{
-	float magnitude = glm::length(p_plane.Normal);
-	if (magnitude > 0.0f) {  // Check to avoid division by zero
-		p_plane.Normal /= magnitude;
-		p_plane.Distance /= magnitude;
-	}
-}
-
 void Rendering::Rasterizer::RasterizeMesh(const Resources::Mesh& p_mesh, AShader& p_shader)
 {
-	float aspect_x = static_cast<float>(m_window.GetSize().first) / static_cast<float>(m_window.GetSize().second);
-	float fov_y = glm::radians(60.0f);
-	float fov_x = atan(tan(fov_y / 2) * aspect_x) * 2;
-	float z_near = 0.1f;
-	float z_far = 100.0f;
+	float z_near = 1.0f;
+	float z_far = 20.0f;
 
-	float cos_half_fov_x = cos(fov_x / 2.0f);
-	float sin_half_fov_x = sin(fov_x / 2.0f);
-	float cos_half_fov_y = cos(fov_y / 2.0f);
-	float sin_half_fov_y = sin(fov_y / 2.0f);
-
-	m_clippingFrustum[0].Distance = glm::vec3(0, 0, 0);
-	m_clippingFrustum[0].Normal.x = cos_half_fov_x;
+	m_clippingFrustum[0].Distance = 1.0f;
+	m_clippingFrustum[0].Normal.x = 1;
 	m_clippingFrustum[0].Normal.y = 0;
-	m_clippingFrustum[0].Normal.z = sin_half_fov_x;
+	m_clippingFrustum[0].Normal.z = 0;
 
-	m_clippingFrustum[1].Distance = glm::vec3(0, 0, 0);
-	m_clippingFrustum[1].Normal.x = -cos_half_fov_x;
+	m_clippingFrustum[1].Distance = 1.0f;
+	m_clippingFrustum[1].Normal.x = -1;
 	m_clippingFrustum[1].Normal.y = 0;
-	m_clippingFrustum[1].Normal.z = sin_half_fov_x;
+	m_clippingFrustum[1].Normal.z = 0;
 
-	m_clippingFrustum[2].Distance = glm::vec3(0, 0, 0);
+	m_clippingFrustum[2].Distance = 1.0f;
 	m_clippingFrustum[2].Normal.x = 0;
-	m_clippingFrustum[2].Normal.y = -cos_half_fov_y;
-	m_clippingFrustum[2].Normal.z = sin_half_fov_y;
+	m_clippingFrustum[2].Normal.y = 1;
+	m_clippingFrustum[2].Normal.z = 0;
 
-	m_clippingFrustum[3].Distance = glm::vec3(0, 0, 0);
+	m_clippingFrustum[3].Distance = 1.0f;
 	m_clippingFrustum[3].Normal.x = 0;
-	m_clippingFrustum[3].Normal.y = cos_half_fov_y;
-	m_clippingFrustum[3].Normal.z = sin_half_fov_y;
+	m_clippingFrustum[3].Normal.y = -1;
+	m_clippingFrustum[3].Normal.z = 0;
 
-	m_clippingFrustum[4].Distance = glm::vec3(0, 0, z_near);
+	m_clippingFrustum[4].Distance = z_near;
 	m_clippingFrustum[4].Normal.x = 0;
 	m_clippingFrustum[4].Normal.y = 0;
 	m_clippingFrustum[4].Normal.z = 1;
 
-	m_clippingFrustum[5].Distance = glm::vec3(0, 0, z_far);
+	m_clippingFrustum[5].Distance = z_far;
 	m_clippingFrustum[5].Normal.x = 0;
 	m_clippingFrustum[5].Normal.y = 0;
 	m_clippingFrustum[5].Normal.z = -1;
@@ -212,14 +195,14 @@ void Rendering::Rasterizer::RasterizeTriangle(const Geometry::Vertex& p_vertex0,
 
 		std::array<glm::vec4, 3> processVertices{ position0, position1, position2 };
 
-		RasterizeLine(position0, position1, Data::Color::Red);
-		RasterizeLine(position1, position2, Data::Color::Red);
-		RasterizeLine(position2, position0, Data::Color::Red);
+		//RasterizeLine(position0, position1, Data::Color::Red);
+		//RasterizeLine(position1, position2, Data::Color::Red);
+		//RasterizeLine(position2, position0, Data::Color::Red);
 
 		p_shader.SetVarying("v_TextCoords", textCoords0, 0);
 		p_shader.SetVarying("v_TextCoords", textCoords1, 1);
 		p_shader.SetVarying("v_TextCoords", textCoords2, 2);
-
+		
 		glm::vec3 vertexScreenPosition0 = ComputeScreenSpaceCoordinate(processVertices[0]);
 		glm::vec3 vertexScreenPosition1 = ComputeScreenSpaceCoordinate(processVertices[1]);
 		glm::vec3 vertexScreenPosition2 = ComputeScreenSpaceCoordinate(processVertices[2]);
@@ -497,11 +480,11 @@ void Rendering::Rasterizer::ClipAgainstPlane(Polygon& p_polygon, const Geometry:
 	glm::vec4 previousVertex     = p_polygon.Vertices[p_polygon.VerticesCount > 0 ? p_polygon.VerticesCount - 1 : 0];
 	glm::vec2 previousTextCoords = p_polygon.textCoords[p_polygon.VerticesCount > 0 ? p_polygon.VerticesCount - 1 : 0];
 
-	float previousDotValue = glm::dot(glm::vec3(previousVertex) - p_plane.Distance, p_plane.Normal);
+	float previousDotValue = glm::dot(previousVertex, glm::vec4(p_plane.Normal, 0)) + p_plane.Distance * (p_plane.Distance < previousVertex.w && p_plane.Distance != 1.0f ? 1.0f : previousVertex.w);
 
 	for(int i = 0; i < p_polygon.VerticesCount; i++)
 	{
-		float currentDotValue = glm::dot(glm::vec3(p_polygon.Vertices[i]) - p_plane.Distance, p_plane.Normal);
+		float currentDotValue = glm::dot(p_polygon.Vertices[i], glm::vec4(p_plane.Normal, 0)) + p_plane.Distance * (p_plane.Distance < p_polygon.Vertices[i].w && p_plane.Distance != 1.0f ? 1.0f : p_polygon.Vertices[i].w);
 
 		if (currentDotValue * previousDotValue < 0.0f)
 		{
