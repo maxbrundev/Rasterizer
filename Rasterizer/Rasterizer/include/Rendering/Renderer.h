@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EDrawMode.h"
 #include "Rendering/Rasterizer.h"
 #include "Context/Driver.h"
 #include "Rendering/AShader.h"
@@ -14,8 +15,8 @@ namespace Rendering
 		~Renderer() = default;
 		void Clear(const Data::Color& p_color);
 		void ClearDepth();
-		void Draw(Resources::Model& p_model, AShader& p_shader) const;
-		void DrawMesh(Resources::Mesh& p_mesh, AShader& p_shader) const;
+		void Draw(EDrawMode p_drawMode, Resources::Model& p_model, AShader& p_shader) const;
+		void DrawMesh(EDrawMode p_drawMode, Resources::Mesh& p_mesh, AShader& p_shader) const;
 		void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, AShader& p_shader, const Data::Color& p_color);
 		void Render() const;
 		void Clear() const;

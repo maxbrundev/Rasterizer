@@ -244,6 +244,7 @@ copy $(SolutionDir)..\Dependencies\SDL2\lib\$(Platform)\*.lib $(OutDir)</Command
     <ClInclude Include="include\Core\CameraController.h" />
     <ClInclude Include="include\Core\ContextCore.h" />
     <ClInclude Include="include\Geometry\Plane.h" />
+    <ClInclude Include="include\Rendering\EDrawMode.h" />
     <ClInclude Include="include\Rendering\Renderer.h" />
     <ClInclude Include="include\Data\Color.h" />
     <ClInclude Include="include\Entities\Camera.h" />

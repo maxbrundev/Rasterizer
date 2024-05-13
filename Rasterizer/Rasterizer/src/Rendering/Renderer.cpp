@@ -15,17 +15,17 @@ void Rendering::Renderer::ClearDepth()
 	m_rasterizer->ClearDepth();
 }
 
-void Rendering::Renderer::Draw(Resources::Model& p_model, AShader& p_shader) const
+void Rendering::Renderer::Draw(EDrawMode p_drawMode, Resources::Model& p_model, AShader& p_shader) const
 {
 	for (const auto mesh : p_model.GetMeshes())
 	{
-		DrawMesh(*mesh, p_shader);
+		DrawMesh(p_drawMode, *mesh, p_shader);
 	}
 }
 
-void Rendering::Renderer::DrawMesh(Resources::Mesh& p_mesh, AShader& p_shader) const
+void Rendering::Renderer::DrawMesh(EDrawMode p_drawMode, Resources::Mesh& p_mesh, AShader& p_shader) const
 {
-	m_rasterizer->RasterizeMesh(p_mesh, p_shader);
+	m_rasterizer->RasterizeMesh(p_drawMode, p_mesh, p_shader);
 }
 
 void Rendering::Renderer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, AShader& p_shader, const Data::Color& p_color)

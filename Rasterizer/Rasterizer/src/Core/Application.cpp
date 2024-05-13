@@ -51,10 +51,12 @@ void Rendering::Application::Run()
 	auto texture2 = Resources::Loaders::TextureLoader::Create("Resources/Textures/WarGreymon.png", true, Resources::ETextureFilteringMode::NEAREST, ETextureWrapMode::CLAMP, true);
 	auto texture3 = Resources::Loaders::TextureLoader::Create("Resources/Textures/Gabumon.png", true, Resources::ETextureFilteringMode::LINEAR, ETextureWrapMode::REPEAT, true);
 	int samples = 0;
+
 	while (IsRunning())
 	{
 		m_context.device->PollEvents();
 
+		// Testing MSAA
 		if (m_context.inputManager->IsKeyPressed(Inputs::EKey::KEY_2))
 		{
 			samples = 2;
@@ -75,7 +77,7 @@ void Rendering::Application::Run()
 
 			m_context.renderer->SetSamples(samples);
 		}
-
+		
 		m_context.renderer->Clear();
 
 		m_context.renderer->Clear(backGround);
@@ -96,18 +98,18 @@ void Rendering::Application::Run()
 		basicShader.SetUniform("u_ViewPos", m_cameraPosition);
 
 		basicShader.SetSample("u_DiffuseMap", texture);
-		m_context.renderer->Draw(*modelCube, basicShader);
+		m_context.renderer->Draw(TRIANGLE, *modelCube, basicShader);
 
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
 		basicShader.SetUniform("u_Model", model);
 		basicShader.SetSample("u_DiffuseMap", texture2);
-		m_context.renderer->Draw(*modelCube2, basicShader);
+		m_context.renderer->Draw(TRIANGLE, *modelCube2, basicShader);
 
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.0f, 0.0f));
 		basicShader.SetUniform("u_Model", model);
 		basicShader.SetSample("u_DiffuseMap", texture3);
 
-		m_context.renderer->Draw(*modelCube3, basicShader);
+		m_context.renderer->Draw(LINE, *modelCube3, basicShader);
 
 		m_context.renderer->SetDepthTest(false);
 		//m_context.renderer->DrawMesh(planeMesh, basicShader);

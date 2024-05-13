@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+
 #include <glm/gtx/compatibility.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -16,21 +17,15 @@ m_depthBuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight)
 	m_window.ResizeEvent.AddListener(std::bind(&Rasterizer::OnResize, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-float Rendering::Rasterizer::ComputeEdge(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2) const
-{
-	return (p_vertex2.position.x - p_vertex0.position.x) * (p_vertex1.position.y - p_vertex0.position.y) - (p_vertex2.position.y - p_vertex0.position.y) * (p_vertex1.position.x - p_vertex0.position.x);
-}
-
-
-void Rendering::Rasterizer::ClearDepth()
+void Rendering::Rasterizer::ClearDepth() const
 {
 	m_depthBuffer.Clear();
 }
 
-void Rendering::Rasterizer::RasterizeMesh(const Resources::Mesh& p_mesh, AShader& p_shader)
+void Rendering::Rasterizer::RasterizeMesh(EDrawMode p_drawMode, const Resources::Mesh& p_mesh, AShader& p_shader)
 {
 	float z_near = 1.0f;
-	float z_far = 20.0f;
+	float z_far  = 100.0f;
 
 	m_clippingFrustum[0].Distance = 1.0f;
 	m_clippingFrustum[0].Normal.x = 1;
@@ -69,14 +64,14 @@ void Rendering::Rasterizer::RasterizeMesh(const Resources::Mesh& p_mesh, AShader
 	{
 		for (uint32_t i = 0; i < indices.size(); i += 3)
 		{
-			RasterizeTriangle(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]], p_shader);
+			RasterizeTriangle(p_drawMode, vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]], p_shader);
 		}
 	}
 	else if (vertices.size() % 3 == 0)
 	{
 		for (uint32_t i = 0; i < vertices.size(); i += 3)
 		{
-			RasterizeTriangle(vertices[i], vertices[i + 1], vertices[i + 2], p_shader);
+			RasterizeTriangle(p_drawMode, vertices[i], vertices[i + 1], vertices[i + 2], p_shader);
 		}
 	}
 
@@ -135,9 +130,7 @@ void Rendering::Rasterizer::RasterizeMesh(const Resources::Mesh& p_mesh, AShader
 	}
 }
 
-
-
-void Rendering::Rasterizer::RasterizeTriangle(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, AShader& p_shader)
+void Rendering::Rasterizer::RasterizeTriangle(EDrawMode p_drawMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, AShader& p_shader)
 {
 	std::array<glm::vec4, 3> verticesWorldPosition{ p_shader.ProcessVertex(p_vertex0, 0), p_shader.ProcessVertex(p_vertex1, 1) , p_shader.ProcessVertex(p_vertex2, 2) };
 
@@ -195,93 +188,100 @@ void Rendering::Rasterizer::RasterizeTriangle(const Geometry::Vertex& p_vertex0,
 
 		std::array<glm::vec4, 3> processVertices{ position0, position1, position2 };
 
-		//RasterizeLine(position0, position1, Data::Color::Red);
-		//RasterizeLine(position1, position2, Data::Color::Red);
-		//RasterizeLine(position2, position0, Data::Color::Red);
-
-		p_shader.SetVarying("v_TextCoords", textCoords0, 0);
-		p_shader.SetVarying("v_TextCoords", textCoords1, 1);
-		p_shader.SetVarying("v_TextCoords", textCoords2, 2);
-		
-		glm::vec3 vertexScreenPosition0 = ComputeScreenSpaceCoordinate(processVertices[0]);
-		glm::vec3 vertexScreenPosition1 = ComputeScreenSpaceCoordinate(processVertices[1]);
-		glm::vec3 vertexScreenPosition2 = ComputeScreenSpaceCoordinate(processVertices[2]);
-		
-		glm::vec2 vertexNormalizedPosition0 = ComputeNormalizedDeviceCoordinate(vertexScreenPosition0);
-		glm::vec2 vertexNormalizedPosition1 = ComputeNormalizedDeviceCoordinate(vertexScreenPosition1);
-		glm::vec2 vertexNormalizedPosition2 = ComputeNormalizedDeviceCoordinate(vertexScreenPosition2);
-		
-		glm::vec2 vertexRasterPosition0 = ComputeRasterSpaceCoordinate(vertexNormalizedPosition0);
-		glm::vec2 vertexRasterPosition1 = ComputeRasterSpaceCoordinate(vertexNormalizedPosition1);
-		glm::vec2 vertexRasterPosition2 = ComputeRasterSpaceCoordinate(vertexNormalizedPosition2);
-		
-		Geometry::Triangle triangle(vertexRasterPosition0, vertexRasterPosition1, vertexRasterPosition2);
-		
-		if ((m_state.CullFace == ECullFace::BACK && triangle.ComputeArea() >= 0.0f)
-			|| (m_state.CullFace == ECullFace::FRONT && triangle.ComputeArea() <= 0.0f))
-			return;
-		
-		auto xMin = std::max(0, triangle.BoundingBox2D.Min.x);
-		auto yMin = std::max(0, triangle.BoundingBox2D.Min.y);
-		
-		auto xMax = std::min(triangle.BoundingBox2D.Max.x, static_cast<int32_t>(m_textureBuffer.GetWidth()));
-		auto yMax = std::min(triangle.BoundingBox2D.Max.y, static_cast<int32_t>(m_textureBuffer.GetHeight()));
-		
-		if (m_samples > 0)
+		if(p_drawMode == LINE)
 		{
-			for (int32_t x = xMin; x < xMax; x++)
+			RasterizeLine(position0, position1, Data::Color::Red);
+			RasterizeLine(position1, position2, Data::Color::Red);
+			RasterizeLine(position2, position0, Data::Color::Red);
+		}
+		else
+		{
+			p_shader.SetVarying("v_TextCoords", textCoords0, 0);
+			p_shader.SetVarying("v_TextCoords", textCoords1, 1);
+			p_shader.SetVarying("v_TextCoords", textCoords2, 2);
+
+			glm::vec3 vertexScreenPosition0 = ComputeScreenSpaceCoordinate(processVertices[0]);
+			glm::vec3 vertexScreenPosition1 = ComputeScreenSpaceCoordinate(processVertices[1]);
+			glm::vec3 vertexScreenPosition2 = ComputeScreenSpaceCoordinate(processVertices[2]);
+
+			glm::vec2 vertexNormalizedPosition0 = ComputeNormalizedDeviceCoordinate(vertexScreenPosition0);
+			glm::vec2 vertexNormalizedPosition1 = ComputeNormalizedDeviceCoordinate(vertexScreenPosition1);
+			glm::vec2 vertexNormalizedPosition2 = ComputeNormalizedDeviceCoordinate(vertexScreenPosition2);
+
+			glm::vec2 vertexRasterPosition0 = ComputeRasterSpaceCoordinate(vertexNormalizedPosition0);
+			glm::vec2 vertexRasterPosition1 = ComputeRasterSpaceCoordinate(vertexNormalizedPosition1);
+			glm::vec2 vertexRasterPosition2 = ComputeRasterSpaceCoordinate(vertexNormalizedPosition2);
+
+			Geometry::Triangle triangle(vertexRasterPosition0, vertexRasterPosition1, vertexRasterPosition2);
+
+			float area = triangle.ComputeArea();
+
+			if ((m_state.CullFace == ECullFace::BACK && area > 0.0f)
+				|| (m_state.CullFace == ECullFace::FRONT && area < 0.0f))
+				return;
+
+			auto xMin = std::max(0, triangle.BoundingBox2D.Min.x);
+			auto yMin = std::max(0, triangle.BoundingBox2D.Min.y);
+
+			auto xMax = std::min(triangle.BoundingBox2D.Max.x, static_cast<int32_t>(m_textureBuffer.GetWidth()));
+			auto yMax = std::min(triangle.BoundingBox2D.Max.y, static_cast<int32_t>(m_textureBuffer.GetHeight()));
+
+			if (m_samples > 0)
 			{
-				for (int32_t y = yMin; y < yMax; y++)
+				for (int32_t x = xMin; x < xMax; x++)
 				{
-					for (uint8_t sampleIndex = 0; sampleIndex < m_samples; sampleIndex++)
+					for (int32_t y = yMin; y < yMax; y++)
 					{
-						float samplePosX = static_cast<float>(x) + (static_cast<float>(sampleIndex) + 0.5f) / static_cast<float>(m_samples);
-						float samplePosY = static_cast<float>(y) + (static_cast<float>(sampleIndex) + 0.5f) / static_cast<float>(m_samples);
-		
-						const glm::vec3 barycentricCoords = triangle.GetBarycentricCoordinates({ samplePosX, samplePosY });
-		
-						if (barycentricCoords.x >= 0.0f && barycentricCoords.y >= 0.0f && barycentricCoords.x + barycentricCoords.y <= 1.0f)
+						for (uint8_t sampleIndex = 0; sampleIndex < m_samples; sampleIndex++)
 						{
-							const float depth = vertexScreenPosition0.z * barycentricCoords.z + vertexScreenPosition2.z * barycentricCoords.x + barycentricCoords.y * vertexScreenPosition1.z;
-		
-							if (!m_state.DepthTest || depth <= m_depthBuffer.GetElement(x, y))
+							float samplePosX = static_cast<float>(x) + (static_cast<float>(sampleIndex) + 0.5f) / static_cast<float>(m_samples);
+							float samplePosY = static_cast<float>(y) + (static_cast<float>(sampleIndex) + 0.5f) / static_cast<float>(m_samples);
+
+							const glm::vec3 barycentricCoords = triangle.GetBarycentricCoordinates({ samplePosX, samplePosY });
+
+							if (barycentricCoords.x >= 0.0f && barycentricCoords.y >= 0.0f && barycentricCoords.x + barycentricCoords.y <= 1.0f)
 							{
-								p_shader.ProcessInterpolation(barycentricCoords, processVertices[0].w, processVertices[1].w, processVertices[2].w);
-		
-								Data::Color color = p_shader.ProcessFragment();
-		
-								m_msaaBuffer.SetPixelSample(x, y, sampleIndex, color, depth);
+								const float depth = vertexScreenPosition0.z * barycentricCoords.z + vertexScreenPosition2.z * barycentricCoords.x + barycentricCoords.y * vertexScreenPosition1.z;
+
+								if (!m_state.DepthTest || depth <= m_depthBuffer.GetElement(x, y))
+								{
+									p_shader.ProcessInterpolation(barycentricCoords, processVertices[0].w, processVertices[1].w, processVertices[2].w);
+
+									Data::Color color = p_shader.ProcessFragment();
+
+									m_msaaBuffer.SetPixelSample(x, y, sampleIndex, color, depth);
+								}
 							}
 						}
 					}
 				}
 			}
-		}
-		else
-		{
-			for (int32_t x = xMin; x < xMax; x++)
+			else
 			{
-				for (int32_t y = yMin; y < yMax; y++)
+				for (int32_t x = xMin; x < xMax; x++)
 				{
-					const glm::vec3 barycentricCoords = triangle.GetBarycentricCoordinates({ x, y });
-		
-					if (barycentricCoords.x >= 0.0f && barycentricCoords.y >= 0.0f && barycentricCoords.x + barycentricCoords.y <= 1.0f)
+					for (int32_t y = yMin; y < yMax; y++)
 					{
-						const float depth = vertexScreenPosition0.z * barycentricCoords.z + vertexScreenPosition2.z * barycentricCoords.x + barycentricCoords.y * vertexScreenPosition1.z;
-		
-						if (!m_state.DepthTest || depth <= m_depthBuffer.GetElement(x, y))
+						const glm::vec3 barycentricCoords = triangle.GetBarycentricCoordinates({ x, y });
+
+						if (barycentricCoords.x >= 0.0f && barycentricCoords.y >= 0.0f && barycentricCoords.x + barycentricCoords.y <= 1.0f)
 						{
-							p_shader.ProcessInterpolation(barycentricCoords, processVertices[0].w, processVertices[1].w, processVertices[2].w);
-		
-							Data::Color color = p_shader.ProcessFragment();
-		
-							float alpha = color.a / 255.0f;
-		
-							m_textureBuffer.SetPixel(x, y, Data::Color::Mix(Data::Color(m_textureBuffer.GetPixel(x, y)), color, alpha));
-		
-							if (m_state.DepthWrite)
+							const float depth = vertexScreenPosition0.z * barycentricCoords.z + vertexScreenPosition2.z * barycentricCoords.x + barycentricCoords.y * vertexScreenPosition1.z;
+
+							if (!m_state.DepthTest || depth <= m_depthBuffer.GetElement(x, y))
 							{
-								m_depthBuffer.SetElement(x, y, depth);
+								p_shader.ProcessInterpolation(barycentricCoords, processVertices[0].w, processVertices[1].w, processVertices[2].w);
+
+								Data::Color color = p_shader.ProcessFragment();
+
+								float alpha = color.a / 255.0f;
+
+								m_textureBuffer.SetPixel(x, y, Data::Color::Mix(Data::Color(m_textureBuffer.GetPixel(x, y)), color, alpha));
+
+								if (m_state.DepthWrite)
+								{
+									m_depthBuffer.SetElement(x, y, depth);
+								}
 							}
 						}
 					}
@@ -362,8 +362,7 @@ void Rendering::Rasterizer::RasterizeLine(const Geometry::Vertex& p_vertex0, con
 	}
 }
 
-void Rendering::Rasterizer::RasterizeLine(const glm::vec4& p_vertex0, const glm::vec4& p_vertex1,
-	const Data::Color& p_color)
+void Rendering::Rasterizer::RasterizeLine(const glm::vec4& p_vertex0, const glm::vec4& p_vertex1, const Data::Color& p_color)
 {
 	glm::vec3 vertexScreenPosition0 = ComputeScreenSpaceCoordinate(p_vertex0);
 	glm::vec3 vertexScreenPosition1 = ComputeScreenSpaceCoordinate(p_vertex1);
@@ -447,28 +446,6 @@ glm::vec2 Rendering::Rasterizer::ComputeRasterSpaceCoordinate(glm::vec2 p_vertex
 	p_vertexNormalizedPosition.y = std::round(p_vertexNormalizedPosition.y * m_textureBuffer.GetHeight());
 
 	return p_vertexNormalizedPosition;
-}
-
-glm::vec3 Rendering::Rasterizer::GetBarycentricWeights(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, const Geometry::Vertex& p_point)
-{
-	float areaABC = ComputeEdge(p_vertex0, p_vertex1, p_vertex2);
-	float areaPBC = ComputeEdge(p_point, p_vertex1, p_vertex2);
-	float areaPCA = ComputeEdge(p_vertex0, p_point, p_vertex2);
-
-	float alpha = areaPBC / areaABC;
-	float beta = areaPCA / areaABC;
-	float gamma = 1.0f - alpha - beta;
-
-	return glm::vec3(alpha, beta, gamma);
-}
-
-Data::Color Rendering::Rasterizer::InterpolateColors(const Data::Color& c0, const Data::Color& c1, const Data::Color& c2, const glm::vec3& weights)
-{
-	float r = weights.x * c0.r + weights.y * c1.r + weights.z * c2.r;
-	float g = weights.x * c0.g + weights.y * c1.g + weights.z * c2.g;
-	float b = weights.x * c0.b + weights.y * c1.b + weights.z * c2.b;
-
-	return Data::Color(r, g, b);
 }
 
 void Rendering::Rasterizer::ClipAgainstPlane(Polygon& p_polygon, const Geometry::Plane& p_plane)
