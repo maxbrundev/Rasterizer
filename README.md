@@ -1,4 +1,4 @@
-## CPU Software Rasterizer
+## Realtime CPU Software Rasterizer
 ![rasterizer](https://github.com/maxbrundev/Rasterizer/assets/32653095/0c8099a7-6bdf-48cd-a0fb-d07e6d025843)
 
 ## Description
@@ -38,7 +38,7 @@ Basic and Advanced Rendering learning project.
 ## Licence
 This project is licenced under an MIT Licence.
 
-# Screenshots\
+# Screenshots
 ![primitiveMode](https://github.com/maxbrundev/Rasterizer/assets/32653095/b64fe571-727d-4a26-b3eb-ddd2880add62)
 *WIP Primitives Mode*
 
