@@ -38,7 +38,10 @@ Basic and Advanced Rendering learning project.
 ## Licence
 This project is licenced under an MIT Licence.
 
-# Screenshots
+# Screenshots\
+![primitiveMode](https://github.com/maxbrundev/Rasterizer/assets/32653095/b64fe571-727d-4a26-b3eb-ddd2880add62)
+*WIP Primitives Mode*
+
 ![TextureFilter](https://github.com/maxbrundev/Rasterizer/assets/32653095/b9a5a633-657d-4205-8575-53fdfb76b4b3)
 *Texture Filter: Left Linear, Right Nearest.*
 
