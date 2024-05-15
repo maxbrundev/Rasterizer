@@ -7,7 +7,7 @@ glm::vec4 Rendering::DefaultShader::VertexPass(const Geometry::Vertex& p_vertex)
 	const glm::mat4 u_Projection = GetUniform<glm::mat4>("u_Projection");
 
 	glm::vec3 fragPos = glm::vec3(u_Model * glm::vec4(p_vertex.position, 1.0));
-	SetVarying("v_FragPos", fragPos);
+	SetFlat("v_FragPos", fragPos);
 
 	glm::vec3 normal = glm::mat3(glm::transpose(glm::inverse(u_Model))) * p_vertex.normal;
 	SetVarying("v_Normal", normal);

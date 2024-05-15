@@ -1,22 +1,25 @@
 #include "Core/CameraController.h"
 
 #include "Tools/Globals/ServiceLocator.h"
+
 #include <glm/gtx/compatibility.hpp>
 
 Rendering::CameraController::CameraController(Entities::Camera& p_camera, glm::vec3& p_position) :
 	m_window(Tools::Globals::ServiceLocator::Get<Context::Window>()),
 	m_inputManager(Tools::Globals::ServiceLocator::Get<Inputs::InputManager>()),
-	m_camera(p_camera), 
-	m_position(p_position)
+	m_camera(p_camera),
+	m_position(p_position),
+	m_targetPosition{},
+	m_currentMovement{}
 {
 	m_camera.SetFov(60.0f);
 }
 
 void Rendering::CameraController::Update(float p_deltaTime)
 {
-	HandleInputs(p_deltaTime);
-	HandleMouse(p_deltaTime);
-	HandleCameraZoom();
+	HandleFPSInputs(p_deltaTime);
+	HandleFPSMouse(p_deltaTime);
+	HandleZoom();
 
 	if (m_inputManager.IsMouseButtonPressed(Inputs::EMouseButton::MOUSE_BUTTON_RIGHT))
 	{
@@ -32,40 +35,7 @@ void Rendering::CameraController::Update(float p_deltaTime)
 	}
 }
 
-void Rendering::CameraController::ProcessKeyboard(ECameraDirection p_direction, float p_deltaTime)
-{
-	const glm::vec3 forward = m_camera.GetForward();
-	const glm::vec3 right   = m_camera.GetRight();
-	const glm::vec3 up      = m_camera.GetUp();
-
-	const float velocity = m_moveSpeed * p_deltaTime;
-
-	switch (p_direction)
-	{
-	case ECameraDirection::FORWARD:
-		m_targetPosition += forward;
-		break;
-	case ECameraDirection::BACKWARD:
-		m_targetPosition -= forward;
-		break;
-	case ECameraDirection::LEFT:
-		m_targetPosition -= right;
-		break;
-	case ECameraDirection::RIGHT:
-		m_targetPosition += right;
-		break;
-	case ECameraDirection::UP:
-		m_targetPosition += up;
-		break;
-	case ECameraDirection::DOWN:
-		m_targetPosition -= up;
-		break;
-	}
-
-	m_targetPosition *= velocity;
-}
-
-void Rendering::CameraController::ProcessMouseMovement(float p_offsetX, float p_offsetY)
+void Rendering::CameraController::ProcessMouseMovement(float p_offsetX, float p_offsetY) const
 {
 	float& yaw   = m_camera.GetYaw();
 	float& pitch = m_camera.GetPitch();
@@ -85,12 +55,12 @@ void Rendering::CameraController::ProcessMouseMovement(float p_offsetX, float p_
 	m_camera.UpdateCameraVectors();
 }
 
-void Rendering::CameraController::SetPosition(const glm::vec3& p_position)
+void Rendering::CameraController::SetPosition(const glm::vec3& p_position) const
 {
 	m_position = p_position;
 }
 
-void Rendering::CameraController::SetPosition(float p_posX, float p_posY, float p_posZ)
+void Rendering::CameraController::SetPosition(float p_posX, float p_posY, float p_posZ) const
 {
 	m_position.x = p_posX;
 	m_position.y = p_posY;
@@ -102,40 +72,42 @@ const glm::vec3& Rendering::CameraController::GetPosition() const
 	return m_position;
 }
 
-void Rendering::CameraController::HandleInputs(float p_deltaTime)
+void Rendering::CameraController::HandleFPSInputs(float p_deltaTime)
 {
 	m_targetPosition = glm::vec3(0.0f, 0.0f, 0.0f);
+
+	float velocity = m_moveSpeed * p_deltaTime;
 
 	if (m_rightMousePressed) 
 	{
 		if (m_inputManager.GetKeyState(Inputs::EKey::KEY_W) == Inputs::EKeyState::KEY_DOWN)
 		{
-			ProcessKeyboard(ECameraDirection::FORWARD, p_deltaTime);
-		}
-
-		if (m_inputManager.GetKeyState(Inputs::EKey::KEY_S) == Inputs::EKeyState::KEY_DOWN)
-		{
-			ProcessKeyboard(ECameraDirection::BACKWARD, p_deltaTime);
+			m_targetPosition += m_camera.GetForward() * velocity;
 		}
 
 		if (m_inputManager.GetKeyState(Inputs::EKey::KEY_A) == Inputs::EKeyState::KEY_DOWN)
 		{
-			ProcessKeyboard(ECameraDirection::LEFT, p_deltaTime);
+			m_targetPosition += m_camera.GetRight() * -velocity;
+		}
+
+		if (m_inputManager.GetKeyState(Inputs::EKey::KEY_S) == Inputs::EKeyState::KEY_DOWN)
+		{
+			m_targetPosition += m_camera.GetForward() * -velocity;
 		}
 
 		if (m_inputManager.GetKeyState(Inputs::EKey::KEY_D) == Inputs::EKeyState::KEY_DOWN)
 		{
-			ProcessKeyboard(ECameraDirection::RIGHT, p_deltaTime);
+			m_targetPosition += m_camera.GetRight() * velocity;
 		}
 
 		if (m_inputManager.GetKeyState(Inputs::EKey::KEY_E) == Inputs::EKeyState::KEY_DOWN)
 		{
-			ProcessKeyboard(ECameraDirection::UP, p_deltaTime);
+			m_targetPosition += glm::vec3(0.0f, velocity, 0.0f);
 		}
 
 		if (m_inputManager.GetKeyState(Inputs::EKey::KEY_Q) == Inputs::EKeyState::KEY_DOWN)
 		{
-			ProcessKeyboard(ECameraDirection::DOWN, p_deltaTime);
+			m_targetPosition += glm::vec3(0.0f, -velocity, 0.0f);
 		}
 	}
 
@@ -143,7 +115,7 @@ void Rendering::CameraController::HandleInputs(float p_deltaTime)
 	m_position += m_currentMovement;
 }
 
-void Rendering::CameraController::HandleMouse(float p_deltaTime)
+void Rendering::CameraController::HandleFPSMouse(float p_deltaTime) const
 {
 	if (m_rightMousePressed)
 	{
@@ -156,7 +128,7 @@ void Rendering::CameraController::HandleMouse(float p_deltaTime)
 	}
 }
 
-void Rendering::CameraController::HandleCameraZoom()
+void Rendering::CameraController::HandleZoom() const
 {
 	m_position += m_camera.GetForward() * static_cast<float>(m_inputManager.GetMouseWheel());
 }

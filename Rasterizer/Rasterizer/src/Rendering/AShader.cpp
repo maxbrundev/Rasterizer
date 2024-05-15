@@ -82,9 +82,9 @@ void Rendering::AShader::SetSample(const std::string& p_name, Resources::Texture
 glm::vec4 Rendering::AShader::Texture(const Resources::Texture& p_texture, const glm::vec2& p_textCoords) const
 {
 	auto u_ViewPos = GetUniform<glm::vec3>("u_ViewPos");
-	auto v_FragPos = GetVarying<glm::vec3>("v_FragPos");
+	auto v_FragPos = GetFlat<glm::vec3>("v_FragPos");
 
-	const float maxDistance = 20.0f;
+	const float maxDistance = 100.0f;
 	const float minDistance = 0.0f;
 	const float maxLevel = static_cast<float>(p_texture.Mipmaps.size() - 1);
 	

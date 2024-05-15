@@ -109,7 +109,7 @@ void Rendering::Application::Run()
 		basicShader.SetUniform("u_Model", model);
 		basicShader.SetSample("u_DiffuseMap", texture3);
 
-		m_context.renderer->Draw(LINE, *modelCube3, basicShader);
+		m_context.renderer->Draw(TRIANGLE, *modelCube3, basicShader);
 
 		m_context.renderer->SetDepthTest(false);
 		//m_context.renderer->DrawMesh(planeMesh, basicShader);

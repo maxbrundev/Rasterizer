@@ -73,9 +73,19 @@ void Entities::Camera::SetClearColor(const glm::vec3& p_clearColor)
 	m_clearColor = p_clearColor;
 }
 
-float& Entities::Camera::GetCameraFov()
+float Entities::Camera::GetFov() const
 {
 	return m_fov;
+}
+
+float Entities::Camera::GetNear() const
+{
+	return m_near;
+}
+
+float Entities::Camera::GetFar() const
+{
+	return m_far;
 }
 
 float& Entities::Camera::GetYaw()

@@ -5,6 +5,7 @@ namespace Rendering
 	enum EDrawMode
 	{
 		TRIANGLE,
-		LINE
+		LINE,
+		POINT
 	};
 }

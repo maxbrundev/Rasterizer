@@ -10,33 +10,22 @@ namespace Rendering
 {
 	class CameraController
 	{
-		enum class ECameraDirection
-		{
-			FORWARD,
-			BACKWARD,
-			LEFT,
-			RIGHT,
-			UP,
-			DOWN
-		};
-
 	public:
 		CameraController(Entities::Camera& p_camera,  glm::vec3& p_position);
 		~CameraController() = default;
 
 		void Update(float p_deltaTime);
 		
-		void SetPosition(const glm::vec3& p_position);
-		void SetPosition(float p_posX, float p_posY, float p_posZ);
+		void SetPosition(const glm::vec3& p_position) const;
+		void SetPosition(float p_posX, float p_posY, float p_posZ) const;
 		
 		const glm::vec3& GetPosition() const;
 
 	private:
-		void ProcessKeyboard(ECameraDirection p_direction, float p_deltaTime);
-		void ProcessMouseMovement(float p_offsetX, float p_offsetY);
-		void HandleInputs(float p_deltaTime);
-		void HandleMouse(float p_deltaTime);
-		void HandleCameraZoom();
+		void ProcessMouseMovement(float p_offsetX, float p_offsetY) const;
+		void HandleFPSInputs(float p_deltaTime);
+		void HandleFPSMouse(float p_deltaTime) const;
+		void HandleZoom() const;
 
 	private:
 		Context::Window& m_window;

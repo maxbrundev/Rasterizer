@@ -21,9 +21,12 @@ namespace Entities
 
 		void SetClearColor(const glm::vec3& p_clearColor);
 
+		float GetFov() const;
+		float GetNear() const;
+		float GetFar() const;
+
 		float& GetYaw();
 		float& GetPitch();
-		float& GetCameraFov();
 		
 		const glm::vec3& GetForward() const;
 		const glm::vec3& GetRight() const;
@@ -50,8 +53,8 @@ namespace Entities
 
 		float m_yaw;
 		float m_pitch;
-		float m_fov;
 
+		float m_fov;
 		float m_near;
 		float m_far;
 	};
