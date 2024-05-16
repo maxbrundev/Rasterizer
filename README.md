@@ -20,20 +20,22 @@ Basic and Advanced Rendering learning project.
 ## To implement
 - Improve architecture to mimic OpenGL API
 - Profiling tools
-- Bump solution to Visual Studio 2022
-- Project generation with Premake  
 ...
 
 ⚠️ Optimization pass, architecture update and global project improvement is planned as soon as Mipmaps / Clipping / MSAA will be cleaned.
 
 ## Software
-- Visual Studio 2017
+- Visual Studio 2022
 
 ## Dependencies
 - SDL2 (Windowing and inputs)
 - Assimp (3D model loader)
 - GLM (Mathematics)
 - stb_image (Image Loader)
+
+## Compiling sources
+Premake5 is used to generate project files.
+To generate the project, execute `GenerateProject.bat`. By default, `GenerateProject.bat` will generate project files for Visual Studio 2022. If you want to use another version of Visual Studio you can execute `GenerateProject.bat` from the command line with the Visual Studio version as argument. (ex: `.\GeneratedProject.bat vs2019`)
 
 ## Licence
 This project is licenced under an MIT Licence.
