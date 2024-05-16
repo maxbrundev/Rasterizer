@@ -6,7 +6,6 @@
 
 #include "Buffers/TextureBuffer.h"
 
-
 namespace Context
 {
 	class Driver

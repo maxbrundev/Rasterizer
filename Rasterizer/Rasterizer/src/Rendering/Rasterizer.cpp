@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/compatibility.hpp>
 #include <glm/gtc/type_ptr.hpp>
 

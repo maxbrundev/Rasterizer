@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 Context::Driver::Driver(Window& p_window, const Settings::DriverSettings& p_driverSettings) : m_window(p_window)
 {

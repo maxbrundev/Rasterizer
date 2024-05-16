@@ -1,5 +1,7 @@
 #include "Inputs/InputManager.h"
 
+#include <SDL2/SDL_events.h>
+
 Inputs::InputManager::InputManager(Context::Device& p_device) : m_device(p_device)
 {
 	m_keyPressedListener = m_device.KeyPressedEvent.AddListener(std::bind(&InputManager::OnKeyPressed, this, std::placeholders::_1));

@@ -1,5 +1,7 @@
 #include "Context/Device.h"
 
+#include <SDL2/SDL.h>
+
 Context::Device::Device()
 {
 	InitializeSDL();

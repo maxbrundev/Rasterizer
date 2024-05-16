@@ -1,7 +1,5 @@
 #pragma once
 
-#include <SDL.h>
-
 #include "Eventing/Event.h"
 
 namespace Context

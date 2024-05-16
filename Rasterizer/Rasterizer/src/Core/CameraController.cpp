@@ -2,6 +2,7 @@
 
 #include "Tools/Globals/ServiceLocator.h"
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/compatibility.hpp>
 
 Rendering::CameraController::CameraController(Entities::Camera& p_camera, glm::vec3& p_position) :

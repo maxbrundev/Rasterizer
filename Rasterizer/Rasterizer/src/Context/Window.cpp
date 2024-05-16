@@ -1,11 +1,10 @@
 #include "Context/Window.h"
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 Context::Window::Window(Device& p_device, const Settings::WindowSettings& p_windowSettings) :
 m_device(p_device),
 m_sdlWindow(nullptr),
-m_surface(nullptr),
 m_title(p_windowSettings.title),
 m_size{p_windowSettings.width, p_windowSettings.height},
 m_aspectRatio(static_cast<float>(p_windowSettings.width) / static_cast<float>(p_windowSettings.height)),
@@ -26,7 +25,6 @@ m_cursorMode(ECursorMode::NORMAL)
 
 Context::Window::~Window()
 {
-	SDL_FreeSurface(m_surface);
 	SDL_DestroyWindow(m_sdlWindow);
 }
 
@@ -39,8 +37,6 @@ void Context::Window::CreateSDLWindow()
 		SDL_Quit();
 		throw std::runtime_error("Failed to create GLFW Window");
 	}
-
-	m_surface = SDL_GetWindowSurface(m_sdlWindow);
 
 	m_isActive = true;
 }
@@ -74,11 +70,6 @@ void Context::Window::SetCursorMode(ECursorMode p_cursorMode)
 {
 	m_cursorMode = p_cursorMode;
 	SDL_ShowCursor(static_cast<int>(p_cursorMode));
-}
-
-SDL_Surface* Context::Window::GetWindowSurface() const
-{
-	return m_surface;
 }
 
 Context::ECursorMode Context::Window::GetCursorMode() const

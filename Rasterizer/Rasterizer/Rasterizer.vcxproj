@@ -72,25 +72,25 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)include;$(SolutionDir)..\Dependencies\SDL2\include;$(SolutionDir)..\Dependencies\GLM\;$(SolutionDir)..\Dependencies\stb_image\include\;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)include;$(SolutionDir)..\Dependencies\SDL2\include\;$(SolutionDir)..\Dependencies\glm\include\;$(SolutionDir)..\Dependencies\stb_image\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\Dependencies\SDL2\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <SourcePath>$(ProjectDir)include;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)include;$(SolutionDir)..\Dependencies\SDL2\include;$(SolutionDir)..\Dependencies\GLM\;$(SolutionDir)..\Dependencies\stb_image\include\;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)include;$(SolutionDir)..\Dependencies\SDL2\include\;$(SolutionDir)..\Dependencies\glm\include\;$(SolutionDir)..\Dependencies\stb_image\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\Dependencies\SDL2\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <SourcePath>$(ProjectDir)include;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)include;$(SolutionDir)..\Dependencies\SDL2\include;$(SolutionDir)..\Dependencies\GLM\;$(SolutionDir)..\Dependencies\stb_image\include\;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)include;$(SolutionDir)..\Dependencies\SDL2\include\;$(SolutionDir)..\Dependencies\glm\include\;$(SolutionDir)..\Dependencies\stb_image\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\Dependencies\SDL2\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <SourcePath>$(ProjectDir)include;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)include;$(SolutionDir)..\Dependencies\SDL2\include;$(SolutionDir)..\Dependencies\GLM\;$(SolutionDir)..\Dependencies\stb_image\include\;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)include;$(SolutionDir)..\Dependencies\SDL2\include\;$(SolutionDir)..\Dependencies\glm\include\;$(SolutionDir)..\Dependencies\stb_image\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\Dependencies\SDL2\lib\$(Platform);$(LibraryPath)</LibraryPath>
     <SourcePath>$(ProjectDir)include;$(SourcePath)</SourcePath>
   </PropertyGroup>

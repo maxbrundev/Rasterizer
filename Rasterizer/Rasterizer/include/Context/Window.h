@@ -1,5 +1,7 @@
 #pragma once
 
+#include <SDL2/SDL_video.h>
+
 #include "Settings/WindowSettings.h"
 
 #include "Context/Device.h"
@@ -35,7 +37,6 @@ namespace Context
 
 		float GetAspectRatio() const;
 
-		SDL_Surface* GetWindowSurface() const;
 		SDL_Window* GetSDLWindow() const;
 
 	private:
@@ -47,7 +48,6 @@ namespace Context
 		Device& m_device;
 
 		SDL_Window* m_sdlWindow;
-		SDL_Surface* m_surface;
 
 		std::string m_title;
 		std::pair<uint16_t, uint16_t> m_size;
