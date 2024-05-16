@@ -25,7 +25,7 @@ Data::Color Rendering::DefaultShader::FragmentPass()
 
 	//return glm::vec4(((normal * 0.5f) + 0.5f), 1.0f);
 
-	auto texture = GetSample<Resources::Texture>("u_DiffuseMap");
+	auto texture = GetSample("u_DiffuseMap");
 
 	glm::vec4 diffuse = Texture(*texture, textCoords);
 

@@ -53,28 +53,27 @@ Data::Color Rendering::AShader::ProcessFragment()
 	return FragmentPass();
 }
 
-void Rendering::AShader::SetUniform(const std::string& p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value)
+void Rendering::AShader::SetUniform(std::string_view p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value)
 {
 	m_uniforms[p_name] = p_value;
 }
 
-void Rendering::AShader::SetFlat(const std::string& p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value)
+void Rendering::AShader::SetFlat(std::string_view p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value)
 {
 	m_flats[p_name] = p_value;
 }
 
-void Rendering::AShader::SetVarying(const std::string& p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value)
+void Rendering::AShader::SetVarying(std::string_view p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value)
 {
 	m_varying[m_vertexIndex][p_name] = p_value;
 }
 
-void Rendering::AShader::SetVarying(const std::string& p_name,
-	std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value, uint8_t p_index)
+void Rendering::AShader::SetVarying(std::string_view p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value, uint8_t p_index)
 {
 	m_varying[p_index][p_name] = p_value;
 }
 
-void Rendering::AShader::SetSample(const std::string& p_name, Resources::Texture* p_texture)
+void Rendering::AShader::SetSample(std::string_view p_name, Resources::Texture* p_texture)
 {
 	m_samples[p_name] = p_texture;
 }
