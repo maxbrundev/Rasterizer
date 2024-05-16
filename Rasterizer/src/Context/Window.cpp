@@ -14,7 +14,7 @@ m_isActive(false),
 m_cursorMode(ECursorMode::NORMAL)
 {
 
-	m_flags = m_isFullscreen ? m_flags | SDL_WINDOW_FULLSCREEN : 0;
+	m_flags = m_isFullscreen ? SDL_WINDOW_FULLSCREEN : 0;
 	m_flags = p_windowSettings.resizable ? m_flags | SDL_WINDOW_RESIZABLE : 0;
 
 	CreateSDLWindow();
