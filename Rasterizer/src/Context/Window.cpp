@@ -1,5 +1,6 @@
 #include "Context/Window.h"
 
+#include <stdexcept>
 #include <SDL2/SDL.h>
 
 Context::Window::Window(Device& p_device, const Settings::WindowSettings& p_windowSettings) :

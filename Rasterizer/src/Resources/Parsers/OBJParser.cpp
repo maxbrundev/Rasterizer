@@ -1,5 +1,6 @@
 #include "Resources/Parsers/OBJParser.h"
 
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <array>

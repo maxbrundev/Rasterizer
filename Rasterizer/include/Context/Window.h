@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <SDL2/SDL_video.h>
 
 #include "Settings/WindowSettings.h"

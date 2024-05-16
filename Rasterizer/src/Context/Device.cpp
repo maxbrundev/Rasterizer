@@ -1,5 +1,6 @@
 #include "Context/Device.h"
 
+#include <stdexcept>
 #include <SDL2/SDL.h>
 
 Context::Device::Device()

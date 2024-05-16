@@ -6,7 +6,7 @@
 
 Context::Driver::Driver(Window& p_window, const Settings::DriverSettings& p_driverSettings) : m_window(p_window)
 {
-	m_flags = p_driverSettings.vsync ? m_flags | SDL_RENDERER_PRESENTVSYNC : 0;
+	m_flags = p_driverSettings.vsync ? SDL_RENDERER_PRESENTVSYNC : 0;
 	m_flags |= SDL_RENDERER_ACCELERATED;
 
 	CreateRenderer();

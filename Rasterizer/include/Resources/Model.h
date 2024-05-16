@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "Resources/Mesh.h"
 
 namespace  Resources::Loaders
