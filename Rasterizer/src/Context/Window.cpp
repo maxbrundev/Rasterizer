@@ -4,24 +4,25 @@
 #include <SDL2/SDL.h>
 
 Context::Window::Window(Device& p_device, const Settings::WindowSettings& p_windowSettings) :
-m_device(p_device),
-m_sdlWindow(nullptr),
-m_title(p_windowSettings.title),
-m_size{p_windowSettings.width, p_windowSettings.height},
-m_aspectRatio(static_cast<float>(p_windowSettings.width) / static_cast<float>(p_windowSettings.height)),
-m_isFullscreen(p_windowSettings.fullScreen),
-m_isActive(false),
-m_cursorMode(ECursorMode::NORMAL)
+	m_device(p_device),
+	m_sdlWindow(nullptr),
+	m_title(p_windowSettings.title),
+	m_size{p_windowSettings.width, p_windowSettings.height},
+	m_aspectRatio(static_cast<float>(p_windowSettings.width) / static_cast<float>(p_windowSettings.height)),
+	m_isFullscreen(p_windowSettings.fullScreen),
+	m_isActive(false),
+	m_cursorMode(ECursorMode::NORMAL),
+	m_flags(0)
 {
-
-	m_flags = m_isFullscreen ? SDL_WINDOW_FULLSCREEN : 0;
-	m_flags = p_windowSettings.resizable ? m_flags | SDL_WINDOW_RESIZABLE : 0;
+	m_flags |= m_isFullscreen ? SDL_WINDOW_FULLSCREEN : 0;
+	m_flags |= p_windowSettings.resizable ? SDL_WINDOW_RESIZABLE : 0;
 
 	CreateSDLWindow();
 	SetCursorMode(ECursorMode::NORMAL);
 
 	p_device.CloseEvent.AddListener(std::bind(&Window::SetClose, this));
-	p_device.ResizeEvent.AddListener(std::bind(&Window::OnResizeWindow, this, std::placeholders::_1, std::placeholders::_2));
+	p_device.ResizeEvent.AddListener(std::bind(&Window::OnResizeWindow, this, std::placeholders::_1,
+	                                           std::placeholders::_2));
 }
 
 Context::Window::~Window()
