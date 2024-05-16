@@ -45,7 +45,7 @@ void Rendering::AShader::ProcessInterpolation(const glm::vec3& p_barycentricCoor
 		}
 	}
 
-	m_interpolatedReciprocal = (1 / p_w0) * p_barycentricCoords.z + (1 / p_w1) * p_barycentricCoords.y + (1 / p_w2) * p_barycentricCoords.x;
+	m_interpolatedReciprocal = (1.0f / p_w0) * p_barycentricCoords.z + (1.0f / p_w1) * p_barycentricCoords.y + (1.0f / p_w2) * p_barycentricCoords.x;
 }
 
 Data::Color Rendering::AShader::ProcessFragment()
@@ -53,49 +53,59 @@ Data::Color Rendering::AShader::ProcessFragment()
 	return FragmentPass();
 }
 
-void Rendering::AShader::SetUniform(std::string_view p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value)
+void Rendering::AShader::SetUniform(const std::string_view p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value)
 {
 	m_uniforms[p_name] = p_value;
 }
 
-void Rendering::AShader::SetFlat(std::string_view p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value)
+void Rendering::AShader::SetFlat(const std::string_view p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value)
 {
 	m_flats[p_name] = p_value;
 }
 
-void Rendering::AShader::SetVarying(std::string_view p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value)
+void Rendering::AShader::SetVarying(const std::string_view p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value)
 {
 	m_varying[m_vertexIndex][p_name] = p_value;
 }
 
-void Rendering::AShader::SetVarying(std::string_view p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value, uint8_t p_index)
+void Rendering::AShader::SetVarying(const std::string_view p_name, std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat2, glm::mat3, glm::mat4> p_value, uint8_t p_index)
 {
 	m_varying[p_index][p_name] = p_value;
 }
 
-void Rendering::AShader::SetSample(std::string_view p_name, Resources::Texture* p_texture)
+void Rendering::AShader::SetSample(const std::string_view p_name, Resources::Texture* p_texture)
 {
 	m_samples[p_name] = p_texture;
 }
 
+uint8_t Rendering::AShader::ComputeCurrentMipmapIndex(uint8_t p_mipmapsCount) const
+{
+	const auto& u_ViewPos = GetUniform<glm::vec3>("u_ViewPos");
+	const auto& v_FragPos = GetFlat<glm::vec3>("v_FragPos");
+
+	const uint8_t maxLevel = p_mipmapsCount - 1;
+
+	const auto viewPosToFragPos = glm::vec3(v_FragPos - u_ViewPos);
+
+	uint8_t distanceRatio = static_cast<uint8_t>(glm::clamp(glm::length(glm::round(viewPosToFragPos)) / MIPMAPS_DISTANCE_STEP, 0.0f, static_cast<float>(maxLevel)));
+
+	return distanceRatio;
+}
+
 glm::vec4 Rendering::AShader::Texture(const Resources::Texture& p_texture, const glm::vec2& p_textCoords) const
 {
-	auto u_ViewPos = GetUniform<glm::vec3>("u_ViewPos");
-	auto v_FragPos = GetFlat<glm::vec3>("v_FragPos");
+	uint32_t width  = p_texture.Width;
+	uint32_t height = p_texture.Height;
 
-	const float maxDistance = 100.0f;
-	const float minDistance = 0.0f;
-	const float maxLevel = static_cast<float>(p_texture.Mipmaps.size() - 1);
-	
-	auto test = glm::vec3(v_FragPos - u_ViewPos);
-	float distanceRatio = glm::clamp((glm::length(test) - minDistance) / (maxDistance - minDistance), 0.0f, 1.0f);
+	uint8_t currentLOD = 0;
 
-	float levelOfDetail = maxLevel * distanceRatio;
+	if(p_texture.HasMipmaps)
+	{
+		currentLOD = ComputeCurrentMipmapIndex(static_cast<uint8_t>(p_texture.Mipmaps.size()));
 
-	int level = static_cast<int>(levelOfDetail);
-
-	int width = p_texture.HasMipmaps ? p_texture.Mipmaps[level].Width : p_texture.Width;
-	int height = p_texture.HasMipmaps ? p_texture.Mipmaps[level].Height : p_texture.Height;
+		width  = p_texture.Mipmaps[currentLOD].Width;
+		height = p_texture.Mipmaps[currentLOD].Height;
+	}
 
 	float uvX = abs(p_textCoords.x / m_interpolatedReciprocal);
 	float uvY = abs(p_textCoords.y / m_interpolatedReciprocal);
@@ -111,31 +121,31 @@ glm::vec4 Rendering::AShader::Texture(const Resources::Texture& p_texture, const
 		uvY = glm::mod(uvY, 1.0f);
 	}
 
-	float texelX = uvX * width - 0.5f;
-	float texelY = uvY * height - 0.5f;
+	uvX = uvX * (static_cast<float>(width) - 0.5f);
+	uvY = uvY * (static_cast<float>(height) - 0.5f);
 
 	if (p_texture.Filter == Resources::ETextureFilteringMode::NEAREST) 
 	{
-		texelX = std::round(texelX);
-		texelY = std::round(texelY);
+		uvX = std::round(uvX);
+		uvY = std::round(uvY);
 	}
 	else if (p_texture.Filter == Resources::ETextureFilteringMode::LINEAR) 
 	{
-		texelX = std::floor(texelX);
-		texelY = std::floor(texelY);
+		uvX = std::floor(uvX);
+		uvY = std::floor(uvY);
 	}
 
-	int x = static_cast<int>(texelX);
-	int y = static_cast<int>(texelY);
+	int x = static_cast<int>(uvX);
+	int y = static_cast<int>(uvY);
 
-	x = glm::clamp(x, 0, width - 1);
-	y = glm::clamp(y, 0, height - 1);
+	x = glm::clamp(x, 0, static_cast<int>(width) - 1);
+	y = glm::clamp(y, 0, static_cast<int>(height) - 1);
 
 	const uint32_t index = (y * width + x) * 4;
 
 	if(p_texture.HasMipmaps)
 	{
-		return glm::vec4(glm::vec3(p_texture.Mipmaps[level].Data[index] / 255.0f, p_texture.Mipmaps[level].Data[index + 1] / 255.0f, p_texture.Mipmaps[level].Data[index + 2] / 255.0f), 1.0f);
+		return glm::vec4(glm::vec3(p_texture.Mipmaps[currentLOD].Data[index] / 255.0f, p_texture.Mipmaps[currentLOD].Data[index + 1] / 255.0f, p_texture.Mipmaps[currentLOD].Data[index + 2] / 255.0f), 1.0f);
 	}
 
 	return glm::vec4(glm::vec3(p_texture.Data[index] / 255.0f, p_texture.Data[index + 1] / 255.0f, p_texture.Data[index + 2] / 255.0f), 1.0f);
