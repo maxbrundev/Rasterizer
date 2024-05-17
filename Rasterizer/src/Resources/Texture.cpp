@@ -38,58 +38,58 @@ Resources::Texture::~Texture()
 
 void Resources::Texture::GenerateMipmaps()
 {
-	int levelWidth  = Width;
-	int levelHeight = Height;
+	int width  = Width;
+	int height = Height;
 
-	int maxLevel = 1 + floor(std::log2(std::max(Width, Height)));
+	int maxLevel = 1 + static_cast<int>(std::floor(std::log2(std::max(Width, Height))));
 
 	for (int i = 0; i < maxLevel; i++)
 	{
-		levelWidth = std::max(1, levelWidth / 2);
-		levelHeight = std::max(1, levelHeight / 2);
+		width  = std::max(1, width / 2);
+		height = std::max(1, height / 2);
 
-		unsigned char* newData = new unsigned char[levelWidth * levelHeight * 4];
+		unsigned char* newData = new unsigned char[width * height * 4];
 
-		auto& previousData = Mipmaps[i];
+		const auto& previousData = Mipmaps[i];
 
-		float scaleX = static_cast<float>(previousData.Width) / levelWidth;
-		float scaleY = static_cast<float>(previousData.Height) / levelHeight;
+		float scaleX = static_cast<float>(previousData.Width) / width;
+		float scaleY = static_cast<float>(previousData.Height) / height;
 
-		for (int y = 0; y < levelHeight; y++)
+		for (int y = 0; y < height; y++)
 		{
-			for (int x = 0; x < levelWidth; x++)
+			for (int x = 0; x < width; x++)
 			{
-				float texelX = x * scaleX;
-				float texelY = y * scaleY;
+				float uvX = x * scaleX;
+				float uvY = y * scaleY;
 
-				int x0 = static_cast<int>(std::floor(texelX));
-				int y0 = static_cast<int>(std::floor(texelY));
+				int x0 = static_cast<int>(std::floor(uvX));
+				int y0 = static_cast<int>(std::floor(uvY));
 
 				int x1 = std::min(x0 + 1, static_cast<int>(previousData.Width) - 1);
 				int y1 = std::min(y0 + 1, static_cast<int>(previousData.Height) - 1);
 
-				float tx = texelX - x0;
-				float ty = texelY - y0;
+				float tx = uvX - x0;
+				float ty = uvY - y0;
 
-				for (int j = 0; j < 4; j++)
+				for (int i = 0; i < 4; i++)
 				{
-					float value00 = previousData.Data[(y0 * previousData.Width + x0) * 4 + j] / 255.0f;
-					float value01 = previousData.Data[(y1 * previousData.Width + x0) * 4 + j] / 255.0f;
-					float value10 = previousData.Data[(y0 * previousData.Width + x1) * 4 + j] / 255.0f;
-					float value11 = previousData.Data[(y1 * previousData.Width + x1) * 4 + j] / 255.0f;
+					float value00 = previousData.Data[(y0 * previousData.Width + x0) * 4 + i] / 255.0f;
+					float value01 = previousData.Data[(y1 * previousData.Width + x0) * 4 + i] / 255.0f;
+					float value10 = previousData.Data[(y0 * previousData.Width + x1) * 4 + i] / 255.0f;
+					float value11 = previousData.Data[(y1 * previousData.Width + x1) * 4 + i] / 255.0f;
 
-					float interpolatedValue = (1.0f - tx) * (1.0f - ty) * value00 +
-						tx * (1.0f - ty) * value10 +
-						(1 - tx) * ty * value01 +
-						tx * ty * value11;
+					float interpolatedValue = (1.0f - tx) * (1.0f - ty) * value00
+					+ tx * (1.0f - ty) * value10
+					+ (1 - tx) * ty * value01
+					+ tx * ty * value11;
 
 					interpolatedValue = std::max(0.0f, std::min(1.0f, interpolatedValue));
 
-					newData[(y * levelWidth + x) * 4 + j] = static_cast<unsigned char>(interpolatedValue * 255.0f);
+					newData[(y * width + x) * 4 + i] = static_cast<unsigned char>(interpolatedValue * 255.0f);
 				}
 			}
 		}
 
-		Mipmaps.emplace_back(newData, levelWidth, levelHeight);
+		Mipmaps.emplace_back(newData, width, height);
 	}
 }
