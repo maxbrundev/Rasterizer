@@ -68,53 +68,13 @@ void Rendering::Rasterizer::RasterizeTriangle(Settings::EDrawMode p_drawMode, co
 			ClipAgainstPlane(currentPoly, plane);
 		}
 
-		struct TriangleClip
-		{
-			glm::vec4 Points[3];
-			glm::vec2 TextCoords[3];
-		};
-
-		TriangleClip test[12];
-
-		for (int i = 0; i < currentPoly.VerticesCount - 2; i++) {
-
-			int index0 = 0;
-			int index1 = i + 1;
-			int index2 = i + 2;
-
-			test[i].Points[0] = currentPoly.Vertices[index0];
-			test[i].Points[1] = currentPoly.Vertices[index1];
-			test[i].Points[2] = currentPoly.Vertices[index2];
-
-			test[i].TextCoords[0] = currentPoly.TextCoords[index0];
-			test[i].TextCoords[1] = currentPoly.TextCoords[index1];
-			test[i].TextCoords[2] = currentPoly.TextCoords[index2];
-		}
-
 		for (int i = 0; i < currentPoly.VerticesCount - 2; i++)
 		{
-			glm::vec4 position0;
-			glm::vec4 position1;
-			glm::vec4 position2;
+			std::array<glm::vec4, 3> clippedVertices{ currentPoly.Vertices[0], currentPoly.Vertices[i + 1], currentPoly.Vertices[i + 2] };
 
-			glm::vec2 textCoords0;
-			glm::vec2 textCoords1;
-			glm::vec2 textCoords2;
-
-			position0   = test[i].Points[0];
-			textCoords0 = test[i].TextCoords[0];
-
-			position1   = test[i].Points[1];
-			textCoords1 = test[i].TextCoords[1];
-
-			position2   = test[i].Points[2];
-			textCoords2 = test[i].TextCoords[2];
-
-			std::array<glm::vec4, 3> clippedVertices{ position0, position1, position2 };
-
-			p_shader.SetVarying("v_TextCoords", textCoords0, 0);
-			p_shader.SetVarying("v_TextCoords", textCoords1, 1);
-			p_shader.SetVarying("v_TextCoords", textCoords2, 2);
+			p_shader.SetVarying("v_TextCoords", currentPoly.TextCoords[0], 0);
+			p_shader.SetVarying("v_TextCoords", currentPoly.TextCoords[i + 1], 1);
+			p_shader.SetVarying("v_TextCoords", currentPoly.TextCoords[i + 2], 2);
 
 			TransformAndRasterizeVertices(p_drawMode, clippedVertices, p_shader);
 		}
@@ -576,37 +536,30 @@ void Rendering::Rasterizer::ApplyMSAA() const
 	{
 		for (int32_t y = 0; y < height; y++)
 		{
-			auto& samples = m_msaaBuffer.Data[y * m_textureBuffer.GetWidth() + x];
+			const auto& samples = m_msaaBuffer.Data[y * width + x];
 
-			uint16_t count = 0;
+			const uint8_t sampleCount = samples.size();
 
 			glm::ivec4 color(0);
 
 			float depth = 0.0f;
 
-			for (const auto sample : samples)
+			for (const auto& sample : samples)
 			{
-				const uint8_t a = sample.first;
-				const uint8_t b = sample.first >> 8;
-				const uint8_t g = sample.first >> 16;
-				const uint8_t r = sample.first >> 24;
-
-				color.x += r;
-				color.y += g;
-				color.z += b;
-				color.w += a;
+				color.x += static_cast<uint8_t>(sample.first >> 24);
+				color.y += static_cast<uint8_t>(sample.first >> 16);
+				color.z += static_cast<uint8_t>(sample.first >> 8);
+				color.w += static_cast<uint8_t>(sample.first);
 
 				depth += sample.second;
-
-				count++;
 			}
 
-			color.x /= count;
-			color.y /= count;
-			color.z /= count;
-			color.w /= count;
+			color.x /= sampleCount;
+			color.y /= sampleCount;
+			color.z /= sampleCount;
+			color.w /= sampleCount;
 
-			depth /= static_cast<float>(count);
+			depth /= static_cast<float>(sampleCount);
 
 			Data::Color sampledColorTotal(static_cast<uint8_t>(color.x), static_cast<uint8_t>(color.y), static_cast<uint8_t>(color.z), static_cast<uint8_t>(color.w));
 			const float alpha = static_cast<float>(sampledColorTotal.a) / 255.0f;

@@ -6,7 +6,7 @@ int main()
 {
 	Context::Settings::WindowSettings windowSettings;
 	windowSettings.title = "Rasterizer";
-	windowSettings.width = 800;
+	windowSettings.width  = 800;
 	windowSettings.height = 600;
 
 	Context::Settings::DriverSettings driverSettings;
