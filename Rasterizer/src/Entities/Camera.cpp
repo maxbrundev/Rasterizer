@@ -4,7 +4,7 @@
 #include <glm/ext/matrix_transform.hpp>
 
 
-Entities::Camera::Camera() : m_clearColor(0.1f, 0.1f, 0.1f), m_yaw(-90.0f), m_pitch(0.0f), m_fov(45.0f), m_near(0.1f), m_far(100.0f)
+Entities::Camera::Camera() : m_clearColor(0.1f, 0.1f, 0.1f), m_yaw(-90.0f), m_pitch(0.0f), m_fov(60.0f), m_near(0.1f), m_far(100.0f)
 {
 	UpdateCameraVectors();
 }

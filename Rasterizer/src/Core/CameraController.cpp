@@ -13,7 +13,6 @@ Rendering::CameraController::CameraController(Entities::Camera& p_camera, glm::v
 	m_targetPosition{},
 	m_currentMovement{}
 {
-	m_camera.SetFov(60.0f);
 }
 
 void Rendering::CameraController::Update(float p_deltaTime)
