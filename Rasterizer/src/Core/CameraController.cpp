@@ -5,7 +5,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/compatibility.hpp>
 
-Rendering::CameraController::CameraController(Entities::Camera& p_camera, glm::vec3& p_position) :
+Core::CameraController::CameraController(Entities::Camera& p_camera, glm::vec3& p_position) :
 	m_window(Tools::Globals::ServiceLocator::Get<Context::Window>()),
 	m_inputManager(Tools::Globals::ServiceLocator::Get<Inputs::InputManager>()),
 	m_camera(p_camera),
@@ -15,7 +15,7 @@ Rendering::CameraController::CameraController(Entities::Camera& p_camera, glm::v
 {
 }
 
-void Rendering::CameraController::Update(float p_deltaTime)
+void Core::CameraController::Update(float p_deltaTime)
 {
 	HandleFPSInputs(p_deltaTime);
 	HandleFPSMouse(p_deltaTime);
@@ -25,17 +25,17 @@ void Rendering::CameraController::Update(float p_deltaTime)
 	{
 		m_rightMousePressed = true;
 		m_inputManager.LockMouse();
-		m_window.SetCursorMode(Context::ECursorMode::DISABLED);
+		m_window.SetCursorMode(Context::Settings::ECursorMode::DISABLED);
 	}
 	else if (m_inputManager.IsMouseButtonReleased(Inputs::EMouseButton::MOUSE_BUTTON_RIGHT))
 	{
 		m_rightMousePressed = false;
 		m_inputManager.UnlockMouse();
-		m_window.SetCursorMode(Context::ECursorMode::NORMAL);
+		m_window.SetCursorMode(Context::Settings::ECursorMode::NORMAL);
 	}
 }
 
-void Rendering::CameraController::ProcessMouseMovement(float p_offsetX, float p_offsetY) const
+void Core::CameraController::ProcessMouseMovement(float p_offsetX, float p_offsetY) const
 {
 	float& yaw   = m_camera.GetYaw();
 	float& pitch = m_camera.GetPitch();
@@ -55,24 +55,24 @@ void Rendering::CameraController::ProcessMouseMovement(float p_offsetX, float p_
 	m_camera.UpdateCameraVectors();
 }
 
-void Rendering::CameraController::SetPosition(const glm::vec3& p_position) const
+void Core::CameraController::SetPosition(const glm::vec3& p_position) const
 {
 	m_position = p_position;
 }
 
-void Rendering::CameraController::SetPosition(float p_posX, float p_posY, float p_posZ) const
+void Core::CameraController::SetPosition(float p_posX, float p_posY, float p_posZ) const
 {
 	m_position.x = p_posX;
 	m_position.y = p_posY;
 	m_position.z = p_posZ;
 }
 
-const glm::vec3& Rendering::CameraController::GetPosition() const
+const glm::vec3& Core::CameraController::GetPosition() const
 {
 	return m_position;
 }
 
-void Rendering::CameraController::HandleFPSInputs(float p_deltaTime)
+void Core::CameraController::HandleFPSInputs(float p_deltaTime)
 {
 	m_targetPosition = glm::vec3(0.0f, 0.0f, 0.0f);
 
@@ -115,7 +115,7 @@ void Rendering::CameraController::HandleFPSInputs(float p_deltaTime)
 	m_position += m_currentMovement;
 }
 
-void Rendering::CameraController::HandleFPSMouse(float p_deltaTime) const
+void Core::CameraController::HandleFPSMouse(float p_deltaTime) const
 {
 	if (m_rightMousePressed)
 	{
@@ -128,7 +128,7 @@ void Rendering::CameraController::HandleFPSMouse(float p_deltaTime) const
 	}
 }
 
-void Rendering::CameraController::HandleZoom() const
+void Core::CameraController::HandleZoom() const
 {
 	m_position += m_camera.GetForward() * static_cast<float>(m_inputManager.GetMouseWheel());
 }

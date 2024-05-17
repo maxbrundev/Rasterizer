@@ -8,6 +8,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Geometry/Triangle.h"
+#include "Rendering/Settings/ECullFace.h"
 
 Rendering::Rasterizer::Rasterizer(Context::Window& p_window, SDL_Renderer* p_sdlRenderer, uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight) :
 m_window(p_window),
@@ -25,7 +26,7 @@ void Rendering::Rasterizer::ClearDepth() const
 	m_depthBuffer.Clear();
 }
 
-void Rendering::Rasterizer::RasterizeMesh(EDrawMode p_drawMode, const Resources::Mesh& p_mesh, AShader& p_shader)
+void Rendering::Rasterizer::RasterizeMesh(Settings::EDrawMode p_drawMode, const Resources::Mesh& p_mesh, AShader& p_shader)
 {
 	const auto& vertices = p_mesh.GetVertices();
 	const auto& indices  = p_mesh.GetIndices();
@@ -51,15 +52,15 @@ void Rendering::Rasterizer::RasterizeMesh(EDrawMode p_drawMode, const Resources:
 	}
 }
 
-void Rendering::Rasterizer::RasterizeTriangle(EDrawMode p_drawMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, AShader& p_shader)
+void Rendering::Rasterizer::RasterizeTriangle(Settings::EDrawMode p_drawMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, AShader& p_shader)
 {
 	std::array<glm::vec4, 3> processedVertices{ p_shader.ProcessVertex(p_vertex0, 0), p_shader.ProcessVertex(p_vertex1, 1) , p_shader.ProcessVertex(p_vertex2, 2) };
 
 	if (clip)
 	{
-		Polygon currentPoly;
+		Geometry::Polygon currentPoly;
 		currentPoly.Vertices = { processedVertices[0], processedVertices[1], processedVertices[2] };
-		currentPoly.textCoords = { p_vertex0.textCoords, p_vertex1.textCoords, p_vertex2.textCoords };
+		currentPoly.TextCoords = { p_vertex0.textCoords, p_vertex1.textCoords, p_vertex2.textCoords };
 		currentPoly.VerticesCount = 3;
 
 		for (const auto& plane : m_clippingFrustum)
@@ -85,9 +86,9 @@ void Rendering::Rasterizer::RasterizeTriangle(EDrawMode p_drawMode, const Geomet
 			test[i].Points[1] = currentPoly.Vertices[index1];
 			test[i].Points[2] = currentPoly.Vertices[index2];
 
-			test[i].TextCoords[0] = currentPoly.textCoords[index0];
-			test[i].TextCoords[1] = currentPoly.textCoords[index1];
-			test[i].TextCoords[2] = currentPoly.textCoords[index2];
+			test[i].TextCoords[0] = currentPoly.TextCoords[index0];
+			test[i].TextCoords[1] = currentPoly.TextCoords[index1];
+			test[i].TextCoords[2] = currentPoly.TextCoords[index2];
 		}
 
 		for (int i = 0; i < currentPoly.VerticesCount - 2; i++)
@@ -143,19 +144,19 @@ void Rendering::Rasterizer::RasterizeTriangle(EDrawMode p_drawMode, const Geomet
 
 			float area = triangle.ComputeArea();
 
-			if ((m_state.CullFace == ECullFace::BACK && area > 0.0f)
-				|| (m_state.CullFace == ECullFace::FRONT && area < 0.0f))
+			if ((m_state.CullFace == Settings::ECullFace::BACK && area > 0.0f)
+				|| (m_state.CullFace == Settings::ECullFace::FRONT && area < 0.0f))
 				return;
 
 			switch (p_drawMode)
 			{
-			case TRIANGLE:
+			case Settings::TRIANGLE:
 				ComputeFragments(triangle, clippedVertices, p_shader);
 				break;
-			case LINE:
+			case Settings::LINE:
 				RasterizeTriangleWireframe(triangle, clippedVertices, p_shader);
 				break;
-			case POINT:
+			case Settings::POINT:
 				RasterizeTrianglePoints(triangle, clippedVertices, p_shader);
 				break;
 			}
@@ -193,19 +194,19 @@ void Rendering::Rasterizer::RasterizeTriangle(EDrawMode p_drawMode, const Geomet
 
 		float area = triangle.ComputeArea();
 
-		if ((m_state.CullFace == ECullFace::BACK && area > 0.0f)
-			|| (m_state.CullFace == ECullFace::FRONT && area < 0.0f))
+		if ((m_state.CullFace == Settings::ECullFace::BACK && area > 0.0f)
+			|| (m_state.CullFace == Settings::ECullFace::FRONT && area < 0.0f))
 			return;
 
 		switch (p_drawMode)
 		{
-		case TRIANGLE:
+		case Settings::TRIANGLE:
 			ComputeFragments(triangle, transformedVertices, p_shader);
 			break;
-		case LINE:
+		case Settings::LINE:
 			RasterizeTriangleWireframe(triangle, transformedVertices, p_shader);
 			break;
-		case POINT:
+		case Settings::POINT:
 			RasterizeTrianglePoints(triangle, transformedVertices, p_shader);
 			break;
 		}
@@ -540,14 +541,15 @@ glm::vec2 Rendering::Rasterizer::ComputeRasterSpaceCoordinate(glm::vec2 p_vertex
 	return p_vertexNormalizedPosition;
 }
 
-void Rendering::Rasterizer::ClipAgainstPlane(Polygon& p_polygon, const Geometry::Plane& p_plane)
+void Rendering::Rasterizer::ClipAgainstPlane(Geometry::Polygon& p_polygon, const Geometry::Plane& p_plane)
 {
-	glm::vec4 insideVertices[12];
-	glm::vec2 insideTextCoords[12];
+	glm::vec4 insideVertices[Geometry::MAX_POLY_VERTICES_COUNT];
+	glm::vec2 insideTextCoords[Geometry::MAX_POLY_VERTICES_COUNT];
+
 	uint8_t insideVerticesCount = 0;
 
 	glm::vec4 previousVertex     = p_polygon.Vertices[p_polygon.VerticesCount > 0 ? p_polygon.VerticesCount - 1 : 0];
-	glm::vec2 previousTextCoords = p_polygon.textCoords[p_polygon.VerticesCount > 0 ? p_polygon.VerticesCount - 1 : 0];
+	glm::vec2 previousTextCoords = p_polygon.TextCoords[p_polygon.VerticesCount > 0 ? p_polygon.VerticesCount - 1 : 0];
 
 	float previousDotValue = glm::dot(previousVertex, glm::vec4(p_plane.Normal, 0)) + p_plane.Distance * (p_plane.Distance < previousVertex.w && p_plane.Distance != 1.0f ? 1.0f : previousVertex.w);
 
@@ -569,8 +571,8 @@ void Rendering::Rasterizer::ClipAgainstPlane(Polygon& p_polygon, const Geometry:
 
 			glm::vec2 interpolatedTextCoords = 
 			{
-				glm::lerp(previousTextCoords.x, p_polygon.textCoords[i].x, t),
-				glm::lerp(previousTextCoords.y, p_polygon.textCoords[i].y, t)
+				glm::lerp(previousTextCoords.x, p_polygon.TextCoords[i].x, t),
+				glm::lerp(previousTextCoords.y, p_polygon.TextCoords[i].y, t)
 			};
 
 			insideVertices[insideVerticesCount]   = intersectionPoint;
@@ -581,19 +583,19 @@ void Rendering::Rasterizer::ClipAgainstPlane(Polygon& p_polygon, const Geometry:
 		if (currentDotValue > 0.0f) 
 		{
 			insideVertices[insideVerticesCount]   = p_polygon.Vertices[i];
-			insideTextCoords[insideVerticesCount] = p_polygon.textCoords[i];
+			insideTextCoords[insideVerticesCount] = p_polygon.TextCoords[i];
 			insideVerticesCount++;
 		}
 
 		previousDotValue  = currentDotValue;
 		previousVertex    = p_polygon.Vertices[i];
-		previousTextCoords = p_polygon.textCoords[i];
+		previousTextCoords = p_polygon.TextCoords[i];
 	}
 
 	for (int i = 0; i < insideVerticesCount; i++) 
 	{
 		p_polygon.Vertices[i]   = insideVertices[i];
-		p_polygon.textCoords[i] = insideTextCoords[i];
+		p_polygon.TextCoords[i] = insideTextCoords[i];
 	}
 	
 	p_polygon.VerticesCount = insideVerticesCount;

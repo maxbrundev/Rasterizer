@@ -1,6 +1,8 @@
 #pragma once
 
-namespace Context
+#include <cstdint>
+
+namespace Context::Settings
 {
 	enum class ECursorMode : uint8_t
 	{

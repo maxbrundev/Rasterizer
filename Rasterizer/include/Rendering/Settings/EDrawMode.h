@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Rendering
+namespace Rendering::Settings
 {
 	enum EDrawMode
 	{

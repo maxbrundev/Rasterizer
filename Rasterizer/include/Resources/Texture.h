@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 
-#include "Resources/ETextureFilteringMode.h"
-#include "Resources/ETextureWrapMode.h"
+#include "Resources/Settings/ETextureFilteringMode.h"
+#include "Resources/Settings/ETextureWrapMode.h"
 
 namespace Resources::Loaders
 {
@@ -29,7 +29,7 @@ namespace Resources
 		};
 
 	public:
-		Texture(std::string p_filePath, uint32_t p_width, uint32_t p_height, uint32_t p_bitsPerPixel, unsigned char* p_data, ETextureFilteringMode p_filter, ETextureWrapMode p_wrapping, bool p_generateMipmap);
+		Texture(std::string p_filePath, uint32_t p_width, uint32_t p_height, uint32_t p_bitsPerPixel, unsigned char* p_data, Settings::ETextureFilteringMode p_filter, Settings::ETextureWrapMode p_wrapping, bool p_generateMipmap);
 		~Texture();
 
 	private:
@@ -41,8 +41,8 @@ namespace Resources
 		const uint32_t Height;
 		const uint32_t BitsPerPixel;
 		uint8_t* Data;
-		const ETextureFilteringMode Filter;
-		const ETextureWrapMode Wrapping;
+		const Settings::ETextureFilteringMode Filter;
+		const Settings::ETextureWrapMode Wrapping;
 		bool HasMipmaps;
 		std::vector<MipmapsData> Mipmaps;
 	};

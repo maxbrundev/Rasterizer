@@ -2,15 +2,15 @@
 
 #include "Core/ContextCore.h"
 
-#include "Settings/WindowSettings.h"
-#include "Settings/DriverSettings.h"
+#include "Context/Settings/WindowSettings.h"
+#include "Context/Settings/DriverSettings.h"
 
-namespace Rendering
+namespace Core
 {
 	class Application
 	{
 	public:
-		Application(const Settings::WindowSettings& p_windowSettings, const Settings::DriverSettings& p_driverSettings);
+		Application(const Context::Settings::WindowSettings& p_windowSettings, const Context::Settings::DriverSettings& p_driverSettings);
 		~Application() = default;
 
 		void Initialize();
@@ -19,10 +19,10 @@ namespace Rendering
 		bool IsRunning() const;
 
 	private:
-		ContextCore m_context;
+		Core::ContextCore m_context;
 		
 		Entities::Camera m_camera;
-		Rendering::CameraController m_cameraController;
+		Core::CameraController m_cameraController;
 
 		glm::vec3 m_cameraPosition;
 

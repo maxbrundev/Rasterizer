@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-Resources::Texture::Texture(std::string p_filePath, uint32_t p_width, uint32_t p_height, uint32_t p_bitsPerPixel, unsigned char* p_data, ETextureFilteringMode p_filter, ETextureWrapMode p_wrapping, bool p_generateMipmap) :
+Resources::Texture::Texture(std::string p_filePath, uint32_t p_width, uint32_t p_height, uint32_t p_bitsPerPixel, unsigned char* p_data, Settings::ETextureFilteringMode p_filter, Settings::ETextureWrapMode p_wrapping, bool p_generateMipmap) :
 Path(std::move(p_filePath)),
 Width(p_width),
 Height(p_width),

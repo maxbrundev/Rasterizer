@@ -3,19 +3,20 @@
 #include <memory>
 
 #include "Context/Driver.h"
-#include "Settings/WindowSettings.h"
+#include "Context/Settings/WindowSettings.h"
+
 #include "Core/CameraController.h"
 
 #include "Inputs/InputManager.h"
 
 #include "Rendering/Renderer.h"
 
-namespace Rendering
+namespace Core
 {
 	class ContextCore
 	{
 	public:
-		ContextCore(const Settings::WindowSettings& p_windowSettings, const Settings::DriverSettings& p_driverSettings);
+		ContextCore(const Context::Settings::WindowSettings& p_windowSettings, const Context::Settings::DriverSettings& p_driverSettings);
 		~ContextCore() = default;
 
 	public:
@@ -23,6 +24,6 @@ namespace Rendering
 		std::unique_ptr<Context::Window>      window;
 		std::unique_ptr<Context::Driver>      driver;
 		std::unique_ptr<Inputs::InputManager> inputManager;
-		std::unique_ptr<Rendering::Renderer>       renderer;
+		std::unique_ptr<Rendering::Renderer>  renderer;
 	};
 }

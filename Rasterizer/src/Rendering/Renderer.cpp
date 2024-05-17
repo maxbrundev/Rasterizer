@@ -15,7 +15,7 @@ void Rendering::Renderer::ClearDepth()
 	m_rasterizer->ClearDepth();
 }
 
-void Rendering::Renderer::Draw(EDrawMode p_drawMode, Resources::Model& p_model, AShader& p_shader) const
+void Rendering::Renderer::Draw(Settings::EDrawMode p_drawMode, Resources::Model& p_model, AShader& p_shader) const
 {
 	for (const auto mesh : p_model.GetMeshes())
 	{
@@ -23,7 +23,7 @@ void Rendering::Renderer::Draw(EDrawMode p_drawMode, Resources::Model& p_model, 
 	}
 }
 
-void Rendering::Renderer::DrawMesh(EDrawMode p_drawMode, Resources::Mesh& p_mesh, AShader& p_shader) const
+void Rendering::Renderer::DrawMesh(Settings::EDrawMode p_drawMode, Resources::Mesh& p_mesh, AShader& p_shader) const
 {
 	m_rasterizer->RasterizeMesh(p_drawMode, p_mesh, p_shader);
 }
@@ -52,7 +52,7 @@ void Rendering::Renderer::SetSamples(uint8_t p_samples)
 	m_rasterizer->SetSamples(p_samples);
 }
 
-void Rendering::Renderer::SetCullFace(ECullFace p_cullFace) const
+void Rendering::Renderer::SetCullFace(Settings::ECullFace p_cullFace) const
 {
 	m_rasterizer->GetRenderState().CullFace = p_cullFace;
 }

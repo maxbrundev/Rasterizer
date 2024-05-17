@@ -6,7 +6,7 @@
 
 #include "Entities/Camera.h"
 
-namespace Rendering
+namespace Core
 {
 	class CameraController
 	{

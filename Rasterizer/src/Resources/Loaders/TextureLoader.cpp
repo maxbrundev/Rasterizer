@@ -5,10 +5,9 @@
 
 #include <iostream>
 
-
 std::string Resources::Loaders::TextureLoader::FILE_TRACE;
 
-Resources::Texture* Resources::Loaders::TextureLoader::Create(std::string p_filePath, bool p_flipVertically, ETextureFilteringMode p_filter, ETextureWrapMode p_wrapping, bool p_generateMipmap)
+Resources::Texture* Resources::Loaders::TextureLoader::Create(std::string p_filePath, bool p_flipVertically, Settings::ETextureFilteringMode p_filter, Settings::ETextureWrapMode p_wrapping, bool p_generateMipmap)
 {
 	FILE_TRACE = p_filePath;
 

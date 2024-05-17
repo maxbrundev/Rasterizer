@@ -1,28 +1,32 @@
 #include "Core/Application.h"
 
 #include <chrono>
+
 #include <glm/ext/matrix_transform.hpp>
 
-#include "Resources/Model.h"
-#include "Tools/Time/Clock.h"
 #include "Buffers/VertexBuffer.h"
 #include "Buffers/IndexBuffer.h"
+
 #include "Rendering/DefaultShader.h"
+
+#include "Resources/Model.h"
 #include "Resources/Mesh.h"
 #include "Resources/Loaders/ModelLoader.h"
 #include "Resources/Loaders/TextureLoader.h"
 
-Rendering::Application::Application(const Settings::WindowSettings& p_windowSettings, const Settings::DriverSettings& p_driverSettings) :
+#include "Tools/Time/Clock.h"
+
+Core::Application::Application(const Context::Settings::WindowSettings& p_windowSettings, const Context::Settings::DriverSettings& p_driverSettings) :
 	m_context(p_windowSettings, p_driverSettings), m_cameraController(m_camera, m_cameraPosition), m_cameraPosition(0.0f, 0.0f, 10.0f),
 	m_isRunning(true)
 {
 }
 
-void Rendering::Application::Initialize()
+void Core::Application::Initialize()
 {
 }
 
-void Rendering::Application::Run()
+void Core::Application::Run()
 {
 	Tools::Time::Clock clock;
 
@@ -32,7 +36,7 @@ void Rendering::Application::Run()
 	Resources::Model* modelCube2 = Resources::Loaders::ModelLoader::Create("Resources/Models/WarGreymon.obj");
 	Resources::Model* modelCube3 = Resources::Loaders::ModelLoader::Create("Resources/Models/Gabumon.obj");
 
-	DefaultShader basicShader;
+	Rendering::DefaultShader basicShader;
 
 	Buffers::VertexBuffer vertices;
 	vertices.Vertices = {
@@ -47,9 +51,9 @@ void Rendering::Application::Run()
 
 	Resources::Mesh planeMesh(vertices.Vertices, indices.Indices);
 
-	auto texture = Resources::Loaders::TextureLoader::Create("Resources/Textures/Terriermon.png", true, Resources::ETextureFilteringMode::NEAREST, ETextureWrapMode::CLAMP, true);
-	auto texture2 = Resources::Loaders::TextureLoader::Create("Resources/Textures/WarGreymon.png", true, Resources::ETextureFilteringMode::NEAREST, ETextureWrapMode::CLAMP, true);
-	auto texture3 = Resources::Loaders::TextureLoader::Create("Resources/Textures/Gabumon.png", true, Resources::ETextureFilteringMode::LINEAR, ETextureWrapMode::REPEAT, true);
+	auto texture = Resources::Loaders::TextureLoader::Create("Resources/Textures/Terriermon.png", true, Resources::Settings::ETextureFilteringMode::NEAREST, Resources::Settings::ETextureWrapMode::CLAMP, true);
+	auto texture2 = Resources::Loaders::TextureLoader::Create("Resources/Textures/WarGreymon.png", true, Resources::Settings::ETextureFilteringMode::NEAREST, Resources::Settings::ETextureWrapMode::CLAMP, true);
+	auto texture3 = Resources::Loaders::TextureLoader::Create("Resources/Textures/Gabumon.png", true, Resources::Settings::ETextureFilteringMode::LINEAR, Resources::Settings::ETextureWrapMode::REPEAT, true);
 	int samples = 0;
 
 	while (IsRunning())
@@ -98,18 +102,18 @@ void Rendering::Application::Run()
 		basicShader.SetUniform("u_ViewPos", m_cameraPosition);
 
 		basicShader.SetSample("u_DiffuseMap", texture);
-		m_context.renderer->Draw(TRIANGLE, *modelCube, basicShader);
+		m_context.renderer->Draw(Rendering::Settings::TRIANGLE, *modelCube, basicShader);
 
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
 		basicShader.SetUniform("u_Model", model);
 		basicShader.SetSample("u_DiffuseMap", texture2);
-		m_context.renderer->Draw(TRIANGLE, *modelCube2, basicShader);
+		m_context.renderer->Draw(Rendering::Settings::TRIANGLE, *modelCube2, basicShader);
 
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.0f, 0.0f));
 		basicShader.SetUniform("u_Model", model);
 		basicShader.SetSample("u_DiffuseMap", texture3);
 
-		m_context.renderer->Draw(TRIANGLE, *modelCube3, basicShader);
+		m_context.renderer->Draw(Rendering::Settings::TRIANGLE, *modelCube3, basicShader);
 
 		m_context.renderer->SetDepthTest(false);
 		//m_context.renderer->DrawMesh(planeMesh, basicShader);
@@ -125,7 +129,7 @@ void Rendering::Application::Run()
 	Resources::Loaders::ModelLoader::Destroy(modelCube);
 }
 
-bool Rendering::Application::IsRunning() const
+bool Core::Application::IsRunning() const
 {
 	return m_isRunning && m_context.window->IsActive();
 }

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace Settings
+namespace Context::Settings
 {
 	struct WindowSettings
 	{

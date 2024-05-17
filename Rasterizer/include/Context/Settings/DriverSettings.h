@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Settings
+namespace Context::Settings
 {
 	struct DriverSettings
 	{

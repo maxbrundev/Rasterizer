@@ -110,12 +110,12 @@ glm::vec4 Rendering::AShader::Texture(const Resources::Texture& p_texture, const
 	float uvX = abs(p_textCoords.x / m_interpolatedReciprocal);
 	float uvY = abs(p_textCoords.y / m_interpolatedReciprocal);
 
-	if (p_texture.Wrapping == CLAMP) 
+	if (p_texture.Wrapping == Resources::Settings::ETextureWrapMode::CLAMP)
 	{
 		uvX = glm::clamp(uvX, 0.0f, 1.0f);
 		uvY = glm::clamp(uvY, 0.0f, 1.0f);
 	}
-	else if (p_texture.Wrapping == REPEAT) 
+	else if (p_texture.Wrapping == Resources::Settings::ETextureWrapMode::REPEAT)
 	{
 		uvX = glm::mod(uvX, 1.0f);
 		uvY = glm::mod(uvY, 1.0f);
@@ -124,12 +124,12 @@ glm::vec4 Rendering::AShader::Texture(const Resources::Texture& p_texture, const
 	uvX = uvX * (static_cast<float>(width) - 0.5f);
 	uvY = uvY * (static_cast<float>(height) - 0.5f);
 
-	if (p_texture.Filter == Resources::ETextureFilteringMode::NEAREST) 
+	if (p_texture.Filter == Resources::Settings::ETextureFilteringMode::NEAREST) 
 	{
 		uvX = std::round(uvX);
 		uvY = std::round(uvY);
 	}
-	else if (p_texture.Filter == Resources::ETextureFilteringMode::LINEAR) 
+	else if (p_texture.Filter == Resources::Settings::ETextureFilteringMode::LINEAR) 
 	{
 		uvX = std::floor(uvX);
 		uvY = std::floor(uvY);

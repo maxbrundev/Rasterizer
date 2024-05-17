@@ -1,12 +1,13 @@
 #pragma once
 
 #include <string>
+
 #include <SDL2/SDL_video.h>
 
-#include "Settings/WindowSettings.h"
-
 #include "Context/Device.h"
-#include "Context/ECursorMode.h"
+
+#include "Context/Settings/WindowSettings.h"
+#include "Context/Settings/ECursorMode.h"
 
 namespace Context
 {
@@ -24,8 +25,8 @@ namespace Context
 		void SetClose();
 		void Restore() const;
 
-		void SetCursorMode(ECursorMode p_cursorMode);
-		ECursorMode GetCursorMode() const;
+		void SetCursorMode(Settings::ECursorMode p_cursorMode);
+		Settings::ECursorMode GetCursorMode() const;
 
 		void SetSize(uint16_t p_width, uint16_t p_height);
 
@@ -58,7 +59,7 @@ namespace Context
 		bool m_isFullscreen;
 		bool m_isActive;
 
-		ECursorMode m_cursorMode;
+		Settings::ECursorMode m_cursorMode;
 
 		uint32_t m_flags;
 	};

@@ -10,7 +10,7 @@
 
 namespace Rendering
 {
-	constexpr float MIPMAPS_DISTANCE_STEP = 20.0f;
+	constexpr float MIPMAPS_DISTANCE_STEP = 5.0f;
 
 	//TODO: Tested multiple options for Shader class data containers implementation: std::any, reinterpret cast, polymorphism, template parameters (Uniform, Varying, Atttributes struct).
 	// for now variant is the more straight forward but the performance cost in debug is high, continuing investigation to improve the architecture and performance for shader class.

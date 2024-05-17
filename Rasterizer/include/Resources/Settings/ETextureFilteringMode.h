@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace Resources
+namespace Resources::Settings
 {
 	enum class ETextureFilteringMode : uint8_t
 	{

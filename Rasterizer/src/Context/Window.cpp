@@ -1,6 +1,7 @@
 #include "Context/Window.h"
 
 #include <stdexcept>
+
 #include <SDL2/SDL.h>
 
 Context::Window::Window(Device& p_device, const Settings::WindowSettings& p_windowSettings) :
@@ -11,14 +12,14 @@ Context::Window::Window(Device& p_device, const Settings::WindowSettings& p_wind
 	m_aspectRatio(static_cast<float>(p_windowSettings.width) / static_cast<float>(p_windowSettings.height)),
 	m_isFullscreen(p_windowSettings.fullScreen),
 	m_isActive(false),
-	m_cursorMode(ECursorMode::NORMAL),
+	m_cursorMode(Settings::ECursorMode::NORMAL),
 	m_flags(0)
 {
 	m_flags |= m_isFullscreen ? SDL_WINDOW_FULLSCREEN : 0;
 	m_flags |= p_windowSettings.resizable ? SDL_WINDOW_RESIZABLE : 0;
 
 	CreateSDLWindow();
-	SetCursorMode(ECursorMode::NORMAL);
+	SetCursorMode(Settings::ECursorMode::NORMAL);
 
 	p_device.CloseEvent.AddListener(std::bind(&Window::SetClose, this));
 	p_device.ResizeEvent.AddListener(std::bind(&Window::OnResizeWindow, this, std::placeholders::_1,
@@ -68,13 +69,13 @@ void Context::Window::SetClose()
 	m_isActive = false;
 }
 
-void Context::Window::SetCursorMode(ECursorMode p_cursorMode)
+void Context::Window::SetCursorMode(Settings::ECursorMode p_cursorMode)
 {
 	m_cursorMode = p_cursorMode;
 	SDL_ShowCursor(static_cast<int>(p_cursorMode));
 }
 
-Context::ECursorMode Context::Window::GetCursorMode() const
+Context::Settings::ECursorMode Context::Window::GetCursorMode() const
 {
 	return m_cursorMode;
 }
