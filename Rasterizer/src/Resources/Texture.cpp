@@ -43,6 +43,8 @@ void Resources::Texture::GenerateMipmaps()
 
 	int maxLevel = 1 + static_cast<int>(std::floor(std::log2(std::max(Width, Height))));
 
+	Mipmaps.reserve(maxLevel);
+
 	for (int i = 0; i < maxLevel; i++)
 	{
 		width  = std::max(1, width / 2);
