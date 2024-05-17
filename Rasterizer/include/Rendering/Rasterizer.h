@@ -23,6 +23,8 @@
 
 namespace Rendering
 {
+	constexpr bool CLIPPING = true;
+
 	class Rasterizer
 	{
 	public:
@@ -31,9 +33,16 @@ namespace Rendering
 		
 		void RasterizeMesh(Settings::EDrawMode p_drawMode, const Resources::Mesh& p_mesh, AShader& p_shader);
 		void RasterizeTriangle(Settings::EDrawMode p_drawMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, AShader& p_shader);
+
+		void TransformAndRasterizeVertices(const Settings::EDrawMode p_drawMode, const std::array<glm::vec4, 3>& processedVertices, AShader& p_shader);
+
 		void ComputeFragments(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, AShader& p_shader);
-		void RasterizeTriangleWireframe(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, AShader& p_shader);
-		void RasterizeTrianglePoints(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, AShader& p_shader);
+
+		void SetFragment(const Geometry::Triangle& p_triangle, int32_t p_x, int32_t p_y, const std::array<glm::vec4, 3>& p_transformedVertices, AShader& p_shader) const;
+		void SetSampleFragment(const Geometry::Triangle& p_triangle, int32_t p_x, int32_t p_y, float p_sampleX, float p_sampleY, uint8_t p_sampleIndex, const std::array<glm::vec4, 3>& p_transformedVertices, AShader& p_shader);
+		
+		void RasterizeTriangleWireframe(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, AShader& p_shader) const;
+		void RasterizeTrianglePoints(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, AShader& p_shader) const;
 		void DrawPoint(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, const glm::vec4& p_point, AShader& p_shader) const;
 		void DrawPoint(const glm::vec2& p_point, const Data::Color& p_color) const;
 		void RasterizeLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, AShader& p_shader, const Data::Color& p_color);
@@ -70,10 +79,8 @@ namespace Rendering
 
 		RenderState m_state;
 
-		uint8_t m_samples = 0;
+		uint8_t m_sampleCount = 0;
 
 		std::array<Geometry::Plane, 6> m_clippingFrustum;
-
-		bool clip = true;
 	};
 }

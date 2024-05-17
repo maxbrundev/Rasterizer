@@ -5,12 +5,12 @@ Rendering::Renderer::Renderer(Context::Driver& p_driver, Context::Window& p_wind
 	m_rasterizer = std::make_unique<Rasterizer>(p_window, m_driver.GetRenderer(), 800, 600);
 }
 
-void Rendering::Renderer::Clear(const Data::Color& p_color)
+void Rendering::Renderer::Clear(const Data::Color& p_color) const
 {
 	m_rasterizer->Clear(p_color);
 }
 
-void Rendering::Renderer::ClearDepth()
+void Rendering::Renderer::ClearDepth() const
 {
 	m_rasterizer->ClearDepth();
 }
@@ -28,7 +28,7 @@ void Rendering::Renderer::DrawMesh(Settings::EDrawMode p_drawMode, Resources::Me
 	m_rasterizer->RasterizeMesh(p_drawMode, p_mesh, p_shader);
 }
 
-void Rendering::Renderer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, AShader& p_shader, const Data::Color& p_color)
+void Rendering::Renderer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, AShader& p_shader, const Data::Color& p_color) const
 {
 	m_rasterizer->RasterizeLine({ p_point0 }, { p_point1 }, p_shader, p_color);
 }
@@ -65,10 +65,6 @@ void Rendering::Renderer::SetDepthTest(bool p_depthTest) const
 void Rendering::Renderer::SetDepthWrite(bool p_depthWrite) const
 {
 	m_rasterizer->GetRenderState().DepthWrite = p_depthWrite;
-}
-
-void Rendering::Renderer::UpdateFrustum(const glm::mat4& vp)
-{
 }
 
 SDL_Renderer* Rendering::Renderer::GetSDLRenderer() const

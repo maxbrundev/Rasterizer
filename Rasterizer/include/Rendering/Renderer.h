@@ -17,11 +17,12 @@ namespace Rendering
 	public:
 		Renderer(Context::Driver& p_driver, Context::Window& p_window);
 		~Renderer() = default;
-		void Clear(const Data::Color& p_color);
-		void ClearDepth();
+
+		void Clear(const Data::Color& p_color) const;
+		void ClearDepth() const;
 		void Draw(Settings::EDrawMode p_drawMode, Resources::Model& p_model, AShader& p_shader) const;
 		void DrawMesh(Settings::EDrawMode p_drawMode, Resources::Mesh& p_mesh, AShader& p_shader) const;
-		void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, AShader& p_shader, const Data::Color& p_color);
+		void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, AShader& p_shader, const Data::Color& p_color) const;
 		void Render() const;
 		void Clear() const;
 		void SetSamples(uint8_t p_samples);
@@ -29,7 +30,7 @@ namespace Rendering
 		void SetCullFace(Settings::ECullFace p_cullFace) const;
 		void SetDepthTest(bool p_depthTest) const;
 		void SetDepthWrite(bool p_depthWrite) const;
-		void UpdateFrustum(const glm::mat4 &vp);
+
 		SDL_Renderer* GetSDLRenderer() const;
 
 	private:
