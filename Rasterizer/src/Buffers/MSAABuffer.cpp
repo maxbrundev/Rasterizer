@@ -41,8 +41,8 @@ void Buffers::MSAABuffer::Clear(const Data::Color& p_color) const
 
 	for (uint32_t i = 0; i < samplesCount; i++)
 	{
-		Data[i].color = color;
-		Data[i].depth = std::numeric_limits<float>::max();
+		Data[i].Color = color;
+		Data[i].Depth = std::numeric_limits<float>::max();
 	}
 }
 
@@ -70,9 +70,9 @@ void Buffers::MSAABuffer::SetPixelSample(uint32_t x, uint32_t y, uint8_t sampleI
 {
 	auto& sample = Data[GetIndex(x, y, sampleIndex)];
 
-	if (depth < sample.depth)
+	if (depth < sample.Depth)
 	{
-		sample.color = color.Pack();
-		sample.depth = depth;
+		sample.Color = color.Pack();
+		sample.Depth = depth;
 	}
 }

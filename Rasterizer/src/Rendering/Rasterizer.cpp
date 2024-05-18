@@ -546,12 +546,12 @@ void Rendering::Rasterizer::ApplyMSAA() const
 			{
 				const auto& sample = m_msaaBuffer.GetSample(x, y, sampleIndex);
 
-				color.x += static_cast<uint8_t>(sample.color >> 24);
-				color.y += static_cast<uint8_t>(sample.color >> 16);
-				color.z += static_cast<uint8_t>(sample.color >> 8);
-				color.w += static_cast<uint8_t>(sample.color);
+				color.x += static_cast<uint8_t>(sample.Color >> 24);
+				color.y += static_cast<uint8_t>(sample.Color >> 16);
+				color.z += static_cast<uint8_t>(sample.Color >> 8);
+				color.w += static_cast<uint8_t>(sample.Color);
 
-				depth += sample.depth;
+				depth += sample.Depth;
 			}
 
 			color.x /= m_sampleCount;

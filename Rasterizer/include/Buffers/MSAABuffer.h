@@ -1,16 +1,13 @@
 #pragma once
 
-#include <memory>
-#include <vector>
-
 #include "Data/Color.h"
 
 namespace Buffers
 {
 	struct Sample
 	{
-		uint32_t color;
-		float depth;
+		uint32_t Color;
+		float Depth;
 	};
 
 	class MSAABuffer
