@@ -1,11 +1,18 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 
 #include "Data/Color.h"
 
 namespace Buffers
 {
+	struct Sample
+	{
+		uint32_t color;
+		float depth;
+	};
+
 	class MSAABuffer
 	{
 	public:
@@ -14,19 +21,23 @@ namespace Buffers
 
 		void SetSamplesAmount(uint8_t p_amount);
 
-		void Clear(const Data::Color& p_color);
+		void Clear(const Data::Color& p_color) const;
 
-		void SetPixelSample(int x, int y, int sampleIndex, const Data::Color& color, float depth);
+		void SetPixelSample(uint32_t x, uint32_t y, uint8_t sampleIndex, const Data::Color& color, float depth) const;
 
 		uint32_t GetWidth() const;
 		uint32_t GetHeight() const;
 
-		
+		Sample& GetSample(uint32_t p_x, uint32_t p_y, uint8_t p_sampleIndex) const;
+
+	private:
+		size_t GetIndex(uint32_t x, uint32_t y, uint8_t sampleIndex) const;
+
 	private:
 		uint32_t m_width;
 		uint32_t m_height;
-		
-	public:
-		std::vector<std::vector<std::pair<uint32_t, float>>> Data;
+		uint8_t m_samplesCount;
+
+		Sample* Data;
 	};
 }

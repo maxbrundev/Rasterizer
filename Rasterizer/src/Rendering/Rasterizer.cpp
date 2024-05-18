@@ -143,9 +143,9 @@ void Rendering::Rasterizer::ComputeFragments(const Geometry::Triangle& p_triangl
 	auto xMax = std::min(p_triangle.BoundingBox2D.Max.x, static_cast<int32_t>(m_textureBuffer.GetWidth()));
 	auto yMax = std::min(p_triangle.BoundingBox2D.Max.y, static_cast<int32_t>(m_textureBuffer.GetHeight()));
 
-	for (int32_t x = xMin; x < xMax; x++)
+	for (uint32_t x = xMin; x < xMax; x++)
 	{
-		for (int32_t y = yMin; y < yMax; y++)
+		for (uint32_t y = yMin; y < yMax; y++)
 		{
 			if (m_sampleCount > 1 && (m_sampleCount & 1) == 0)
 			{
@@ -529,37 +529,37 @@ void Rendering::Rasterizer::ClipAgainstPlane(Geometry::Polygon& p_polygon, const
 
 void Rendering::Rasterizer::ApplyMSAA() const
 {
-	const int32_t width = static_cast<int32_t>(m_textureBuffer.GetWidth());
-	const int32_t height = static_cast<int32_t>(m_textureBuffer.GetHeight());
+	const uint32_t width  = m_textureBuffer.GetWidth();
+	const uint32_t height = m_textureBuffer.GetHeight();
 
-	for (int32_t x = 0; x < width; x++)
+	float depth = 0.0f;
+
+	for (uint32_t x = 0; x < width; x++)
 	{
-		for (int32_t y = 0; y < height; y++)
+		for (uint32_t y = 0; y < height; y++)
 		{
-			const auto& samples = m_msaaBuffer.Data[y * width + x];
+			glm::ivec4 color = {0, 0, 0, 0};
 
-			const uint8_t sampleCount = samples.size();
+			depth = 0.0f;
 
-			glm::ivec4 color(0);
-
-			float depth = 0.0f;
-
-			for (const auto& sample : samples)
+			for (uint8_t sampleIndex = 0; sampleIndex < m_sampleCount; ++sampleIndex)
 			{
-				color.x += static_cast<uint8_t>(sample.first >> 24);
-				color.y += static_cast<uint8_t>(sample.first >> 16);
-				color.z += static_cast<uint8_t>(sample.first >> 8);
-				color.w += static_cast<uint8_t>(sample.first);
+				const auto& sample = m_msaaBuffer.GetSample(x, y, sampleIndex);
 
-				depth += sample.second;
+				color.x += static_cast<uint8_t>(sample.color >> 24);
+				color.y += static_cast<uint8_t>(sample.color >> 16);
+				color.z += static_cast<uint8_t>(sample.color >> 8);
+				color.w += static_cast<uint8_t>(sample.color);
+
+				depth += sample.depth;
 			}
 
-			color.x /= sampleCount;
-			color.y /= sampleCount;
-			color.z /= sampleCount;
-			color.w /= sampleCount;
+			color.x /= m_sampleCount;
+			color.y /= m_sampleCount;
+			color.z /= m_sampleCount;
+			color.w /= m_sampleCount;
 
-			depth /= static_cast<float>(sampleCount);
+			depth /= static_cast<float>(m_sampleCount);
 
 			Data::Color sampledColorTotal(static_cast<uint8_t>(color.x), static_cast<uint8_t>(color.y), static_cast<uint8_t>(color.z), static_cast<uint8_t>(color.w));
 			const float alpha = static_cast<float>(sampledColorTotal.a) / 255.0f;

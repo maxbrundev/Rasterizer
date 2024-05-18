@@ -2,31 +2,47 @@
 
 Buffers::MSAABuffer::MSAABuffer(uint32_t p_width, uint32_t p_height) :
 m_width(p_width),
-m_height(p_height)
+m_height(p_height),
+m_samplesCount(0),
+Data(nullptr)
 {
 }
 
 Buffers::MSAABuffer::~MSAABuffer()
 {
+	if(Data != nullptr)
+	{
+		delete[] Data;
+		Data = nullptr;
+	}
 }
 
 void Buffers::MSAABuffer::SetSamplesAmount(uint8_t p_amount)
 {
-	Data.clear();
-	Data.resize(m_width * m_height, std::vector<std::pair<uint32_t, float>>(p_amount));
+	m_samplesCount = p_amount;
+
+	if(Data != nullptr)
+	{
+		delete[] Data;
+		Data = nullptr;
+	}
+
+	Data = new Sample[m_width * m_height * m_samplesCount];
 }
 
-void Buffers::MSAABuffer::Clear(const Data::Color& p_color)
+void Buffers::MSAABuffer::Clear(const Data::Color& p_color) const
 {
+	if(m_samplesCount == 0)
+		return;
+
 	const uint32_t color = p_color.Pack();
 
-	for (auto& pixel : Data) 
+	const uint32_t samplesCount = m_width * m_height * m_samplesCount;
+
+	for (uint32_t i = 0; i < samplesCount; i++)
 	{
-		for (auto& sample : pixel) 
-		{
-			sample.first = color;
-			sample.second = std::numeric_limits<float>::max();
-		}
+		Data[i].color = color;
+		Data[i].depth = std::numeric_limits<float>::max();
 	}
 }
 
@@ -40,13 +56,23 @@ uint32_t Buffers::MSAABuffer::GetHeight() const
 	return m_height;
 }
 
-void Buffers::MSAABuffer::SetPixelSample(int x, int y, int sampleIndex, const Data::Color& color, float depth)
+size_t Buffers::MSAABuffer::GetIndex(uint32_t x, uint32_t y, uint8_t sampleIndex) const
 {
-	auto& sample = Data[y * m_width + x][sampleIndex];
+	return (y * m_width + x) * m_samplesCount + sampleIndex;
+}
 
-	if (depth < sample.second)
+Buffers::Sample& Buffers::MSAABuffer::GetSample(uint32_t p_x, uint32_t p_y, uint8_t p_sampleIndex) const
+{
+	return Data[GetIndex(p_x, p_y, p_sampleIndex)];
+}
+
+void Buffers::MSAABuffer::SetPixelSample(uint32_t x, uint32_t y, uint8_t sampleIndex, const Data::Color& color, float depth) const
+{
+	auto& sample = Data[GetIndex(x, y, sampleIndex)];
+
+	if (depth < sample.depth)
 	{
-		sample.first = color.Pack();
-		sample.second = depth;
+		sample.color = color.Pack();
+		sample.depth = depth;
 	}
 }
