@@ -20,16 +20,22 @@ namespace Rendering
 
 		void Clear(const Data::Color& p_color) const;
 		void ClearDepth() const;
-		void Draw(Settings::EDrawMode p_drawMode, Resources::Model& p_model, AShader& p_shader) const;
-		void DrawMesh(Settings::EDrawMode p_drawMode, Resources::Mesh& p_mesh, AShader& p_shader) const;
-		void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, AShader& p_shader, const Data::Color& p_color) const;
+		void Draw(Settings::EDrawMode p_drawMode, Resources::Model& p_model, AShader& p_shader);
+		void DrawMesh(Settings::EDrawMode p_drawMode, Resources::Mesh& p_mesh, AShader& p_shader);
+		void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, AShader& p_shader, const Data::Color& p_color);
 		void Render() const;
 		void Clear() const;
-		void SetSamples(uint8_t p_samples);
+		void SetSamples(uint8_t p_samples) const;
 
-		void SetCullFace(Settings::ECullFace p_cullFace) const;
-		void SetDepthTest(bool p_depthTest) const;
-		void SetDepthWrite(bool p_depthWrite) const;
+		uint8_t FetchState() const;
+		void ApplyState(uint8_t p_state);
+		void SetState(uint8_t p_state);
+
+		void SetDepthTest(bool p_value);
+		void SetDepthWrite(bool p_value);
+		void SetCull(bool p_value);
+
+		void SetCullFace(Settings::ECullFace p_cullFace);
 
 		SDL_Renderer* GetSDLRenderer() const;
 
@@ -37,6 +43,14 @@ namespace Rendering
 		Context::Driver& m_driver;
 		std::unique_ptr<Rasterizer> m_rasterizer;
 
+		uint8_t m_state;
 		uint8_t m_samples = 0;
+		
+		bool m_depthTest  = true;
+		bool m_depthWrite = true;
+		bool m_cull       = true;
+
+		Settings::ECullFace m_cullFace = Settings::BACK;
+
 	};
 }

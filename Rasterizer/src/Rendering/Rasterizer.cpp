@@ -9,6 +9,7 @@
 
 #include "Geometry/Triangle.h"
 #include "Rendering/Settings/ECullFace.h"
+#include "Rendering/Settings/ERenderState.h"
 
 Rendering::Rasterizer::Rasterizer(Context::Window& p_window, SDL_Renderer* p_sdlRenderer, uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight) :
 m_window(p_window),
@@ -21,15 +22,73 @@ m_depthBuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight)
 	InitializeClippingFrustum();
 }
 
+void Rendering::Rasterizer::InitializeClippingFrustum()
+{
+	float z_near = 1.0f;
+	float z_far = 100.0f;
+
+	m_clippingFrustum[0].Distance = 1.0f;
+	m_clippingFrustum[0].Normal.x = 1.0f;
+	m_clippingFrustum[0].Normal.y = 0.0f;
+	m_clippingFrustum[0].Normal.z = 0.0f;
+
+	m_clippingFrustum[1].Distance = 1.0f;
+	m_clippingFrustum[1].Normal.x = -1.0f;
+	m_clippingFrustum[1].Normal.y = 0.0f;
+	m_clippingFrustum[1].Normal.z = 0.0f;
+
+	m_clippingFrustum[2].Distance = 1.0f;
+	m_clippingFrustum[2].Normal.x = 0.0f;
+	m_clippingFrustum[2].Normal.y = 1.0f;
+	m_clippingFrustum[2].Normal.z = 0.0f;
+
+	m_clippingFrustum[3].Distance = 1.0f;
+	m_clippingFrustum[3].Normal.x = 0.0f;
+	m_clippingFrustum[3].Normal.y = -1.0f;
+	m_clippingFrustum[3].Normal.z = 0.0f;
+
+	m_clippingFrustum[4].Distance = z_near;
+	m_clippingFrustum[4].Normal.x = 0.0f;
+	m_clippingFrustum[4].Normal.y = 0.0f;
+	m_clippingFrustum[4].Normal.z = 1.0f;
+
+	m_clippingFrustum[5].Distance = z_far;
+	m_clippingFrustum[5].Normal.x = 0.0f;
+	m_clippingFrustum[5].Normal.y = 0.0f;
+	m_clippingFrustum[5].Normal.z = -1.0f;
+}
+
+void Rendering::Rasterizer::Clear(const Data::Color& p_color) const
+{
+	m_textureBuffer.Clear(p_color);
+	m_msaaBuffer.Clear(p_color);
+}
+
 void Rendering::Rasterizer::ClearDepth() const
 {
 	m_depthBuffer.Clear();
 }
 
+void Rendering::Rasterizer::SendDataToGPU() const
+{
+	m_textureBuffer.SendDataToGPU();
+}
+
+void Rendering::Rasterizer::SetState(uint8_t p_state)
+{
+	m_state = p_state;
+}
+
+void Rendering::Rasterizer::SetSamples(uint8_t p_samples)
+{
+	m_sampleCount = p_samples;
+	m_msaaBuffer.SetSamplesAmount(p_samples);
+}
+
 void Rendering::Rasterizer::RasterizeMesh(Settings::EDrawMode p_drawMode, const Resources::Mesh& p_mesh, AShader& p_shader)
 {
 	const auto& vertices = p_mesh.GetVertices();
-	const auto& indices  = p_mesh.GetIndices();
+	const auto& indices = p_mesh.GetIndices();
 
 	if (!indices.empty())
 	{
@@ -117,25 +176,26 @@ void Rendering::Rasterizer::TransformAndRasterizeVertices(const Settings::EDrawM
 
 	float area = triangle.ComputeArea();
 
-	if ((m_state.CullFace == Settings::ECullFace::BACK && area > 0.0f)
-		|| (m_state.CullFace == Settings::ECullFace::FRONT && area < 0.0f))
+
+	if ((m_state & Settings::ECullFace::BACK && area > 0.0f)
+		|| (m_state & Settings::ECullFace::FRONT && area < 0.0f))
 		return;
 
 	switch (p_drawMode)
 	{
-	case Settings::TRIANGLE:
+	case Settings::TRIANGLES:
 		ComputeFragments(triangle, transformedVertices, p_shader);
 		break;
-	case Settings::LINE:
+	case Settings::LINES:
 		RasterizeTriangleWireframe(triangle, transformedVertices, p_shader);
 		break;
-	case Settings::POINT:
+	case Settings::POINTS:
 		RasterizeTrianglePoints(triangle, transformedVertices, p_shader);
 		break;
 	}
 }
 
-void Rendering::Rasterizer::ComputeFragments(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, AShader& p_shader)
+void Rendering::Rasterizer::ComputeFragments(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, AShader& p_shader) const
 {
 	auto xMin = std::max(0, p_triangle.BoundingBox2D.Min.x);
 	auto yMin = std::max(0, p_triangle.BoundingBox2D.Min.y);
@@ -165,7 +225,7 @@ void Rendering::Rasterizer::ComputeFragments(const Geometry::Triangle& p_triangl
 	}
 }
 
-void Rendering::Rasterizer::SetFragment(const Geometry::Triangle& p_triangle, int32_t p_x, int32_t p_y, const std::array<glm::vec4, 3>& p_transformedVertices, AShader& p_shader) const
+void Rendering::Rasterizer::SetFragment(const Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_y, const std::array<glm::vec4, 3>& p_transformedVertices, AShader& p_shader) const
 {
 	const glm::vec3 barycentricCoords = p_triangle.GetBarycentricCoordinates({ p_x, p_y });
 
@@ -173,7 +233,7 @@ void Rendering::Rasterizer::SetFragment(const Geometry::Triangle& p_triangle, in
 	{
 		const float depth = p_transformedVertices[0].z * barycentricCoords.z + p_transformedVertices[2].z * barycentricCoords.x + barycentricCoords.y * p_transformedVertices[1].z;
 
-		if (!m_state.DepthTest || depth <= m_depthBuffer.GetElement(p_x, p_y))
+		if (!(m_state & Settings::ERenderState::DEPTH_TEST) || depth <= m_depthBuffer.GetElement(p_x, p_y))
 		{
 			p_shader.ProcessInterpolation(barycentricCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, p_transformedVertices[2].w);
 
@@ -183,7 +243,7 @@ void Rendering::Rasterizer::SetFragment(const Geometry::Triangle& p_triangle, in
 
 			m_textureBuffer.SetPixel(p_x, p_y, Data::Color::Mix(Data::Color(m_textureBuffer.GetPixel(p_x, p_y)), color, alpha));
 
-			if (m_state.DepthWrite)
+			if (m_state & Settings::ERenderState::DEPTH_WRITE)
 			{
 				m_depthBuffer.SetElement(p_x, p_y, depth);
 			}
@@ -191,7 +251,7 @@ void Rendering::Rasterizer::SetFragment(const Geometry::Triangle& p_triangle, in
 	}
 }
 
-void Rendering::Rasterizer::SetSampleFragment(const Geometry::Triangle& p_triangle, int32_t p_x, int32_t p_y, float p_sampleX, float p_sampleY, uint8_t p_sampleIndex, const std::array<glm::vec4, 3>& p_transformedVertices, AShader& p_shader)
+void Rendering::Rasterizer::SetSampleFragment(const Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_y, float p_sampleX, float p_sampleY, uint8_t p_sampleIndex, const std::array<glm::vec4, 3>& p_transformedVertices, AShader& p_shader) const
 {
 	const glm::vec3 barycentricCoords = p_triangle.GetBarycentricCoordinates({ p_sampleX, p_sampleY });
 
@@ -199,7 +259,7 @@ void Rendering::Rasterizer::SetSampleFragment(const Geometry::Triangle& p_triang
 	{
 		const float depth = p_transformedVertices[0].z * barycentricCoords.z + p_transformedVertices[2].z * barycentricCoords.x + barycentricCoords.y * p_transformedVertices[1].z;
 
-		if (!m_state.DepthTest || depth <= m_depthBuffer.GetElement(p_x, p_y))
+		if (!(m_state & Settings::ERenderState::DEPTH_TEST) || depth <= m_depthBuffer.GetElement(p_x, p_y))
 		{
 			p_shader.ProcessInterpolation(barycentricCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, p_transformedVertices[2].w);
 
@@ -215,79 +275,6 @@ void Rendering::Rasterizer::RasterizeTriangleWireframe(const Geometry::Triangle&
 	RasterizeLine(p_triangle, transformedVertices, transformedVertices[0], transformedVertices[1], p_shader);
 	RasterizeLine(p_triangle, transformedVertices, transformedVertices[1], transformedVertices[2], p_shader);
 	RasterizeLine(p_triangle, transformedVertices, transformedVertices[2], transformedVertices[0], p_shader);
-}
-
-void Rendering::Rasterizer::RasterizeTrianglePoints(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, AShader& p_shader) const
-{
-	DrawPoint(p_triangle, transformedVertices, transformedVertices[0], p_shader);
-	DrawPoint(p_triangle, transformedVertices, transformedVertices[1], p_shader);
-	DrawPoint(p_triangle, transformedVertices, transformedVertices[2], p_shader);
-}
-
-void Rendering::Rasterizer::RasterizeLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, AShader& p_shader, const Data::Color& p_color)
-{
-	glm::vec4 vertexWorldPosition0 = p_shader.ProcessVertex(p_vertex0, 0);
-	glm::vec4 vertexWorldPosition1 = p_shader.ProcessVertex(p_vertex1, 1);
-
-	glm::vec3 vertexScreenPosition0 = ComputeScreenSpaceCoordinate(vertexWorldPosition0);
-	glm::vec3 vertexScreenPosition1 = ComputeScreenSpaceCoordinate(vertexWorldPosition1);
-
-	glm::vec2 vertexNormalizedPosition0 = ComputeNormalizedDeviceCoordinate(vertexScreenPosition0);
-	glm::vec2 vertexNormalizedPosition1 = ComputeNormalizedDeviceCoordinate(vertexScreenPosition1);
-
-	glm::vec2 vertexRasterPosition0 = ComputeRasterSpaceCoordinate(vertexNormalizedPosition0);
-	glm::vec2 vertexRasterPosition1 = ComputeRasterSpaceCoordinate(vertexNormalizedPosition1);
-
-	int x0 = static_cast<int>(vertexRasterPosition0.x);
-	int y0 = static_cast<int>(vertexRasterPosition0.y);
-	int x1 = static_cast<int>(vertexRasterPosition1.x);
-	int y1 = static_cast<int>(vertexRasterPosition1.y);
-
-	// Bresenham's line algorithm.
-	int dx = abs(x1 - x0);
-	int dy = abs(y1 - y0);
-	int sx = x0 < x1 ? 1 : -1;
-	int sy = y0 < y1 ? 1 : -1;
-	int err = dx - dy;
-
-	int width = static_cast<int>(m_textureBuffer.GetWidth());
-	int height = static_cast<int>(m_textureBuffer.GetHeight());
-
-	float totalDistance = sqrt(dx * dx + dy * dy);
-
-	while (x0 != x1 || y0 != y1)
-	{
-		float currentDistance = sqrt((x0 - vertexRasterPosition0.x) * (x0 - vertexRasterPosition0.x) + (y0 - vertexRasterPosition0.y) * (y0 - vertexRasterPosition0.y));
-
-		float depth = vertexScreenPosition0.z * ((totalDistance - currentDistance) / totalDistance) + vertexScreenPosition1.z * (currentDistance / totalDistance);
-
-		if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
-		{
-			if (!m_state.DepthTest || depth <= m_depthBuffer.GetElement(x0, y0))
-			{
-				m_textureBuffer.SetPixel(x0, y0, p_color);
-
-				if (m_state.DepthWrite)
-				{
-					m_depthBuffer.SetElement(x0, y0, depth);
-				}
-			}
-		}
-
-		int e2 = (err << 1);
-
-		if (e2 > -dy)
-		{
-			err -= dy;
-			x0 += sx;
-		}
-
-		if (e2 < dx)
-		{
-			err += dx;
-			y0 += sy;
-		}
-	}
 }
 
 void Rendering::Rasterizer::RasterizeLine(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, const glm::vec4& p_start, const glm::vec4& p_end, AShader& p_shader) const
@@ -317,7 +304,7 @@ void Rendering::Rasterizer::RasterizeLine(const Geometry::Triangle& p_triangle, 
 
 			float depth = transformedVertices[0].z * barycentricCoords.z + transformedVertices[2].z * barycentricCoords.x + barycentricCoords.y * transformedVertices[1].z;
 
-			if (!m_state.DepthTest || depth <= m_depthBuffer.GetElement(x0, y0))
+			if (!(m_state & Settings::ERenderState::DEPTH_TEST) || depth <= m_depthBuffer.GetElement(x0, y0))
 			{
 				p_shader.ProcessInterpolation(barycentricCoords, transformedVertices[0].w, transformedVertices[1].w, transformedVertices[2].w);
 
@@ -327,7 +314,7 @@ void Rendering::Rasterizer::RasterizeLine(const Geometry::Triangle& p_triangle, 
 
 				m_textureBuffer.SetPixel(x0, y0, Data::Color::Mix(Data::Color(m_textureBuffer.GetPixel(x0, y0)), color, alpha));
 
-				if (m_state.DepthWrite)
+				if (m_state & Settings::ERenderState::DEPTH_WRITE)
 				{
 					m_depthBuffer.SetElement(x0, y0, depth);
 				}
@@ -377,11 +364,11 @@ void Rendering::Rasterizer::RasterizeLine(const glm::vec4& p_start, const glm::v
 
 		if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
 		{
-			if (!m_state.DepthTest || depth <= m_depthBuffer.GetElement(x0, y0))
+			if (!(m_state & Settings::ERenderState::DEPTH_TEST) || depth <= m_depthBuffer.GetElement(x0, y0))
 			{
 				m_textureBuffer.SetPixel(x0, y0, p_color);
 
-				if (m_state.DepthWrite)
+				if (m_state & Settings::ERenderState::DEPTH_WRITE)
 				{
 					m_depthBuffer.SetElement(x0, y0, depth);
 				}
@@ -404,9 +391,16 @@ void Rendering::Rasterizer::RasterizeLine(const glm::vec4& p_start, const glm::v
 	}
 }
 
+void Rendering::Rasterizer::RasterizeTrianglePoints(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, AShader& p_shader) const
+{
+	DrawPoint(p_triangle, transformedVertices, transformedVertices[0], p_shader);
+	DrawPoint(p_triangle, transformedVertices, transformedVertices[1], p_shader);
+	DrawPoint(p_triangle, transformedVertices, transformedVertices[2], p_shader);
+}
+
 void Rendering::Rasterizer::DrawPoint(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, const glm::vec4& p_point, AShader& p_shader) const
 {
-	int width  = static_cast<int>(m_textureBuffer.GetWidth());
+	int width = static_cast<int>(m_textureBuffer.GetWidth());
 	int height = static_cast<int>(m_textureBuffer.GetHeight());
 
 	if (p_point.x >= 0 && p_point.x < width && p_point.y >= 0 && p_point.y < height)
@@ -415,7 +409,7 @@ void Rendering::Rasterizer::DrawPoint(const Geometry::Triangle& p_triangle, cons
 
 		const float depth = transformedVertices[0].z * barycentricCoords.z + transformedVertices[2].z * barycentricCoords.x + barycentricCoords.y * transformedVertices[1].z;
 
-		if (!m_state.DepthTest || depth <= m_depthBuffer.GetElement(p_point.x, p_point.y))
+		if (!(m_state & Settings::ERenderState::DEPTH_TEST) || depth <= m_depthBuffer.GetElement(p_point.x, p_point.y))
 		{
 			p_shader.ProcessInterpolation(barycentricCoords, transformedVertices[0].w, transformedVertices[1].w, transformedVertices[2].w);
 
@@ -425,7 +419,7 @@ void Rendering::Rasterizer::DrawPoint(const Geometry::Triangle& p_triangle, cons
 
 			m_textureBuffer.SetPixel(p_point.x, p_point.y, Data::Color::Mix(Data::Color(m_textureBuffer.GetPixel(p_point.x, p_point.y)), color, alpha));
 
-			if (m_state.DepthWrite)
+			if (m_state & Settings::ERenderState::DEPTH_WRITE)
 			{
 				m_depthBuffer.SetElement(p_point.x, p_point.y, depth);
 			}
@@ -441,6 +435,72 @@ void Rendering::Rasterizer::DrawPoint(const glm::vec2& p_point, const Data::Colo
 	if (p_point.x >= 0 && p_point.x < width && p_point.y >= 0 && p_point.y < height)
 	{
 		m_textureBuffer.SetPixel(p_point.x, p_point.y, p_color);
+	}
+}
+
+void Rendering::Rasterizer::RasterizeLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, AShader& p_shader, const Data::Color& p_color)
+{
+	glm::vec4 vertexWorldPosition0 = p_shader.ProcessVertex(p_vertex0, 0);
+	glm::vec4 vertexWorldPosition1 = p_shader.ProcessVertex(p_vertex1, 1);
+
+	glm::vec3 vertexScreenPosition0 = ComputeScreenSpaceCoordinate(vertexWorldPosition0);
+	glm::vec3 vertexScreenPosition1 = ComputeScreenSpaceCoordinate(vertexWorldPosition1);
+
+	glm::vec2 vertexNormalizedPosition0 = ComputeNormalizedDeviceCoordinate(vertexScreenPosition0);
+	glm::vec2 vertexNormalizedPosition1 = ComputeNormalizedDeviceCoordinate(vertexScreenPosition1);
+
+	glm::vec2 vertexRasterPosition0 = ComputeRasterSpaceCoordinate(vertexNormalizedPosition0);
+	glm::vec2 vertexRasterPosition1 = ComputeRasterSpaceCoordinate(vertexNormalizedPosition1);
+
+	int x0 = static_cast<int>(vertexRasterPosition0.x);
+	int y0 = static_cast<int>(vertexRasterPosition0.y);
+	int x1 = static_cast<int>(vertexRasterPosition1.x);
+	int y1 = static_cast<int>(vertexRasterPosition1.y);
+
+	// Bresenham's line algorithm.
+	int dx = abs(x1 - x0);
+	int dy = abs(y1 - y0);
+	int sx = x0 < x1 ? 1 : -1;
+	int sy = y0 < y1 ? 1 : -1;
+	int err = dx - dy;
+
+	int width = static_cast<int>(m_textureBuffer.GetWidth());
+	int height = static_cast<int>(m_textureBuffer.GetHeight());
+
+	float totalDistance = sqrt(dx * dx + dy * dy);
+
+	while (x0 != x1 || y0 != y1)
+	{
+		float currentDistance = sqrt((x0 - vertexRasterPosition0.x) * (x0 - vertexRasterPosition0.x) + (y0 - vertexRasterPosition0.y) * (y0 - vertexRasterPosition0.y));
+
+		float depth = vertexScreenPosition0.z * ((totalDistance - currentDistance) / totalDistance) + vertexScreenPosition1.z * (currentDistance / totalDistance);
+
+		if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
+		{
+			if (!(m_state & Settings::ERenderState::DEPTH_TEST) || depth <= m_depthBuffer.GetElement(x0, y0))
+			{
+				m_textureBuffer.SetPixel(x0, y0, p_color);
+
+				if (m_state & Settings::ERenderState::DEPTH_WRITE)
+				{
+					m_depthBuffer.SetElement(x0, y0, depth);
+				}
+			}
+		}
+
+		int e2 = (err << 1);
+
+		if (e2 > -dy)
+		{
+			err -= dy;
+			x0 += sx;
+		}
+
+		if (e2 < dx)
+		{
+			err += dx;
+			y0 += sy;
+		}
 	}
 }
 
@@ -566,7 +626,7 @@ void Rendering::Rasterizer::ApplyMSAA() const
 
 			m_textureBuffer.SetPixel(x, y, Data::Color::Mix(Data::Color(m_textureBuffer.GetPixel(x, y)), sampledColorTotal, alpha));
 
-			if (m_state.DepthWrite)
+			if (m_state & Settings::ERenderState::DEPTH_WRITE)
 			{
 				m_depthBuffer.SetElement(x, y, depth);
 			}
@@ -577,64 +637,6 @@ void Rendering::Rasterizer::ApplyMSAA() const
 Buffers::TextureBuffer& Rendering::Rasterizer::GetTextureBuffer()
 {
 	return m_textureBuffer;
-}
-
-Rendering::RenderState& Rendering::Rasterizer::GetRenderState()
-{
-	return m_state;
-}
-
-void Rendering::Rasterizer::InitializeClippingFrustum()
-{
-	float z_near = 1.0f;
-	float z_far  = 100.0f;
-
-	m_clippingFrustum[0].Distance = 1.0f;
-	m_clippingFrustum[0].Normal.x = 1;
-	m_clippingFrustum[0].Normal.y = 0;
-	m_clippingFrustum[0].Normal.z = 0;
-
-	m_clippingFrustum[1].Distance = 1.0f;
-	m_clippingFrustum[1].Normal.x = -1;
-	m_clippingFrustum[1].Normal.y = 0;
-	m_clippingFrustum[1].Normal.z = 0;
-
-	m_clippingFrustum[2].Distance = 1.0f;
-	m_clippingFrustum[2].Normal.x = 0;
-	m_clippingFrustum[2].Normal.y = 1;
-	m_clippingFrustum[2].Normal.z = 0;
-
-	m_clippingFrustum[3].Distance = 1.0f;
-	m_clippingFrustum[3].Normal.x = 0;
-	m_clippingFrustum[3].Normal.y = -1;
-	m_clippingFrustum[3].Normal.z = 0;
-
-	m_clippingFrustum[4].Distance = z_near;
-	m_clippingFrustum[4].Normal.x = 0;
-	m_clippingFrustum[4].Normal.y = 0;
-	m_clippingFrustum[4].Normal.z = 1;
-
-	m_clippingFrustum[5].Distance = z_far;
-	m_clippingFrustum[5].Normal.x = 0;
-	m_clippingFrustum[5].Normal.y = 0;
-	m_clippingFrustum[5].Normal.z = -1;
-}
-
-void Rendering::Rasterizer::Clear(const Data::Color& p_color)
-{
-	m_textureBuffer.Clear(p_color);
-	m_msaaBuffer.Clear(p_color);
-}
-
-void Rendering::Rasterizer::SendDataToGPU()
-{
-	m_textureBuffer.SendDataToGPU();
-}
-
-void Rendering::Rasterizer::SetSamples(uint8_t p_samples)
-{
-	m_sampleCount = p_samples;
-	m_msaaBuffer.SetSamplesAmount(p_samples);
 }
 
 void Rendering::Rasterizer::OnResize(uint16_t p_width, uint16_t p_height)

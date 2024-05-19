@@ -102,22 +102,25 @@ void Core::Application::Run()
 		basicShader.SetUniform("u_ViewPos", m_cameraPosition);
 
 		basicShader.SetSample("u_DiffuseMap", texture);
-		m_context.renderer->Draw(Rendering::Settings::TRIANGLE, *modelCube, basicShader);
+		m_context.renderer->Draw(Rendering::Settings::EDrawMode::TRIANGLES, *modelCube, basicShader);
 
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
 		basicShader.SetUniform("u_Model", model);
 		basicShader.SetSample("u_DiffuseMap", texture2);
-		m_context.renderer->Draw(Rendering::Settings::TRIANGLE, *modelCube2, basicShader);
+		m_context.renderer->Draw(Rendering::Settings::TRIANGLES, *modelCube2, basicShader);
 
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.0f, 0.0f));
 		basicShader.SetUniform("u_Model", model);
 		basicShader.SetSample("u_DiffuseMap", texture3);
 
-		m_context.renderer->Draw(Rendering::Settings::TRIANGLE, *modelCube3, basicShader);
+		m_context.renderer->Draw(Rendering::Settings::EDrawMode::TRIANGLES, *modelCube3, basicShader);
 
 		m_context.renderer->SetDepthTest(false);
-		//m_context.renderer->DrawMesh(planeMesh, basicShader);
+		m_context.renderer->SetCull(false);
+		m_context.renderer->DrawMesh(Rendering::Settings::EDrawMode::TRIANGLES, planeMesh, basicShader);
 		m_context.renderer->SetDepthTest(true);
+		m_context.renderer->SetCull(true);
+
 		m_context.renderer->DrawLine({ 0.0f, 0.0f, 0.0f }, { 5.0f, 0.0f, 0.0f }, basicShader, Data::Color::Red);
 
 		m_context.renderer->Render();

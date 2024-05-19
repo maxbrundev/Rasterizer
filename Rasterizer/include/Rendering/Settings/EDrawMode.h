@@ -2,10 +2,10 @@
 
 namespace Rendering::Settings
 {
-	enum EDrawMode
+	enum EDrawMode : uint8_t
 	{
-		TRIANGLE,
-		LINE,
-		POINT
+		TRIANGLES,
+		LINES,
+		POINTS
 	};
 }
