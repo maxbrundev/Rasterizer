@@ -55,11 +55,8 @@ Global optimization pass to improve overall performance and efficiency.
 Premake5 is used to generate project files.
 To generate the project, execute `GenerateProject.bat`. By default, `GenerateProject.bat` will generate project files for Visual Studio 2022. If you want to use another version of Visual Studio you can execute `GenerateProject.bat` from the command line with the Visual Studio version as argument. (ex: `.\GeneratedProject.bat vs2019`)
 
-# Licence
-This project is licenced under an MIT Licence.
-
 # Video and Screenshots
-https://github.com/maxbrundev/Rasterizer/assets/32653095/d926e3d1-7a05-43bd-9327-5e661169e567
+[![cppRasterizer](https://img.youtube.com/vi/UjUxgVGn0rU/0.jpg)](https://www.youtube.com/watch?v=UjUxgVGn0rU)
 
 **Polygon Rasterization Mode**
 ![primitiveMode](https://github.com/user-attachments/assets/d3d75daa-4ea8-4e84-9cc6-651b9d64f77f)
@@ -76,3 +73,6 @@ https://github.com/maxbrundev/Rasterizer/assets/32653095/d926e3d1-7a05-43bd-9327
 
 ![clipping](https://github.com/user-attachments/assets/b2ac8825-3ba7-47fa-930d-39986438a02c)  
 *Frustum plane distances have been reduced to highlight clipping*
+
+# Licence
+This project is licenced under an MIT Licence.
