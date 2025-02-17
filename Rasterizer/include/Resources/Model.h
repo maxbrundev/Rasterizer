@@ -2,9 +2,10 @@
 
 #include <string>
 
+#include "Material.h"
 #include "Resources/Mesh.h"
 
-namespace  Resources::Loaders
+namespace Resources::Loaders
 {
 	class ModelLoader;
 }
@@ -17,6 +18,7 @@ namespace Resources
 
 	public:
 		std::vector<Mesh*>& GetMeshes();
+		std::vector<Material*>& GetMaterials();
 
 	private:
 		Model(const std::string& p_filePath);
@@ -27,5 +29,6 @@ namespace Resources
 
 	private:
 		std::vector<Mesh*> m_meshes;
+		std::vector<Material*> m_materials;
 	};
 }

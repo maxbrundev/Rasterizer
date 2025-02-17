@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+#include "MaterialData.h"
 #include "Resources/Mesh.h"
 
 namespace Resources::Parsers
@@ -10,15 +11,18 @@ namespace Resources::Parsers
 	class OBJParser
 	{
 	public:
-		bool LoadOBJ(const std::string& p_filePath, std::vector<Mesh*>& p_meshes);
+		bool LoadOBJ(const std::string& p_filePath, std::vector<Mesh*>& p_meshes, std::vector<MaterialData>& p_materialsData);
 
 	private:
-		bool ParseFile(const std::string& p_filePath, std::vector<Mesh*>& p_meshes);
+		bool ParseFile(const std::string& p_filePath, std::vector<Mesh*>& p_meshes, std::vector<MaterialData>& p_materialsData);
 
 		template<typename T>
 		void ParseLine(const std::string_view& p_line, const std::string_view& p_header, std::vector<T>& p_values);
 
 		void ParseIndices(const std::string_view& p_line, std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& p_indices);
+
+	private:
+		std::string m_directory;
 	};
 
 	template <typename T>
@@ -43,7 +47,6 @@ namespace Resources::Parsers
 		{
 			sscanf_s(p_line.data(), scanStrFormat.c_str(), &result.x, &result.y, &result.z);
 		}
-		
 
 		p_values.emplace_back(std::move(result));
 	}

@@ -1,10 +1,23 @@
 #include "Rendering/Renderer.h"
 
 #include "Rendering/Settings/ERenderState.h"
+#include "Resources/Loaders/TextureLoader.h"
 
-Rendering::Renderer::Renderer(Context::Driver& p_driver, Context::Window& p_window) : m_driver(p_driver)
+Rendering::Renderer::Renderer(Context::Driver& p_driver, Context::Window& p_window) :
+m_driver(p_driver),
+m_emptyTexture(Resources::Loaders::TextureLoader::CreateColor
+(
+	(255 << 24) | (255 << 16) | (255 << 8) | 255,
+	Resources::Settings::ETextureFilteringMode::NEAREST,
+	Resources::Settings::ETextureWrapMode::CLAMP
+))
 {
 	m_rasterizer = std::make_unique<Rasterizer>(p_window, m_driver.GetRenderer(), 800, 600);
+}
+
+Rendering::Renderer::~Renderer()
+{
+	Resources::Loaders::TextureLoader::Destroy(m_emptyTexture);
 }
 
 void Rendering::Renderer::Clear(const Data::Color& p_color) const
@@ -17,29 +30,43 @@ void Rendering::Renderer::ClearDepth() const
 	m_rasterizer->ClearDepth();
 }
 
-void Rendering::Renderer::Draw(Settings::EDrawMode p_drawMode, Resources::Model& p_model, AShader& p_shader)
+void Rendering::Renderer::Draw(Settings::EDrawMode p_drawMode, Resources::Model& p_model, Resources::Material* p_defaultMaterial)
 {
 	uint8_t state = FetchState();
 
 	ApplyState(state);
 
 	m_rasterizer->SetState(state);
+
+	auto materials = p_model.GetMaterials();
 
 	for (const auto mesh : p_model.GetMeshes())
 	{
-		DrawMesh(p_drawMode, *mesh, p_shader);
+		if (mesh->GetMaterialIndex() < 255)
+		{
+			const Resources::Material* material = materials.at(mesh->GetMaterialIndex());
+
+			if (!material || !material->GetShader())
+				material = p_defaultMaterial;
+
+			DrawMesh(p_drawMode, *mesh, *material);
+		}
 	}
 }
 
-void Rendering::Renderer::DrawMesh(Settings::EDrawMode p_drawMode, Resources::Mesh& p_mesh, AShader& p_shader)
+void Rendering::Renderer::DrawMesh(Settings::EDrawMode p_drawMode, Resources::Mesh& p_mesh, const Resources::Material& p_material)
 {
-	uint8_t state = FetchState();
+	if (p_material.GetShader() != nullptr)
+	{
+		uint8_t state = FetchState();
 
-	ApplyState(state);
+		ApplyState(state);
 
-	m_rasterizer->SetState(state);
+		m_rasterizer->SetState(state);
 
-	m_rasterizer->RasterizeMesh(p_drawMode, p_mesh, p_shader);
+		p_material.Bind(m_emptyTexture);
+		m_rasterizer->RasterizeMesh(p_drawMode, p_mesh, *p_material.GetShader());
+	}
 }
 
 void Rendering::Renderer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, AShader& p_shader, const Data::Color& p_color)

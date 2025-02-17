@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "Eventing/Event.h"
 
 namespace Context
@@ -13,6 +15,7 @@ namespace Context
 		Eventing::Event<int> MouseButtonReleasedEvent;
 		Eventing::Event<std::pair<int, int>> MouseMovedEvent;
 		Eventing::Event<int> MouseWheelEvent;
+		Eventing::Event<std::string> DropFileEvent;
 
 		Eventing::Event<> CloseEvent;
 

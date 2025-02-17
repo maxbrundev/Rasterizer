@@ -45,3 +45,22 @@ bool Resources::Loaders::TextureLoader::Destroy(Texture*& p_textureInstance)
 
 	return false;
 }
+
+Resources::Texture* Resources::Loaders::TextureLoader::CreateColor(uint32_t color, Settings::ETextureFilteringMode p_filter, Settings::ETextureWrapMode p_wrapping)
+{
+	uint32_t width = 1;
+	uint32_t height = 1;
+	uint32_t bitsPerPixel = 32;
+
+	unsigned char data[4];
+
+	data[0] = (color >> 24) & 0xFF;
+	data[1] = (color >> 16) & 0xFF;
+	data[2] = (color >> 8) & 0xFF;
+	data[3] = color & 0xFF;
+
+	unsigned char* textureData = new unsigned char[4];
+	std::memcpy(textureData, data, 4);
+
+	return new Texture("color", width, height, bitsPerPixel, textureData, p_filter, p_wrapping, false);
+}

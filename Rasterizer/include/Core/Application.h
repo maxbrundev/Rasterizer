@@ -4,6 +4,7 @@
 
 #include "Context/Settings/WindowSettings.h"
 #include "Context/Settings/DriverSettings.h"
+#include "Rendering/DefaultShader.h"
 
 namespace Core
 {
@@ -11,7 +12,7 @@ namespace Core
 	{
 	public:
 		Application(const Context::Settings::WindowSettings& p_windowSettings, const Context::Settings::DriverSettings& p_driverSettings);
-		~Application() = default;
+		~Application();
 
 		void Initialize();
 		void Run();
@@ -26,6 +27,9 @@ namespace Core
 
 		glm::vec3 m_cameraPosition;
 
+		Resources::Model* m_currentModel = nullptr;
+		Rendering::DefaultShader basicShader;
+		Resources::Material m_defaultMaterial;
 		bool m_isRunning;
 	};
 }

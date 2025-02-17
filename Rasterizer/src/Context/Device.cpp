@@ -69,6 +69,14 @@ void Context::Device::PollEvents()
 			MouseWheelEvent.Invoke(event.wheel.y);
 			break;
 
+		case SDL_DROPFILE:
+		{
+			char* droppedFile = event.drop.file;
+			DropFileEvent.Invoke(std::string(droppedFile));
+			SDL_free(droppedFile);
+			break;
+		}
+
 		default: 
 			break;
 		}

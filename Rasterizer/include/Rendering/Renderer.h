@@ -9,6 +9,7 @@
 
 #include "Rendering/AShader.h"
 #include "Resources/Model.h"
+#include "Resources/Texture.h"
 
 namespace Rendering
 {
@@ -16,12 +17,12 @@ namespace Rendering
 	{
 	public:
 		Renderer(Context::Driver& p_driver, Context::Window& p_window);
-		~Renderer() = default;
+		~Renderer();
 
 		void Clear(const Data::Color& p_color) const;
 		void ClearDepth() const;
-		void Draw(Settings::EDrawMode p_drawMode, Resources::Model& p_model, AShader& p_shader);
-		void DrawMesh(Settings::EDrawMode p_drawMode, Resources::Mesh& p_mesh, AShader& p_shader);
+		void Draw(Settings::EDrawMode p_drawMode, Resources::Model& p_model, Resources::Material* p_defaultMaterial);
+		void DrawMesh(Settings::EDrawMode p_drawMode, Resources::Mesh& p_mesh, const Resources::Material& p_material);
 		void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, AShader& p_shader, const Data::Color& p_color);
 		void Render() const;
 		void Clear() const;
@@ -52,5 +53,6 @@ namespace Rendering
 
 		Settings::ECullFace m_cullFace = Settings::BACK;
 
+		Resources::Texture* m_emptyTexture;
 	};
 }

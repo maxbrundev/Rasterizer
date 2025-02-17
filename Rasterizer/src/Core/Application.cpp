@@ -1,7 +1,6 @@
 #include "Core/Application.h"
 
 #include <chrono>
-
 #include <glm/ext/matrix_transform.hpp>
 
 #include "Buffers/VertexBuffer.h"
@@ -12,31 +11,54 @@
 #include "Resources/Model.h"
 #include "Resources/Mesh.h"
 #include "Resources/Loaders/ModelLoader.h"
-#include "Resources/Loaders/TextureLoader.h"
 
 #include "Tools/Time/Clock.h"
 
 Core::Application::Application(const Context::Settings::WindowSettings& p_windowSettings, const Context::Settings::DriverSettings& p_driverSettings) :
-	m_context(p_windowSettings, p_driverSettings), m_cameraController(m_camera, m_cameraPosition), m_cameraPosition(0.0f, 0.0f, 10.0f),
-	m_isRunning(true)
+m_context(p_windowSettings, p_driverSettings),
+m_cameraController(m_camera, m_cameraPosition),
+m_cameraPosition(0.0f, 0.0f, 10.0f),
+m_isRunning(true)
 {
+}
+
+Core::Application::~Application()
+{
+	Resources::Loaders::ModelLoader::Destroy(m_currentModel);
 }
 
 void Core::Application::Initialize()
 {
+	m_context.device->DropFileEvent.AddListener([this](const std::string& p_filePath) 
+	{
+		if (m_currentModel != nullptr)
+		{
+			Resources::Loaders::ModelLoader::Destroy(m_currentModel);
+		}
+
+		m_currentModel = Resources::Loaders::ModelLoader::Create(p_filePath);
+
+		for (Resources::Material* material : m_currentModel->GetMaterials())
+		{
+			material->SetShader(&basicShader);
+		}
+	});
+
+	m_defaultMaterial.SetShader(&basicShader);
+
+	m_currentModel = Resources::Loaders::ModelLoader::Create("Resources/Models/DamagedHelmet/wavefront/DamagedHelmet.obj");
+
+	for (Resources::Material* material : m_currentModel->GetMaterials())
+	{
+		material->SetShader(&basicShader);
+	}
 }
 
 void Core::Application::Run()
 {
 	Tools::Time::Clock clock;
 
-	Data::Color backGround(0, 0, 0);
-
-	Resources::Model* modelCube = Resources::Loaders::ModelLoader::Create("Resources/Models/Terriermon.obj");
-	Resources::Model* modelCube2 = Resources::Loaders::ModelLoader::Create("Resources/Models/WarGreymon.obj");
-	Resources::Model* modelCube3 = Resources::Loaders::ModelLoader::Create("Resources/Models/Gabumon.obj");
-
-	Rendering::DefaultShader basicShader;
+	Data::Color backGround(70, 70, 70);
 
 	Buffers::VertexBuffer vertices;
 	vertices.Vertices = {
@@ -49,12 +71,7 @@ void Core::Application::Run()
 	Buffers::IndexBuffer indices;
 	indices.Indices = { 0, 1, 2, 2, 3, 0 };
 
-	Resources::Mesh planeMesh(vertices.Vertices, indices.Indices);
-
-	auto texture = Resources::Loaders::TextureLoader::Create("Resources/Textures/Terriermon.png", true, Resources::Settings::ETextureFilteringMode::NEAREST, Resources::Settings::ETextureWrapMode::CLAMP, true);
-	auto texture2 = Resources::Loaders::TextureLoader::Create("Resources/Textures/WarGreymon.png", true, Resources::Settings::ETextureFilteringMode::NEAREST, Resources::Settings::ETextureWrapMode::CLAMP, true);
-	auto texture3 = Resources::Loaders::TextureLoader::Create("Resources/Textures/Gabumon.png", true, Resources::Settings::ETextureFilteringMode::LINEAR, Resources::Settings::ETextureWrapMode::REPEAT, true);
-	int samples = 0;
+	Resources::Mesh planeMesh(vertices.Vertices, indices.Indices, 0);
 
 	while (IsRunning())
 	{
@@ -63,23 +80,17 @@ void Core::Application::Run()
 		// Testing MSAA
 		if (m_context.inputManager->IsKeyPressed(Inputs::EKey::KEY_2))
 		{
-			samples = 2;
-
-			m_context.renderer->SetSamples(samples);
+			m_context.renderer->SetSamples(2);
 		}
 
 		if (m_context.inputManager->IsKeyPressed(Inputs::EKey::KEY_4))
 		{
-			samples = 4;
-
-			m_context.renderer->SetSamples(samples);
+			m_context.renderer->SetSamples(4);
 		}
 
 		if (m_context.inputManager->IsKeyPressed(Inputs::EKey::KEY_8))
 		{
-			samples = 8;
-
-			m_context.renderer->SetSamples(samples);
+			m_context.renderer->SetSamples(8);
 		}
 		
 		m_context.renderer->Clear();
@@ -93,6 +104,7 @@ void Core::Application::Run()
 
 		glm::mat4 model(1.0f);
 
+		model = glm::scale(glm::mat4(1.0f), glm::vec3(0.03f));
 		const auto& view = m_camera.GetViewMatrix();
 		const auto& projection = m_camera.GetProjectionMatrix();
 
@@ -101,35 +113,16 @@ void Core::Application::Run()
 		basicShader.SetUniform("u_Projection", projection);
 		basicShader.SetUniform("u_ViewPos", m_cameraPosition);
 
-		basicShader.SetSample("u_DiffuseMap", texture);
-		m_context.renderer->Draw(Rendering::Settings::EDrawMode::TRIANGLES, *modelCube, basicShader);
-
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
-		basicShader.SetUniform("u_Model", model);
-		basicShader.SetSample("u_DiffuseMap", texture2);
-		m_context.renderer->Draw(Rendering::Settings::TRIANGLES, *modelCube2, basicShader);
-
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.0f, 0.0f));
-		basicShader.SetUniform("u_Model", model);
-		basicShader.SetSample("u_DiffuseMap", texture3);
-
-		m_context.renderer->Draw(Rendering::Settings::EDrawMode::TRIANGLES, *modelCube3, basicShader);
-
-		m_context.renderer->SetDepthTest(false);
-		m_context.renderer->SetCull(false);
-		m_context.renderer->DrawMesh(Rendering::Settings::EDrawMode::TRIANGLES, planeMesh, basicShader);
-		m_context.renderer->SetDepthTest(true);
-		m_context.renderer->SetCull(true);
-
-		m_context.renderer->DrawLine({ 0.0f, 0.0f, 0.0f }, { 5.0f, 0.0f, 0.0f }, basicShader, Data::Color::Red);
+		if (m_currentModel)
+		{
+			m_context.renderer->Draw(Rendering::Settings::EDrawMode::TRIANGLES, *m_currentModel, &m_defaultMaterial);
+		}
 
 		m_context.renderer->Render();
 		m_context.inputManager->ClearEvents();
 
 		clock.Update();
 	}
-
-	Resources::Loaders::ModelLoader::Destroy(modelCube);
 }
 
 bool Core::Application::IsRunning() const
