@@ -131,9 +131,9 @@ void Rendering::Rasterizer::RasterizeTriangle(Settings::EDrawMode p_drawMode, co
 		{
 			std::array<glm::vec4, 3> clippedVertices{ currentPoly.Vertices[0], currentPoly.Vertices[i + 1], currentPoly.Vertices[i + 2] };
 
-			p_shader.SetVarying("v_TextCoords", currentPoly.TextCoords[0], 0);
-			p_shader.SetVarying("v_TextCoords", currentPoly.TextCoords[i + 1], 1);
-			p_shader.SetVarying("v_TextCoords", currentPoly.TextCoords[i + 2], 2);
+			p_shader.SetVaryingVec2("v_TextCoords", currentPoly.TextCoords[0], 0);
+			p_shader.SetVaryingVec2("v_TextCoords", currentPoly.TextCoords[i + 1], 1);
+			p_shader.SetVaryingVec2("v_TextCoords", currentPoly.TextCoords[i + 2], 2);
 
 			TransformAndRasterizeVertices(p_drawMode, clippedVertices, p_shader);
 		}

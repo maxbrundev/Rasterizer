@@ -4,6 +4,7 @@
 
 namespace Rendering
 {
+
 	class DefaultShader : public AShader
 	{
 	public:

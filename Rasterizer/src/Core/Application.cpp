@@ -46,6 +46,7 @@ void Core::Application::Initialize()
 
 	m_defaultMaterial.SetShader(&basicShader);
 
+	//TODO: ModelLoader instantiate related textures with flipVertically parameter at true, this result to flipped texture for this obj.
 	m_currentModel = Resources::Loaders::ModelLoader::Create("Resources/Models/DamagedHelmet/wavefront/DamagedHelmet.obj");
 
 	for (Resources::Material* material : m_currentModel->GetMaterials())
@@ -104,14 +105,15 @@ void Core::Application::Run()
 
 		glm::mat4 model(1.0f);
 
-		model = glm::scale(glm::mat4(1.0f), glm::vec3(0.03f));
+		//TODO: For Sponza model. Will fix.
+		//model = glm::scale(glm::mat4(1.0f), glm::vec3(0.03f));
 		const auto& view = m_camera.GetViewMatrix();
 		const auto& projection = m_camera.GetProjectionMatrix();
 
-		basicShader.SetUniform("u_Model", model);
-		basicShader.SetUniform("u_View", view);
-		basicShader.SetUniform("u_Projection", projection);
-		basicShader.SetUniform("u_ViewPos", m_cameraPosition);
+		basicShader.SetUniformMat4("u_Model", model);
+		basicShader.SetUniformMat4("u_View", view);
+		basicShader.SetUniformMat4("u_Projection", projection);
+		basicShader.SetUniformVec3("u_ViewPos", m_cameraPosition);
 
 		if (m_currentModel)
 		{
