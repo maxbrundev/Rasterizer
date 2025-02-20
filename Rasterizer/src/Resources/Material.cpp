@@ -1,5 +1,6 @@
 #include "Resources/Material.h"
 
+#include "Rendering/GLRasterizer.h"
 #include "Resources/Loaders/TextureLoader.h"
 
 Resources::Material::Material(const std::string& p_name) :
@@ -21,6 +22,8 @@ void Resources::Material::Bind(Texture* p_emptyTexture) const
 {
 	if (HasShader())
 	{
+		m_shader->Bind();
+
 		if (m_texture != nullptr)
 		{
 			m_shader->SetSample("u_DiffuseMap", m_texture);

@@ -29,7 +29,7 @@ namespace Rendering
 		void SetSamples(uint8_t p_samples) const;
 
 		uint8_t FetchState() const;
-		void ApplyState(uint8_t p_state);
+		void ApplyStateMask(uint8_t p_mask);
 		void SetState(uint8_t p_state);
 
 		void SetDepthTest(bool p_value);
@@ -42,7 +42,7 @@ namespace Rendering
 
 	private:
 		Context::Driver& m_driver;
-		std::unique_ptr<Rasterizer> m_rasterizer;
+		//std::unique_ptr<Rasterizer> m_rasterizer;
 
 		uint8_t m_state;
 		uint8_t m_samples = 0;

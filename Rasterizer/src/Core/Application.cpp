@@ -7,6 +7,7 @@
 #include "Buffers/IndexBuffer.h"
 
 #include "Rendering/DefaultShader.h"
+#include "Rendering/GLRasterizer.h"
 
 #include "Resources/Model.h"
 #include "Resources/Mesh.h"
@@ -20,6 +21,11 @@ m_cameraController(m_camera, m_cameraPosition),
 m_cameraPosition(0.0f, 0.0f, 10.0f),
 m_isRunning(true)
 {
+	GLRasterizer::Enable(GLR_DEPTH_TEST);
+	GLRasterizer::Enable(GLR_DEPTH_WRITE);
+	GLRasterizer::Enable(GLR_CULL_FACE);
+
+	GLRasterizer::CullFace(GLR_BACK);
 }
 
 Core::Application::~Application()
