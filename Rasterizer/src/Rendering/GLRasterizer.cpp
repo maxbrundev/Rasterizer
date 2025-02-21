@@ -207,6 +207,18 @@ int GLRasterizer::GetInt(int p_parameter)
 	return 0;
 }
 
+void GLRasterizer::Terminate()
+{
+	delete RenderContext.TextureBuffer;
+	RenderContext.TextureBuffer = nullptr;
+
+	delete RenderContext.MsaaBuffer;
+	RenderContext.MsaaBuffer = nullptr;
+
+	delete RenderContext.DepthBuffer;
+	RenderContext.DepthBuffer = nullptr;
+}
+
 Buffers::TextureBuffer& GLRasterizer::GetTextureBuffer()
 {
 	return *RenderContext.TextureBuffer;

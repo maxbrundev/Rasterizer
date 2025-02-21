@@ -37,6 +37,7 @@ namespace GLRasterizer
 
 	bool GetBool(int p_parameter);
 	bool GetCapability(int p_capability);
-	int  GetInt(int p_parameter);
+	int GetInt(int p_parameter);
+	void Terminate();
 	Buffers::TextureBuffer& GetTextureBuffer();
 }

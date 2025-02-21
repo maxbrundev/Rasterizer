@@ -31,6 +31,8 @@ m_isRunning(true)
 Core::Application::~Application()
 {
 	Resources::Loaders::ModelLoader::Destroy(m_currentModel);
+
+	GLRasterizer::Terminate();
 }
 
 void Core::Application::Initialize()
