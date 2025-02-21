@@ -6,6 +6,8 @@
 #include "Context/Window.h"
 #include "Resources/Model.h"
 
+constexpr bool CLIPPING = true;
+
 #define GLR_TRIANGLES 0
 #define GLR_LINES     1
 #define GLR_POINTS    2
@@ -19,13 +21,12 @@
 
 namespace GLRasterizer
 {
-	void MakeCurrentContext(Context::Window* p_window, SDL_Renderer* p_sdlRenderer, uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight);
+	void MakeCurrentContext(Context::Window* p_window, uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight);
 
 	void Clear(const Data::Color& p_color);
 	void ClearDepth();
 	void DrawElements(uint8_t  p_drawMode, const Resources::Mesh& p_mesh);
 	void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const Data::Color& p_color);
-	void SendDataToGPU();
 	void UseProgram(Rendering::AShader* p_shader);
 	void SetState(uint8_t p_state);
 	void SetSamples(uint8_t p_samples);
@@ -39,5 +40,7 @@ namespace GLRasterizer
 	bool GetCapability(int p_capability);
 	int GetInt(int p_parameter);
 	void Terminate();
+	Buffers::TextureBuffer* GetFrameBuffer();
+	uint32_t* GetFrameBufferDate();
 	Buffers::TextureBuffer& GetTextureBuffer();
 }

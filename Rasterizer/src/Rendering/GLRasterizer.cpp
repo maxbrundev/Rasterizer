@@ -1,13 +1,14 @@
 #include "Rendering/GLRasterizer.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/compatibility.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/compatibility.hpp>
 
-#include "Rendering/Rasterizer.h"
-#include "Rendering/Settings/ECullFace.h"
-#include "Rendering/Settings/EDrawMode.h"
-#include "Rendering/Settings/ERenderState.h"
+#include "Buffers/DepthBuffer.h"
+#include "Buffers/MSAABuffer.h"
+#include "Geometry/Plane.h"
+#include "Geometry/Polygon.h"
+#include "Geometry/Triangle.h"
 
 void RasterizeMesh(uint8_t  p_drawMode, const Resources::Mesh& p_mesh);
 void RasterizeLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Data::Color& p_color);
@@ -91,9 +92,9 @@ namespace
 	}
 }
 
-void GLRasterizer::MakeCurrentContext(Context::Window* p_window, SDL_Renderer* p_sdlRenderer, uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight)
+void GLRasterizer::MakeCurrentContext(Context::Window* p_window, uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight)
 {
-	RenderContext.TextureBuffer = new Buffers::TextureBuffer(p_sdlRenderer, p_rasterizationBufferWidth, p_rasterizationBufferHeight, SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING);
+	RenderContext.TextureBuffer = new Buffers::TextureBuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
 	RenderContext.MsaaBuffer = new Buffers::MSAABuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
 	RenderContext.DepthBuffer = new Buffers::DepthBuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
 
@@ -119,11 +120,6 @@ void GLRasterizer::DrawElements(uint8_t  p_drawMode, const Resources::Mesh& p_me
 void GLRasterizer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const Data::Color& p_color)
 {
 	RasterizeLine(Geometry::Vertex(p_point0 ), Geometry::Vertex(p_point1), p_color);
-}
-
-void GLRasterizer::SendDataToGPU()
-{
-	RenderContext.TextureBuffer->SendDataToGPU();
 }
 
 void GLRasterizer::UseProgram(Rendering::AShader* p_shader)
@@ -219,6 +215,16 @@ void GLRasterizer::Terminate()
 	RenderContext.DepthBuffer = nullptr;
 }
 
+Buffers::TextureBuffer* GLRasterizer::GetFrameBuffer()
+{
+	return RenderContext.TextureBuffer;
+}
+
+uint32_t* GLRasterizer::GetFrameBufferDate()
+{
+	return RenderContext.TextureBuffer->GetData();
+}
+
 Buffers::TextureBuffer& GLRasterizer::GetTextureBuffer()
 {
 	return *RenderContext.TextureBuffer;
@@ -254,7 +260,7 @@ void RasterizeTriangle(uint8_t  p_drawMode, const Geometry::Vertex& p_vertex0, c
 {
 	std::array<glm::vec4, 3> processedVertices{ RenderContext.Shader->ProcessVertex(p_vertex0, 0), RenderContext.Shader->ProcessVertex(p_vertex1, 1) , RenderContext.Shader->ProcessVertex(p_vertex2, 2) };
 
-	if constexpr (Rendering::CLIPPING)
+	if constexpr (CLIPPING)
 	{
 		Geometry::Polygon currentPoly;
 		currentPoly.Vertices = { processedVertices[0], processedVertices[1], processedVertices[2] };

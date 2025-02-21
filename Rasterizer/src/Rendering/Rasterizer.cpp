@@ -8,17 +8,16 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Geometry/Triangle.h"
+#include "Rendering/GLRasterizer.h"
 #include "Rendering/Settings/ECullFace.h"
 #include "Rendering/Settings/ERenderState.h"
 
-Rendering::Rasterizer::Rasterizer(Context::Window& p_window, SDL_Renderer* p_sdlRenderer, uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight) :
+Rendering::Rasterizer::Rasterizer(Context::Window& p_window, uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight) :
 m_window(p_window),
-m_textureBuffer(p_sdlRenderer, p_rasterizationBufferWidth, p_rasterizationBufferHeight, SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING),
+m_textureBuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight),
 m_msaaBuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight),
 m_depthBuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight)
 {
-	m_window.ResizeEvent.AddListener(std::bind(&Rasterizer::OnResize, this, std::placeholders::_1, std::placeholders::_2));
-
 	InitializeClippingFrustum();
 }
 
@@ -67,11 +66,6 @@ void Rendering::Rasterizer::Clear(const Data::Color& p_color) const
 void Rendering::Rasterizer::ClearDepth() const
 {
 	m_depthBuffer.Clear();
-}
-
-void Rendering::Rasterizer::SendDataToGPU() const
-{
-	m_textureBuffer.SendDataToGPU();
 }
 
 void Rendering::Rasterizer::SetState(uint8_t p_state)
@@ -637,10 +631,4 @@ void Rendering::Rasterizer::ApplyMSAA() const
 Buffers::TextureBuffer& Rendering::Rasterizer::GetTextureBuffer()
 {
 	return m_textureBuffer;
-}
-
-void Rendering::Rasterizer::OnResize(uint16_t p_width, uint16_t p_height)
-{
-	//m_textureBuffer.Resize(p_width, p_height);
-	//m_depthBuffer.Resize(p_width, p_height);
 }

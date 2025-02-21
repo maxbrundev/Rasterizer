@@ -1,10 +1,10 @@
 #pragma once
 
+#include <SDL2/SDL_render.h>
+
 #include "Context/Window.h"
 
 #include "Context/Settings/DriverSettings.h"
-
-#include "Buffers/TextureBuffer.h"
 
 namespace Context
 {

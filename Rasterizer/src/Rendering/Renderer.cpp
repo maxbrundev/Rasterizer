@@ -1,7 +1,6 @@
 #include "Rendering/Renderer.h"
 
 #include "Rendering/GLRasterizer.h"
-#include "Rendering/Settings/ERenderState.h"
 #include "Resources/Loaders/TextureLoader.h"
 
 Rendering::Renderer::Renderer(Context::Driver& p_driver, Context::Window& p_window) :
@@ -11,15 +10,24 @@ m_emptyTexture(Resources::Loaders::TextureLoader::CreateColor
 	(255 << 24) | (255 << 16) | (255 << 8) | 255,
 	Resources::Settings::ETextureFilteringMode::NEAREST,
 	Resources::Settings::ETextureWrapMode::CLAMP
-))
+)),
+m_sdlTexture(nullptr)
 {
-	GLRasterizer::MakeCurrentContext(&p_window, m_driver.GetRenderer(), 800, 600);
+	GLRasterizer::MakeCurrentContext(&p_window, 800, 600);
+
+	m_sdlTexture = SDL_CreateTexture(m_driver.GetRenderer(), SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(800), static_cast<int>(600));
+
+
+	p_window.ResizeEvent.AddListener(std::bind(&Renderer::OnResize, this, std::placeholders::_1, std::placeholders::_2));
+
 	//m_rasterizer = std::make_unique<Rasterizer>(p_window, m_driver.GetRenderer(), 800, 600);
 }
 
 Rendering::Renderer::~Renderer()
 {
 	Resources::Loaders::TextureLoader::Destroy(m_emptyTexture);
+
+	SDL_DestroyTexture(m_sdlTexture);
 }
 
 void Rendering::Renderer::Clear(const Data::Color& p_color) const
@@ -92,8 +100,8 @@ void Rendering::Renderer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p
 void Rendering::Renderer::Render() const
 {
 	//m_rasterizer->SendDataToGPU();
-	GLRasterizer::SendDataToGPU();
-	m_driver.RenderCopy(GLRasterizer::GetTextureBuffer().GetSDLTexture());
+	SendDataToGPU();
+	m_driver.RenderCopy(m_sdlTexture);
 
 	m_driver.RenderPresent();
 }
@@ -107,6 +115,11 @@ void Rendering::Renderer::SetSamples(uint8_t p_samples) const
 {
 	GLRasterizer::SetSamples(p_samples);
 	//m_rasterizer->SetSamples(p_samples);
+}
+
+void Rendering::Renderer::SendDataToGPU() const
+{
+	SDL_UpdateTexture(m_sdlTexture, nullptr, GLRasterizer::GetTextureBuffer().GetData(), GLRasterizer::GetTextureBuffer().GetRawSize());
 }
 
 uint8_t Rendering::Renderer::FetchState() const
@@ -169,32 +182,18 @@ void Rendering::Renderer::ApplyStateMask(uint8_t p_mask)
 	}
 }
 
-void Rendering::Renderer::SetState(uint8_t p_state)
-{
-	m_state = p_state;
-}
-
-void Rendering::Renderer::SetDepthTest(bool p_depthTest)
-{
-	m_depthTest = p_depthTest;
-}
-
-void Rendering::Renderer::SetDepthWrite(bool p_depthWrite)
-{
-	m_depthWrite = p_depthWrite;
-}
-
-void Rendering::Renderer::SetCull(bool p_value)
-{
-	m_cull = p_value;
-}
-
-void Rendering::Renderer::SetCullFace(Settings::ECullFace p_cullFace)
-{
-	m_cullFace = p_cullFace;
-}
 
 SDL_Renderer* Rendering::Renderer::GetSDLRenderer() const
 {
 	return m_driver.GetRenderer();
+}
+
+void Rendering::Renderer::OnResize(uint16_t p_width, uint16_t p_height)
+{
+	//m_textureBuffer.Resize(p_width, p_height);
+	//m_depthBuffer.Resize(p_width, p_height);
+
+	//SDL_DestroyTexture(m_sdlTexture);
+
+	//m_sdlTexture = SDL_CreateTexture(m_driver.GetRenderer(), SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(GLRasterizer::GetTextureBuffer().GetWidth()), static_cast<int>(GLRasterizer::GetTextureBuffer().GetHeight()));
 }

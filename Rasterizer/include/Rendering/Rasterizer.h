@@ -22,12 +22,10 @@
 
 namespace Rendering
 {
-	constexpr bool CLIPPING = true;
-
 	class Rasterizer
 	{
 	public:
-		Rasterizer(Context::Window& p_window, SDL_Renderer* p_sdlRenderer, uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight);
+		Rasterizer(Context::Window& p_window, uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight);
 		~Rasterizer() = default;
 		
 		void RasterizeMesh(Settings::EDrawMode p_drawMode, const Resources::Mesh& p_mesh, AShader& p_shader);
@@ -36,8 +34,6 @@ namespace Rendering
 
 		void Clear(const Data::Color& p_color) const;
 		void ClearDepth() const;
-
-		void SendDataToGPU() const;
 
 		void SetState(uint8_t p_state);
 		void SetSamples(uint8_t p_samples);
@@ -69,8 +65,6 @@ namespace Rendering
 		void ClipAgainstPlane(Geometry::Polygon& p_polygon, const Geometry::Plane& p_plane);
 
 		void ApplyMSAA() const;
-
-		void OnResize(uint16_t p_width, uint16_t p_height);
 
 	private:
 		Context::Window& m_window;

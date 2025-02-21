@@ -1,11 +1,12 @@
 #pragma once
 
+#include <SDL2/SDL_render.h>
+
 #include "Context/Driver.h"
 
 #include "Rendering/Rasterizer.h"
 
 #include "Rendering/Settings/EDrawMode.h"
-#include "Rendering/Settings/ECullFace.h"
 
 #include "Rendering/AShader.h"
 #include "Resources/Model.h"
@@ -27,32 +28,24 @@ namespace Rendering
 		void Render() const;
 		void Clear() const;
 		void SetSamples(uint8_t p_samples) const;
-
+		//TODO FRAMEBUFFFER BIND
+		void SendDataToGPU() const;
 		uint8_t FetchState() const;
 		void ApplyStateMask(uint8_t p_mask);
-		void SetState(uint8_t p_state);
-
-		void SetDepthTest(bool p_value);
-		void SetDepthWrite(bool p_value);
-		void SetCull(bool p_value);
-
-		void SetCullFace(Settings::ECullFace p_cullFace);
 
 		SDL_Renderer* GetSDLRenderer() const;
 
 	private:
+
+		void OnResize(uint16_t p_width, uint16_t p_height);
+
 		Context::Driver& m_driver;
-		//std::unique_ptr<Rasterizer> m_rasterizer;
 
 		uint8_t m_state;
-		uint8_t m_samples = 0;
-		
-		bool m_depthTest  = true;
-		bool m_depthWrite = true;
-		bool m_cull       = true;
-
-		Settings::ECullFace m_cullFace = Settings::BACK;
+		//std::unique_ptr<Rasterizer> m_rasterizer;
 
 		Resources::Texture* m_emptyTexture;
+
+		SDL_Texture* m_sdlTexture;
 	};
 }
