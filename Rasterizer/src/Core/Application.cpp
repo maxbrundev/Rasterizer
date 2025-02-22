@@ -86,13 +86,6 @@ void Core::Application::Run()
 
 	Resources::Mesh planeMesh(vertices.Vertices, indices.Indices, 0);
 
-	auto test = Resources::Loaders::ModelLoader::Create("Resources/Models/Terriermon.obj");
-
-	for (Resources::Material* material : test->GetMaterials())
-	{
-		material->SetShader(&basicShader);
-	}
-
 	while (IsRunning())
 	{
 		m_context.device->PollEvents();
