@@ -4,7 +4,7 @@
 #include "Rendering/Settings/EPrimitiveMode.h"
 #include "Resources/Loaders/TextureLoader.h"
 
-Rendering::Renderer::Renderer(Context::SDLDriver& p_SDLdriver, Rendering::Driver& p_driver, Context::Window& p_window) :
+Rendering::Renderer::Renderer(Context::SDLDriver& p_SDLdriver, Driver& p_driver, Context::Window& p_window) :
 m_driver(p_SDLdriver),
 m_renderDriver(p_driver),
 m_emptyTexture(Resources::Loaders::TextureLoader::CreateColor
@@ -18,7 +18,6 @@ m_sdlTexture(nullptr)
 	GLRasterizer::Initialize(800, 600);
 
 	m_sdlTexture = SDL_CreateTexture(m_driver.GetRenderer(), SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(800), static_cast<int>(600));
-
 
 	p_window.ResizeEvent.AddListener(std::bind(&Renderer::OnResize, this, std::placeholders::_1, std::placeholders::_2));
 
@@ -159,7 +158,6 @@ void Rendering::Renderer::ApplyStateMask(uint8_t p_mask)
 		m_state = p_mask;
 	}
 }
-
 
 SDL_Renderer* Rendering::Renderer::GetSDLRenderer() const
 {

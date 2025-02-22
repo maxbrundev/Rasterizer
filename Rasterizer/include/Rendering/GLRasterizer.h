@@ -4,6 +4,8 @@
 
 #include "Buffers/TextureBuffer.h"
 #include "Context/Window.h"
+
+//TODO: IMPLEMENT BUFFERS API SHOULD NOT BE AWARE OF MODEL CLASS.
 #include "Resources/Model.h"
 
 constexpr bool CLIPPING = true;
@@ -34,13 +36,12 @@ namespace GLRasterizer
 	void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const Data::Color& p_color);
 	void UseProgram(Rendering::AShader* p_shader);
 	void SetSamples(uint8_t p_samples);
-	void PolygoneMode(uint8_t p_mode);
+	void PolygonMode(uint8_t p_mode);
 	void Enable(uint8_t p_state);
 	void Disable(uint8_t p_state);
 	bool IsEnabled(uint8_t p_capability);
 	void CullFace(uint8_t p_face);
 	void DepthMask(bool p_flag);
-
 	void GetBool(uint8_t p_name, bool* p_params);
 	void GetInt(uint8_t p_name, int* p_params);
 	void Terminate();

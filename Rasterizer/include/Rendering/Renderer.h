@@ -19,7 +19,7 @@ namespace Rendering
 	class Renderer
 	{
 	public:
-		Renderer(Context::SDLDriver& p_SDLdriver, Rendering::Driver& p_driver, Context::Window& p_window);
+		Renderer(Context::SDLDriver& p_SDLdriver, Driver& p_driver, Context::Window& p_window);
 		~Renderer();
 
 		void Clear(const Data::Color& p_color) const;
@@ -30,7 +30,7 @@ namespace Rendering
 		void Render() const;
 		void Clear() const;
 		void SetSamples(uint8_t p_samples) const;
-		//TODO FRAMEBUFFFER BIND
+		//TODO: FRAMEBUFFER BIND.
 		void SendDataToGPU() const;
 		uint8_t FetchState();
 		void ApplyStateMask(uint8_t p_mask);
@@ -38,9 +38,9 @@ namespace Rendering
 		SDL_Renderer* GetSDLRenderer() const;
 
 	private:
-
 		void OnResize(uint16_t p_width, uint16_t p_height);
 
+	private:
 		Context::SDLDriver& m_driver;
 		Driver& m_renderDriver;
 
@@ -49,6 +49,7 @@ namespace Rendering
 
 		Resources::Texture* m_emptyTexture;
 
+		//TODO: FRAMEBUFFER CLASS
 		SDL_Texture* m_sdlTexture;
 	};
 }

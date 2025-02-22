@@ -38,11 +38,9 @@ namespace
 {
 	struct RenderContext
 	{
-		Context::Window* Window = nullptr;
-
 		Buffers::TextureBuffer* TextureBuffer = nullptr;
-		Buffers::DepthBuffer* DepthBuffer = nullptr;
-		Buffers::MSAABuffer* MsaaBuffer = nullptr;
+		Buffers::DepthBuffer* DepthBuffer     = nullptr;
+		Buffers::MSAABuffer* MsaaBuffer       = nullptr;
 
 		uint8_t State = 0;
 		uint8_t PolygoneMode = GLR_FILL;
@@ -134,7 +132,7 @@ void GLRasterizer::SetSamples(uint8_t p_samples)
 	RenderContext.MsaaBuffer->SetSamplesAmount(p_samples);
 }
 
-void GLRasterizer::PolygoneMode(uint8_t p_mode)
+void GLRasterizer::PolygonMode(uint8_t p_mode)
 {
 	if (p_mode <= GLR_POINT)
 		RenderContext.PolygoneMode = p_mode;

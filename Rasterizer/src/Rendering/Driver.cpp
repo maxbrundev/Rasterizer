@@ -9,7 +9,7 @@ Rendering::Driver::Driver()
 
 void Rendering::Driver::SetRasterizationMode(Settings::ERasterizationMode p_rasterizationMode)
 {
-	GLRasterizer::PolygoneMode(static_cast<uint8_t>(p_rasterizationMode));
+	GLRasterizer::PolygonMode(static_cast<uint8_t>(p_rasterizationMode));
 }
 
 void Rendering::Driver::SetCapability(Settings::ERenderingCapability p_capability, bool p_value)
