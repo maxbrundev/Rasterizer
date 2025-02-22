@@ -15,6 +15,8 @@
 
 #include "Tools/Time/Clock.h"
 
+//#define RENDER_TEST
+
 Core::Application::Application(const Context::Settings::WindowSettings& p_windowSettings, const Context::Settings::DriverSettings& p_driverSettings) :
 m_context(p_windowSettings, p_driverSettings),
 m_cameraController(m_camera, m_cameraPosition),
@@ -37,6 +39,7 @@ Core::Application::~Application()
 
 void Core::Application::Initialize()
 {
+#ifndef RENDER_TEST
 	m_context.device->DropFileEvent.AddListener([this](const std::string& p_filePath) 
 	{
 		if (m_currentModel != nullptr)
@@ -51,6 +54,7 @@ void Core::Application::Initialize()
 			material->SetShader(&basicShader);
 		}
 	});
+#endif
 
 	m_defaultMaterial.SetShader(&basicShader);
 
@@ -130,25 +134,27 @@ void Core::Application::Run()
 		basicShader.SetUniformMat4("u_Projection", projection);
 		basicShader.SetUniformVec3("u_ViewPos", m_cameraPosition);
 
-		if (m_currentModel)
-		{
-			m_context.renderer->Draw(*m_currentModel, &m_defaultMaterial);
-			model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
-			basicShader.SetUniformMat4("u_Model", model);
-			//m_context.renderDriver->SetCapability(Rendering::Settings::DEPTH_TEST, false);
-			//m_context.renderDriver->SetDepthWriting(false);
-			m_context.renderDriver->SetRasterizationMode(Rendering::Settings::ERasterizationMode::LINE);
-			m_context.renderer->Draw(*m_currentModel, &m_defaultMaterial);
-			m_context.renderDriver->SetRasterizationMode(Rendering::Settings::ERasterizationMode::FILL);
-			//m_context.renderDriver->SetCapability(Rendering::Settings::DEPTH_TEST, true);
-			//m_context.renderDriver->SetDepthWriting(true);
+#ifdef RENDER_TEST
+		//RENDER TEST
+		m_context.renderer->Draw(*m_currentModel, &m_defaultMaterial);
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
+		basicShader.SetUniformMat4("u_Model", model);
+		//m_context.renderDriver->SetCapability(Rendering::Settings::DEPTH_TEST, false);
+		//m_context.renderDriver->SetDepthWriting(false);
+		m_context.renderDriver->SetRasterizationMode(Rendering::Settings::ERasterizationMode::LINE);
+		m_context.renderer->Draw(*m_currentModel, &m_defaultMaterial);
+		m_context.renderDriver->SetRasterizationMode(Rendering::Settings::ERasterizationMode::FILL);
+		//m_context.renderDriver->SetCapability(Rendering::Settings::DEPTH_TEST, true);
+		//m_context.renderDriver->SetDepthWriting(true);
 
-			m_context.renderDriver->SetRasterizationMode(Rendering::Settings::ERasterizationMode::POINT);
-			model = glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, 0.0f, 0.0f));
-			basicShader.SetUniformMat4("u_Model", model);
-			m_context.renderer->Draw(*m_currentModel, &m_defaultMaterial);
-			m_context.renderDriver->SetRasterizationMode(Rendering::Settings::ERasterizationMode::FILL);
-		}
+		m_context.renderDriver->SetRasterizationMode(Rendering::Settings::ERasterizationMode::POINT);
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, 0.0f, 0.0f));
+		basicShader.SetUniformMat4("u_Model", model);
+		m_context.renderer->Draw(*m_currentModel, &m_defaultMaterial);
+		m_context.renderDriver->SetRasterizationMode(Rendering::Settings::ERasterizationMode::FILL);
+#else
+		m_context.renderer->Draw(*m_currentModel, &m_defaultMaterial);
+#endif
 
 		m_context.renderer->Render();
 		m_context.inputManager->ClearEvents();
