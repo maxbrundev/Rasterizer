@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstdint>
+
 namespace Rendering::Settings
 {
-	enum EDrawMode : uint8_t
+	enum class EPrimitiveMode : uint8_t
 	{
 		TRIANGLES,
 		LINES,

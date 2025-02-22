@@ -10,10 +10,10 @@
 #include "Geometry/Polygon.h"
 #include "Geometry/Triangle.h"
 
-void RasterizeMesh(uint8_t  p_drawMode, const Resources::Mesh& p_mesh);
+void RasterizeMesh(uint8_t p_primitiveMode, const Resources::Mesh& p_mesh);
 void RasterizeLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Data::Color& p_color);
-void RasterizeTriangle(uint8_t  p_drawMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2);
-void TransformAndRasterizeVertices(const uint8_t  p_drawMode, const std::array<glm::vec4, 3>& processedVertices);
+void RasterizeTriangle(uint8_t  p_primitiveMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2);
+void TransformAndRasterizeVertices(const uint8_t  p_primitiveMode, const std::array<glm::vec4, 3>& processedVertices);
 void ComputeFragments(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices);
 
 void SetFragment(const Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_y, const std::array<glm::vec4, 3>& p_transformedVertices);
@@ -45,7 +45,8 @@ namespace
 		Buffers::MSAABuffer* MsaaBuffer = nullptr;
 
 		uint8_t State = 0;
-
+		uint8_t PolygoneMode = GLR_FILL;
+		uint8_t CullFace = GLR_BACK;
 		uint8_t SampleCount = 0;
 
 		std::array<Geometry::Plane, 6> ClippingFrustum;
@@ -92,7 +93,7 @@ namespace
 	}
 }
 
-void GLRasterizer::MakeCurrentContext(Context::Window* p_window, uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight)
+void GLRasterizer::Initialize(uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight)
 {
 	RenderContext.TextureBuffer = new Buffers::TextureBuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
 	RenderContext.MsaaBuffer = new Buffers::MSAABuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
@@ -112,7 +113,7 @@ void GLRasterizer::ClearDepth()
 	RenderContext.DepthBuffer->Clear();
 }
 
-void GLRasterizer::DrawElements(uint8_t  p_drawMode, const Resources::Mesh& p_mesh)
+void GLRasterizer::DrawElements(uint8_t p_drawMode, const Resources::Mesh& p_mesh)
 {
 	RasterizeMesh(p_drawMode, p_mesh);
 }
@@ -127,15 +128,18 @@ void GLRasterizer::UseProgram(Rendering::AShader* p_shader)
 	RenderContext.Shader = p_shader;
 }
 
-void GLRasterizer::SetState(uint8_t p_state)
-{
-	RenderContext.State = p_state;
-}
-
 void GLRasterizer::SetSamples(uint8_t p_samples)
 {
 	RenderContext.SampleCount = p_samples;
 	RenderContext.MsaaBuffer->SetSamplesAmount(p_samples);
+}
+
+void GLRasterizer::PolygoneMode(uint8_t p_mode)
+{
+	if (p_mode <= GLR_POINT)
+		RenderContext.PolygoneMode = p_mode;
+	else
+		RenderContext.PolygoneMode = GLR_FILL;
 }
 
 void GLRasterizer::Enable(uint8_t p_state)
@@ -148,10 +152,17 @@ void GLRasterizer::Disable(uint8_t p_state)
 	RenderContext.State &= ~p_state;
 }
 
+bool GLRasterizer::IsEnabled(uint8_t p_capability)
+{
+	return (RenderContext.State & p_capability) != 0;
+}
+
 void GLRasterizer::CullFace(uint8_t p_face)
 {
-	RenderContext.State &= ~(GLR_BACK | GLR_FRONT);
-	RenderContext.State |= p_face;
+	if (p_face <= GLR_FRONT_AND_BACK)
+		RenderContext.CullFace = p_face;
+	else
+		RenderContext.CullFace = GLR_BACK;
 }
 
 void GLRasterizer::DepthMask(bool p_flag)
@@ -166,41 +177,45 @@ void GLRasterizer::DepthMask(bool p_flag)
 	}
 }
 
-bool GLRasterizer::GetBool(int p_parameter)
+void GLRasterizer::GetBool(uint8_t p_name, bool* p_params)
 {
-	if (p_parameter == GLR_DEPTH_WRITE)
-		return (RenderContext.State & GLR_DEPTH_WRITE) != 0;
+	if (!p_params) return;
 
-	return false;
-}
-
-bool GLRasterizer::GetCapability(int p_capability)
-{
-	if (p_capability == GLR_CULL_FACE)
-		return (RenderContext.State & GLR_CULL_FACE) != 0;
-
-	if (p_capability == GLR_DEPTH_TEST)
-		return (RenderContext.State & GLR_DEPTH_TEST) != 0;
-
-	return false;
-}
-
-int GLRasterizer::GetInt(int p_parameter)
-{
-	if (p_parameter == GLR_CULL_FACE)
+	switch (p_name)
 	{
-		int faceBits = RenderContext.State & (GLR_BACK | GLR_FRONT);
-
-		if (faceBits == (GLR_BACK | GLR_FRONT))
-			return GLR_BACK | GLR_FRONT;
-
-		if (faceBits & GLR_BACK)
-			return GLR_BACK;
-
-		if (faceBits & GLR_FRONT)
-			return GLR_FRONT;
+	case GLR_DEPTH_WRITE:
+		*p_params = (RenderContext.State & GLR_DEPTH_WRITE) != 0;
+		break;
+	case GLR_DEPTH_TEST:
+		*p_params = (RenderContext.State & GLR_DEPTH_TEST) != 0;
+		break;
+	case GLR_CULL_FACE:
+		*p_params = (RenderContext.State & GLR_CULL_FACE) != 0;
+		break;
+	default:
+		*p_params = false;
+		break;
 	}
-	return 0;
+}
+
+void GLRasterizer::GetInt(uint8_t p_name, int* p_params)
+{
+	if (!p_params) return;
+
+	switch (p_name)
+	{
+	case GLR_CULL_FACE:
+		*p_params = RenderContext.CullFace;
+		break;
+	case GLR_FILL:
+	case GLR_LINE:
+	case GLR_POINT:
+		*p_params = RenderContext.PolygoneMode;
+		break;
+	default:
+		*p_params = -1;
+		break;
+	}
 }
 
 void GLRasterizer::Terminate()
@@ -230,7 +245,7 @@ Buffers::TextureBuffer& GLRasterizer::GetTextureBuffer()
 	return *RenderContext.TextureBuffer;
 }
 
-void RasterizeMesh(uint8_t  p_drawMode, const Resources::Mesh& p_mesh)
+void RasterizeMesh(uint8_t p_primitiveMode, const Resources::Mesh& p_mesh)
 {
 	const auto& vertices = p_mesh.GetVertices();
 	const auto& indices = p_mesh.GetIndices();
@@ -239,14 +254,14 @@ void RasterizeMesh(uint8_t  p_drawMode, const Resources::Mesh& p_mesh)
 	{
 		for (uint32_t i = 0; i < indices.size(); i += 3)
 		{
-			RasterizeTriangle(p_drawMode, vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
+			RasterizeTriangle(p_primitiveMode, vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
 		}
 	}
 	else if (vertices.size() % 3 == 0)
 	{
 		for (uint32_t i = 0; i < vertices.size(); i += 3)
 		{
-			RasterizeTriangle(p_drawMode, vertices[i], vertices[i + 1], vertices[i + 2]);
+			RasterizeTriangle(p_primitiveMode, vertices[i], vertices[i + 1], vertices[i + 2]);
 		}
 	}
 
@@ -256,7 +271,7 @@ void RasterizeMesh(uint8_t  p_drawMode, const Resources::Mesh& p_mesh)
 	}
 }
 
-void RasterizeTriangle(uint8_t  p_drawMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2)
+void RasterizeTriangle(uint8_t p_primitiveMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2)
 {
 	std::array<glm::vec4, 3> processedVertices{ RenderContext.Shader->ProcessVertex(p_vertex0, 0), RenderContext.Shader->ProcessVertex(p_vertex1, 1) , RenderContext.Shader->ProcessVertex(p_vertex2, 2) };
 
@@ -280,16 +295,16 @@ void RasterizeTriangle(uint8_t  p_drawMode, const Geometry::Vertex& p_vertex0, c
 			RenderContext.Shader->SetVarying<glm::vec2>("v_TextCoords", currentPoly.TextCoords[i + 1], 1);
 			RenderContext.Shader->SetVarying<glm::vec2>("v_TextCoords", currentPoly.TextCoords[i + 2], 2);
 
-			TransformAndRasterizeVertices(p_drawMode, clippedVertices);
+			TransformAndRasterizeVertices(p_primitiveMode, clippedVertices);
 		}
 	}
 	else
 	{
-		TransformAndRasterizeVertices(p_drawMode, processedVertices);
+		TransformAndRasterizeVertices(p_primitiveMode, processedVertices);
 	}
 }
 
-void TransformAndRasterizeVertices(const uint8_t  p_drawMode, const std::array<glm::vec4, 3>& processedVertices)
+void TransformAndRasterizeVertices(const uint8_t p_primitiveMode, const std::array<glm::vec4, 3>& processedVertices)
 {
 	glm::vec3 vertexScreenPosition0 = ComputeScreenSpaceCoordinate(processedVertices[0]);
 	glm::vec3 vertexScreenPosition1 = ComputeScreenSpaceCoordinate(processedVertices[1]);
@@ -322,22 +337,35 @@ void TransformAndRasterizeVertices(const uint8_t  p_drawMode, const std::array<g
 	float area = triangle.ComputeArea();
 
 
-	if ((RenderContext.State & GLR_BACK && area > 0.0f)
-		|| (RenderContext.State & GLR_FRONT && area < 0.0f))
+	if ((RenderContext.CullFace == GLR_BACK && area > 0.0f) ||
+		(RenderContext.CullFace == GLR_FRONT && area < 0.0f) ||
+		(RenderContext.CullFace == GLR_FRONT_AND_BACK))
 		return;
 
-	switch (p_drawMode)
+	if (p_primitiveMode == GLR_TRIANGLES)
 	{
-	case GLR_TRIANGLES:
-		ComputeFragments(triangle, transformedVertices);
-		break;
-	case GLR_LINES:
-		RasterizeTriangleWireframe(triangle, transformedVertices);
-		break;
-	case GLR_POINTS:
-		RasterizeTrianglePoints(triangle, transformedVertices);
-		break;
+		switch (RenderContext.PolygoneMode)
+		{
+		case GLR_FILL:
+			ComputeFragments(triangle, transformedVertices);
+			break;
+		case GLR_LINE:
+			RasterizeTriangleWireframe(triangle, transformedVertices);
+			break;
+		case GLR_POINT:
+			RasterizeTrianglePoints(triangle, transformedVertices);
+			break;
+		}
 	}
+	else if (p_primitiveMode == GLR_LINES)
+	{
+		RasterizeTriangleWireframe(triangle, transformedVertices);
+	}
+	else if (p_primitiveMode == GLR_POINTS)
+	{
+		RasterizeTrianglePoints(triangle, transformedVertices);
+	}
+	
 }
 
 void ComputeFragments(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices)

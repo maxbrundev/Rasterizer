@@ -1,10 +1,10 @@
-#include "Context/Driver.h"
+#include "Context/SDLDriver.h"
 
 #include <stdexcept>
 
 #include <SDL2/SDL.h>
 
-Context::Driver::Driver(Window& p_window, const Settings::DriverSettings& p_driverSettings) : m_window(p_window)
+Context::SDLDriver::SDLDriver(Window& p_window, const Settings::DriverSettings& p_driverSettings) : m_window(p_window)
 {
 	m_flags = p_driverSettings.vsync ? SDL_RENDERER_PRESENTVSYNC : 0;
 	m_flags |= SDL_RENDERER_ACCELERATED;
@@ -14,28 +14,28 @@ Context::Driver::Driver(Window& p_window, const Settings::DriverSettings& p_driv
 	m_isActive = true;
 }
 
-Context::Driver::~Driver()
+Context::SDLDriver::~SDLDriver()
 {
 	SDL_DestroyRenderer(m_sdlRenderer);
 
 }
 
-void Context::Driver::RenderClear() const
+void Context::SDLDriver::RenderClear() const
 {
 	SDL_RenderClear(m_sdlRenderer);
 }
 
-void Context::Driver::RenderCopy(SDL_Texture* p_texture) const
+void Context::SDLDriver::RenderCopy(SDL_Texture* p_texture) const
 {
 	SDL_RenderCopy(m_sdlRenderer, p_texture, nullptr, nullptr);
 }
 
-void Context::Driver::RenderPresent() const
+void Context::SDLDriver::RenderPresent() const
 {
 	SDL_RenderPresent(m_sdlRenderer);
 }
 
-void Context::Driver::CreateRenderer()
+void Context::SDLDriver::CreateRenderer()
 {
 	m_sdlRenderer = SDL_CreateRenderer(m_window.GetSDLWindow(), -1, m_flags);
 
@@ -46,12 +46,12 @@ void Context::Driver::CreateRenderer()
 	}
 }
 
-bool Context::Driver::IsActive() const
+bool Context::SDLDriver::IsActive() const
 {
 	return m_isActive;
 }
 
-SDL_Renderer* Context::Driver::GetRenderer() const
+SDL_Renderer* Context::SDLDriver::GetRenderer() const
 {
 	return m_sdlRenderer;
 }

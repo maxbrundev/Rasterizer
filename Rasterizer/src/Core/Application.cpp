@@ -82,6 +82,13 @@ void Core::Application::Run()
 
 	Resources::Mesh planeMesh(vertices.Vertices, indices.Indices, 0);
 
+	auto test = Resources::Loaders::ModelLoader::Create("Resources/Models/Terriermon.obj");
+
+	for (Resources::Material* material : test->GetMaterials())
+	{
+		material->SetShader(&basicShader);
+	}
+
 	while (IsRunning())
 	{
 		m_context.device->PollEvents();
@@ -125,7 +132,22 @@ void Core::Application::Run()
 
 		if (m_currentModel)
 		{
-			m_context.renderer->Draw(Rendering::Settings::EDrawMode::TRIANGLES, *m_currentModel, &m_defaultMaterial);
+			m_context.renderer->Draw(*m_currentModel, &m_defaultMaterial);
+			model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
+			basicShader.SetUniformMat4("u_Model", model);
+			//m_context.renderDriver->SetCapability(Rendering::Settings::DEPTH_TEST, false);
+			//m_context.renderDriver->SetDepthWriting(false);
+			m_context.renderDriver->SetRasterizationMode(Rendering::Settings::ERasterizationMode::LINE);
+			m_context.renderer->Draw(*m_currentModel, &m_defaultMaterial);
+			m_context.renderDriver->SetRasterizationMode(Rendering::Settings::ERasterizationMode::FILL);
+			//m_context.renderDriver->SetCapability(Rendering::Settings::DEPTH_TEST, true);
+			//m_context.renderDriver->SetDepthWriting(true);
+
+			m_context.renderDriver->SetRasterizationMode(Rendering::Settings::ERasterizationMode::POINT);
+			model = glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, 0.0f, 0.0f));
+			basicShader.SetUniformMat4("u_Model", model);
+			m_context.renderer->Draw(*m_currentModel, &m_defaultMaterial);
+			m_context.renderDriver->SetRasterizationMode(Rendering::Settings::ERasterizationMode::FILL);
 		}
 
 		m_context.renderer->Render();

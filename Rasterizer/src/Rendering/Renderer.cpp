@@ -1,10 +1,12 @@
 #include "Rendering/Renderer.h"
 
 #include "Rendering/GLRasterizer.h"
+#include "Rendering/Settings/EPrimitiveMode.h"
 #include "Resources/Loaders/TextureLoader.h"
 
-Rendering::Renderer::Renderer(Context::Driver& p_driver, Context::Window& p_window) :
-m_driver(p_driver),
+Rendering::Renderer::Renderer(Context::SDLDriver& p_SDLdriver, Rendering::Driver& p_driver, Context::Window& p_window) :
+m_driver(p_SDLdriver),
+m_renderDriver(p_driver),
 m_emptyTexture(Resources::Loaders::TextureLoader::CreateColor
 (
 	(255 << 24) | (255 << 16) | (255 << 8) | 255,
@@ -13,7 +15,7 @@ m_emptyTexture(Resources::Loaders::TextureLoader::CreateColor
 )),
 m_sdlTexture(nullptr)
 {
-	GLRasterizer::MakeCurrentContext(&p_window, 800, 600);
+	GLRasterizer::Initialize(800, 600);
 
 	m_sdlTexture = SDL_CreateTexture(m_driver.GetRenderer(), SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(800), static_cast<int>(600));
 
@@ -42,12 +44,11 @@ void Rendering::Renderer::ClearDepth() const
 	//m_rasterizer->ClearDepth();
 }
 
-void Rendering::Renderer::Draw(Settings::EDrawMode p_drawMode, Resources::Model& p_model, Resources::Material* p_defaultMaterial)
+void Rendering::Renderer::Draw(Resources::Model& p_model, Resources::Material* p_defaultMaterial)
 {
 	uint8_t state = FetchState();
 
 	ApplyStateMask(state);
-
 
 	//m_rasterizer->SetState(state);
 
@@ -62,12 +63,12 @@ void Rendering::Renderer::Draw(Settings::EDrawMode p_drawMode, Resources::Model&
 			if (!material || !material->GetShader())
 				material = p_defaultMaterial;
 
-			DrawMesh(p_drawMode, *mesh, *material);
+			DrawMesh(Settings::EPrimitiveMode::TRIANGLES, *mesh, *material);
 		}
 	}
 }
 
-void Rendering::Renderer::DrawMesh(Settings::EDrawMode p_drawMode, Resources::Mesh& p_mesh, const Resources::Material& p_material)
+void Rendering::Renderer::DrawMesh(Settings::EPrimitiveMode p_drawMode, Resources::Mesh& p_mesh, const Resources::Material& p_material)
 {
 	if (p_material.GetShader() != nullptr)
 	{
@@ -76,9 +77,9 @@ void Rendering::Renderer::DrawMesh(Settings::EDrawMode p_drawMode, Resources::Me
 		ApplyStateMask(state);
 
 		//m_rasterizer->SetState(state);
-
+		 
 		p_material.Bind(m_emptyTexture);
-		GLRasterizer::DrawElements(p_drawMode, p_mesh);
+		GLRasterizer::DrawElements(static_cast<uint8_t>(p_drawMode), p_mesh);
 
 		//m_rasterizer->RasterizeMesh(p_drawMode, p_mesh, *p_material.GetShader());
 	}
@@ -90,7 +91,6 @@ void Rendering::Renderer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p
 
 	ApplyStateMask(state);
 
-	GLRasterizer::SetState(state);
 	//m_rasterizer->SetState(state);
 	p_shader.Bind();
 	GLRasterizer::DrawLine({ p_point0 }, { p_point1 }, p_color);
@@ -122,29 +122,21 @@ void Rendering::Renderer::SendDataToGPU() const
 	SDL_UpdateTexture(m_sdlTexture, nullptr, GLRasterizer::GetTextureBuffer().GetData(), GLRasterizer::GetTextureBuffer().GetRawSize());
 }
 
-uint8_t Rendering::Renderer::FetchState() const
+uint8_t Rendering::Renderer::FetchState()
 {
 	uint8_t result = 0;
-	
-	if (GLRasterizer::GetBool(GLR_DEPTH_WRITE))
-		result |= GLR_DEPTH_WRITE;
-	if (GLRasterizer::GetCapability(GLR_CULL_FACE))
-		result |= GLR_CULL_FACE;
-	if (GLRasterizer::GetCapability(GLR_DEPTH_TEST))
-		result |= GLR_DEPTH_TEST;
 
-	int face = GLRasterizer::GetInt(GLR_CULL_FACE);
-	switch (face)
+	if (m_renderDriver.GetBool(GLR_DEPTH_WRITE))             result |= 0b0000'0001;
+	if (m_renderDriver.GetCapability(Settings::DEPTH_TEST))  result |= 0b0000'0010;
+	if (m_renderDriver.GetCapability(Settings::CULL_FACE))   result |= 0b0000'0100;
+
+	switch (static_cast<Settings::ECullFace>(m_renderDriver.GetInt(GLR_CULL_FACE)))
 	{
-	case GLR_BACK:
-		result |= GLR_BACK;
-		break;
-	case GLR_FRONT:
-		result |= GLR_FRONT;
-		break;
-	default:
-		break;
+	case Settings::ECullFace::BACK:           result |= 0b0000'1000; break;
+	case Settings::ECullFace::FRONT:          result |= 0b0001'0000; break;
+	case Settings::ECullFace::FRONT_AND_BACK: result |= 0b0010'0000; break;
 	}
+
 	return result;
 }
 
@@ -152,30 +144,16 @@ void Rendering::Renderer::ApplyStateMask(uint8_t p_mask)
 {
 	if (p_mask != m_state)
 	{
-		if ((p_mask & GLR_DEPTH_WRITE) != (m_state & GLR_DEPTH_WRITE))
-			GLRasterizer::DepthMask((p_mask & GLR_DEPTH_WRITE) != 0);
 
-		if ((p_mask & GLR_DEPTH_TEST) != (m_state & GLR_DEPTH_TEST))
-		{
-			if (p_mask & GLR_DEPTH_TEST)
-				GLRasterizer::Enable(GLR_DEPTH_TEST);
-			else
-				GLRasterizer::Disable(GLR_DEPTH_TEST);
-		}
+		if ((p_mask & 0x01) != (m_state & 0x01)) m_renderDriver.SetDepthWriting(p_mask & 0x01);
+		if ((p_mask & 0x02) != (m_state & 0x02)) m_renderDriver.SetCapability(Settings::DEPTH_TEST, p_mask & 0x02);
+		if ((p_mask & 0x04) != (m_state & 0x04)) m_renderDriver.SetCapability(Settings::CULL_FACE, p_mask & 0x04);
 
-		if ((p_mask & GLR_CULL_FACE) != (m_state & GLR_CULL_FACE))
+		if ((p_mask & 0x04) && ((p_mask & 0x08) != (m_state & 0x08) || (p_mask & 0x10) != (m_state & 0x10)))
 		{
-			if (p_mask & GLR_CULL_FACE)
-				GLRasterizer::Enable(GLR_CULL_FACE);
-			else
-				GLRasterizer::Disable(GLR_CULL_FACE);
-		}
-
-		if ((p_mask & (GLR_BACK | GLR_FRONT)) != (m_state & (GLR_BACK | GLR_FRONT)))
-		{
-			int backBit = p_mask & GLR_BACK;
-			int frontBit = p_mask & GLR_FRONT;
-			GLRasterizer::CullFace((backBit && frontBit) ? (GLR_BACK | GLR_FRONT) : (backBit ? GLR_BACK : GLR_FRONT));
+			const int backBit = p_mask & 0x08;
+			const int frontBit = p_mask & 0x10;
+			m_renderDriver.SetCullFace(backBit && frontBit ? Settings::FRONT_AND_BACK : (backBit ? Settings::BACK : Settings::FRONT));
 		}
 
 		m_state = p_mask;

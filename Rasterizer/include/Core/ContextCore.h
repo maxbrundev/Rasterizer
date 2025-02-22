@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "Context/Driver.h"
+#include "Context/SDLDriver.h"
 #include "Context/Settings/WindowSettings.h"
 
 #include "Core/CameraController.h"
@@ -22,7 +22,8 @@ namespace Core
 	public:
 		std::unique_ptr<Context::Device>      device;
 		std::unique_ptr<Context::Window>      window;
-		std::unique_ptr<Context::Driver>      driver;
+		std::unique_ptr<Context::SDLDriver>      driver;
+		std::unique_ptr<Rendering::Driver>      renderDriver;
 		std::unique_ptr<Inputs::InputManager> inputManager;
 		std::unique_ptr<Rendering::Renderer>  renderer;
 	};

@@ -8,11 +8,11 @@
 
 namespace Context
 {
-	class Driver
+	class SDLDriver
 	{
 	public:
-		Driver(Window& p_window, const Settings::DriverSettings& p_driverSettings);
-		~Driver();
+		SDLDriver(Window& p_window, const Settings::DriverSettings& p_driverSettings);
+		~SDLDriver();
 
 		void RenderClear() const;
 		void RenderCopy(SDL_Texture* p_texture) const;

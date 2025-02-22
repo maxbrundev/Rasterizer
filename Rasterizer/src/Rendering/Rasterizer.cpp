@@ -10,7 +10,7 @@
 #include "Geometry/Triangle.h"
 #include "Rendering/GLRasterizer.h"
 #include "Rendering/Settings/ECullFace.h"
-#include "Rendering/Settings/ERenderState.h"
+#include "Rendering/Settings/ERenderingCapability.h"
 
 Rendering::Rasterizer::Rasterizer(Context::Window& p_window, uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight) :
 m_window(p_window),
@@ -79,7 +79,7 @@ void Rendering::Rasterizer::SetSamples(uint8_t p_samples)
 	m_msaaBuffer.SetSamplesAmount(p_samples);
 }
 
-void Rendering::Rasterizer::RasterizeMesh(Settings::EDrawMode p_drawMode, const Resources::Mesh& p_mesh, AShader& p_shader)
+void Rendering::Rasterizer::RasterizeMesh(Settings::ERasterizationMode p_drawMode, const Resources::Mesh& p_mesh, AShader& p_shader)
 {
 	const auto& vertices = p_mesh.GetVertices();
 	const auto& indices = p_mesh.GetIndices();
@@ -105,7 +105,7 @@ void Rendering::Rasterizer::RasterizeMesh(Settings::EDrawMode p_drawMode, const 
 	}
 }
 
-void Rendering::Rasterizer::RasterizeTriangle(Settings::EDrawMode p_drawMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, AShader& p_shader)
+void Rendering::Rasterizer::RasterizeTriangle(Settings::ERasterizationMode p_drawMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, AShader& p_shader)
 {
 	std::array<glm::vec4, 3> processedVertices{ p_shader.ProcessVertex(p_vertex0, 0), p_shader.ProcessVertex(p_vertex1, 1) , p_shader.ProcessVertex(p_vertex2, 2) };
 
@@ -138,7 +138,7 @@ void Rendering::Rasterizer::RasterizeTriangle(Settings::EDrawMode p_drawMode, co
 	}
 }
 
-void Rendering::Rasterizer::TransformAndRasterizeVertices(const Settings::EDrawMode p_drawMode, const std::array<glm::vec4, 3>& processedVertices, AShader& p_shader)
+void Rendering::Rasterizer::TransformAndRasterizeVertices(const Settings::ERasterizationMode p_drawMode, const std::array<glm::vec4, 3>& processedVertices, AShader& p_shader)
 {
 	glm::vec3 vertexScreenPosition0 = ComputeScreenSpaceCoordinate(processedVertices[0]);
 	glm::vec3 vertexScreenPosition1 = ComputeScreenSpaceCoordinate(processedVertices[1]);
@@ -177,13 +177,13 @@ void Rendering::Rasterizer::TransformAndRasterizeVertices(const Settings::EDrawM
 
 	switch (p_drawMode)
 	{
-	case Settings::TRIANGLES:
+	case Settings::ERasterizationMode::FILL:
 		ComputeFragments(triangle, transformedVertices, p_shader);
 		break;
-	case Settings::LINES:
+	case Settings::ERasterizationMode::LINE:
 		RasterizeTriangleWireframe(triangle, transformedVertices, p_shader);
 		break;
-	case Settings::POINTS:
+	case Settings::ERasterizationMode::POINT:
 		RasterizeTrianglePoints(triangle, transformedVertices, p_shader);
 		break;
 	}
@@ -227,7 +227,7 @@ void Rendering::Rasterizer::SetFragment(const Geometry::Triangle& p_triangle, ui
 	{
 		const float depth = p_transformedVertices[0].z * barycentricCoords.z + p_transformedVertices[2].z * barycentricCoords.x + barycentricCoords.y * p_transformedVertices[1].z;
 
-		if (!(m_state & Settings::ERenderState::DEPTH_TEST) || depth <= m_depthBuffer.GetElement(p_x, p_y))
+		if (!(m_state & Settings::ERenderingCapability::DEPTH_TEST) || depth <= m_depthBuffer.GetElement(p_x, p_y))
 		{
 			p_shader.ProcessInterpolation(barycentricCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, p_transformedVertices[2].w);
 
@@ -237,7 +237,7 @@ void Rendering::Rasterizer::SetFragment(const Geometry::Triangle& p_triangle, ui
 
 			m_textureBuffer.SetPixel(p_x, p_y, Data::Color::Mix(Data::Color(m_textureBuffer.GetPixel(p_x, p_y)), color, alpha));
 
-			if (m_state & Settings::ERenderState::DEPTH_WRITE)
+			if (m_state & Settings::ERenderingCapability::DEPTH_WRITE)
 			{
 				m_depthBuffer.SetElement(p_x, p_y, depth);
 			}
@@ -253,7 +253,7 @@ void Rendering::Rasterizer::SetSampleFragment(const Geometry::Triangle& p_triang
 	{
 		const float depth = p_transformedVertices[0].z * barycentricCoords.z + p_transformedVertices[2].z * barycentricCoords.x + barycentricCoords.y * p_transformedVertices[1].z;
 
-		if (!(m_state & Settings::ERenderState::DEPTH_TEST) || depth <= m_depthBuffer.GetElement(p_x, p_y))
+		if (!(m_state & Settings::ERenderingCapability::DEPTH_TEST) || depth <= m_depthBuffer.GetElement(p_x, p_y))
 		{
 			p_shader.ProcessInterpolation(barycentricCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, p_transformedVertices[2].w);
 
@@ -298,7 +298,7 @@ void Rendering::Rasterizer::RasterizeLine(const Geometry::Triangle& p_triangle, 
 
 			float depth = transformedVertices[0].z * barycentricCoords.z + transformedVertices[2].z * barycentricCoords.x + barycentricCoords.y * transformedVertices[1].z;
 
-			if (!(m_state & Settings::ERenderState::DEPTH_TEST) || depth <= m_depthBuffer.GetElement(x0, y0))
+			if (!(m_state & Settings::ERenderingCapability::DEPTH_TEST) || depth <= m_depthBuffer.GetElement(x0, y0))
 			{
 				p_shader.ProcessInterpolation(barycentricCoords, transformedVertices[0].w, transformedVertices[1].w, transformedVertices[2].w);
 
@@ -308,7 +308,7 @@ void Rendering::Rasterizer::RasterizeLine(const Geometry::Triangle& p_triangle, 
 
 				m_textureBuffer.SetPixel(x0, y0, Data::Color::Mix(Data::Color(m_textureBuffer.GetPixel(x0, y0)), color, alpha));
 
-				if (m_state & Settings::ERenderState::DEPTH_WRITE)
+				if (m_state & Settings::ERenderingCapability::DEPTH_WRITE)
 				{
 					m_depthBuffer.SetElement(x0, y0, depth);
 				}
@@ -358,11 +358,11 @@ void Rendering::Rasterizer::RasterizeLine(const glm::vec4& p_start, const glm::v
 
 		if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
 		{
-			if (!(m_state & Settings::ERenderState::DEPTH_TEST) || depth <= m_depthBuffer.GetElement(x0, y0))
+			if (!(m_state & Settings::ERenderingCapability::DEPTH_TEST) || depth <= m_depthBuffer.GetElement(x0, y0))
 			{
 				m_textureBuffer.SetPixel(x0, y0, p_color);
 
-				if (m_state & Settings::ERenderState::DEPTH_WRITE)
+				if (m_state & Settings::ERenderingCapability::DEPTH_WRITE)
 				{
 					m_depthBuffer.SetElement(x0, y0, depth);
 				}
@@ -403,7 +403,7 @@ void Rendering::Rasterizer::DrawPoint(const Geometry::Triangle& p_triangle, cons
 
 		const float depth = transformedVertices[0].z * barycentricCoords.z + transformedVertices[2].z * barycentricCoords.x + barycentricCoords.y * transformedVertices[1].z;
 
-		if (!(m_state & Settings::ERenderState::DEPTH_TEST) || depth <= m_depthBuffer.GetElement(p_point.x, p_point.y))
+		if (!(m_state & Settings::ERenderingCapability::DEPTH_TEST) || depth <= m_depthBuffer.GetElement(p_point.x, p_point.y))
 		{
 			p_shader.ProcessInterpolation(barycentricCoords, transformedVertices[0].w, transformedVertices[1].w, transformedVertices[2].w);
 
@@ -413,7 +413,7 @@ void Rendering::Rasterizer::DrawPoint(const Geometry::Triangle& p_triangle, cons
 
 			m_textureBuffer.SetPixel(p_point.x, p_point.y, Data::Color::Mix(Data::Color(m_textureBuffer.GetPixel(p_point.x, p_point.y)), color, alpha));
 
-			if (m_state & Settings::ERenderState::DEPTH_WRITE)
+			if (m_state & Settings::ERenderingCapability::DEPTH_WRITE)
 			{
 				m_depthBuffer.SetElement(p_point.x, p_point.y, depth);
 			}
@@ -471,11 +471,11 @@ void Rendering::Rasterizer::RasterizeLine(const Geometry::Vertex& p_vertex0, con
 
 		if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
 		{
-			if (!(m_state & Settings::ERenderState::DEPTH_TEST) || depth <= m_depthBuffer.GetElement(x0, y0))
+			if (!(m_state & Settings::ERenderingCapability::DEPTH_TEST) || depth <= m_depthBuffer.GetElement(x0, y0))
 			{
 				m_textureBuffer.SetPixel(x0, y0, p_color);
 
-				if (m_state & Settings::ERenderState::DEPTH_WRITE)
+				if (m_state & Settings::ERenderingCapability::DEPTH_WRITE)
 				{
 					m_depthBuffer.SetElement(x0, y0, depth);
 				}
@@ -620,7 +620,7 @@ void Rendering::Rasterizer::ApplyMSAA() const
 
 			m_textureBuffer.SetPixel(x, y, Data::Color::Mix(Data::Color(m_textureBuffer.GetPixel(x, y)), sampledColorTotal, alpha));
 
-			if (m_state & Settings::ERenderState::DEPTH_WRITE)
+			if (m_state & Settings::ERenderingCapability::DEPTH_WRITE)
 			{
 				m_depthBuffer.SetElement(x, y, depth);
 			}

@@ -9,7 +9,7 @@
 #include "Buffers/MSAABuffer.h"
 
 #include "Rendering/AShader.h"
-#include "Rendering/Settings/EDrawMode.h"
+#include "Rendering/Settings/ERasterizationMode.h"
 
 #include "Geometry/Vertex.h"
 #include "Geometry/Triangle.h"
@@ -28,7 +28,7 @@ namespace Rendering
 		Rasterizer(Context::Window& p_window, uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight);
 		~Rasterizer() = default;
 		
-		void RasterizeMesh(Settings::EDrawMode p_drawMode, const Resources::Mesh& p_mesh, AShader& p_shader);
+		void RasterizeMesh(Settings::ERasterizationMode p_drawMode, const Resources::Mesh& p_mesh, AShader& p_shader);
 
 		void RasterizeLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, AShader& p_shader, const Data::Color& p_color);
 
@@ -43,8 +43,8 @@ namespace Rendering
 	private:
 		void InitializeClippingFrustum();
 
-		void RasterizeTriangle(Settings::EDrawMode p_drawMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, AShader& p_shader);
-		void TransformAndRasterizeVertices(const Settings::EDrawMode p_drawMode, const std::array<glm::vec4, 3>& processedVertices, AShader& p_shader);
+		void RasterizeTriangle(Settings::ERasterizationMode p_drawMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, AShader& p_shader);
+		void TransformAndRasterizeVertices(const Settings::ERasterizationMode p_drawMode, const std::array<glm::vec4, 3>& processedVertices, AShader& p_shader);
 		void ComputeFragments(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, AShader& p_shader) const;
 
 		void SetFragment(const Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_y, const std::array<glm::vec4, 3>& p_transformedVertices, AShader& p_shader) const;
