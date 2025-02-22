@@ -1,42 +1,55 @@
 #include "Rendering/Renderer.h"
 
-#include "Rendering/Settings/ERenderState.h"
+#include "Rendering/GLRasterizer.h"
+#include "Rendering/Settings/EPrimitiveMode.h"
 #include "Resources/Loaders/TextureLoader.h"
 
-Rendering::Renderer::Renderer(Context::Driver& p_driver, Context::Window& p_window) :
-m_driver(p_driver),
+Rendering::Renderer::Renderer(Context::SDLDriver& p_SDLdriver, Driver& p_driver, Context::Window& p_window) :
+m_driver(p_SDLdriver),
+m_renderDriver(p_driver),
 m_emptyTexture(Resources::Loaders::TextureLoader::CreateColor
 (
 	(255 << 24) | (255 << 16) | (255 << 8) | 255,
 	Resources::Settings::ETextureFilteringMode::NEAREST,
 	Resources::Settings::ETextureWrapMode::CLAMP
-))
+)),
+m_sdlTexture(nullptr)
 {
-	m_rasterizer = std::make_unique<Rasterizer>(p_window, m_driver.GetRenderer(), 800, 600);
+	GLRasterizer::Initialize(800, 600);
+
+	m_sdlTexture = SDL_CreateTexture(m_driver.GetRenderer(), SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(800), static_cast<int>(600));
+
+	p_window.ResizeEvent.AddListener(std::bind(&Renderer::OnResize, this, std::placeholders::_1, std::placeholders::_2));
+
+	//m_rasterizer = std::make_unique<Rasterizer>(p_window, m_driver.GetRenderer(), 800, 600);
 }
 
 Rendering::Renderer::~Renderer()
 {
 	Resources::Loaders::TextureLoader::Destroy(m_emptyTexture);
+
+	SDL_DestroyTexture(m_sdlTexture);
 }
 
 void Rendering::Renderer::Clear(const Data::Color& p_color) const
 {
-	m_rasterizer->Clear(p_color);
+	GLRasterizer::Clear(p_color);
+	//m_rasterizer->Clear(p_color);
 }
 
 void Rendering::Renderer::ClearDepth() const
 {
-	m_rasterizer->ClearDepth();
+	GLRasterizer::ClearDepth();
+	//m_rasterizer->ClearDepth();
 }
 
-void Rendering::Renderer::Draw(Settings::EDrawMode p_drawMode, Resources::Model& p_model, Resources::Material* p_defaultMaterial)
+void Rendering::Renderer::Draw(Resources::Model& p_model, Resources::Material* p_defaultMaterial)
 {
 	uint8_t state = FetchState();
 
-	ApplyState(state);
+	ApplyStateMask(state);
 
-	m_rasterizer->SetState(state);
+	//m_rasterizer->SetState(state);
 
 	auto materials = p_model.GetMaterials();
 
@@ -49,23 +62,25 @@ void Rendering::Renderer::Draw(Settings::EDrawMode p_drawMode, Resources::Model&
 			if (!material || !material->GetShader())
 				material = p_defaultMaterial;
 
-			DrawMesh(p_drawMode, *mesh, *material);
+			DrawMesh(Settings::EPrimitiveMode::TRIANGLES, *mesh, *material);
 		}
 	}
 }
 
-void Rendering::Renderer::DrawMesh(Settings::EDrawMode p_drawMode, Resources::Mesh& p_mesh, const Resources::Material& p_material)
+void Rendering::Renderer::DrawMesh(Settings::EPrimitiveMode p_drawMode, Resources::Mesh& p_mesh, const Resources::Material& p_material)
 {
 	if (p_material.GetShader() != nullptr)
 	{
 		uint8_t state = FetchState();
 
-		ApplyState(state);
+		ApplyStateMask(state);
 
-		m_rasterizer->SetState(state);
-
+		//m_rasterizer->SetState(state);
+		 
 		p_material.Bind(m_emptyTexture);
-		m_rasterizer->RasterizeMesh(p_drawMode, p_mesh, *p_material.GetShader());
+		GLRasterizer::DrawElements(static_cast<uint8_t>(p_drawMode), p_mesh);
+
+		//m_rasterizer->RasterizeMesh(p_drawMode, p_mesh, *p_material.GetShader());
 	}
 }
 
@@ -73,18 +88,19 @@ void Rendering::Renderer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p
 {
 	uint8_t state = FetchState();
 
-	ApplyState(state);
+	ApplyStateMask(state);
 
-	m_rasterizer->SetState(state);
-
-	m_rasterizer->RasterizeLine({ p_point0 }, { p_point1 }, p_shader, p_color);
+	//m_rasterizer->SetState(state);
+	p_shader.Bind();
+	GLRasterizer::DrawLine({ p_point0 }, { p_point1 }, p_color);
+	//m_rasterizer->RasterizeLine({ p_point0 }, { p_point1 }, p_shader, p_color);
 }
 
 void Rendering::Renderer::Render() const
 {
-	m_rasterizer->SendDataToGPU();
-
-	m_driver.RenderCopy(m_rasterizer->GetTextureBuffer().GetSDLTexture());
+	//m_rasterizer->SendDataToGPU();
+	SendDataToGPU();
+	m_driver.RenderCopy(m_sdlTexture);
 
 	m_driver.RenderPresent();
 }
@@ -96,85 +112,64 @@ void Rendering::Renderer::Clear() const
 
 void Rendering::Renderer::SetSamples(uint8_t p_samples) const
 {
-	m_rasterizer->SetSamples(p_samples);
+	GLRasterizer::SetSamples(p_samples);
+	//m_rasterizer->SetSamples(p_samples);
 }
 
-uint8_t Rendering::Renderer::FetchState() const
+void Rendering::Renderer::SendDataToGPU() const
+{
+	SDL_UpdateTexture(m_sdlTexture, nullptr, GLRasterizer::GetTextureBuffer().GetData(), GLRasterizer::GetTextureBuffer().GetRawSize());
+}
+
+uint8_t Rendering::Renderer::FetchState()
 {
 	uint8_t result = 0;
 
-	if (m_depthWrite) result |= Settings::ERenderState::DEPTH_WRITE;
-	if (m_depthTest)  result |= Settings::ERenderState::DEPTH_TEST;
+	if (m_renderDriver.GetBool(GLR_DEPTH_WRITE))             result |= 0b0000'0001;
+	if (m_renderDriver.GetCapability(Settings::DEPTH_TEST))  result |= 0b0000'0010;
+	if (m_renderDriver.GetCapability(Settings::CULL_FACE))   result |= 0b0000'0100;
 
-	if(m_cull)
+	switch (static_cast<Settings::ECullFace>(m_renderDriver.GetInt(GLR_CULL_FACE)))
 	{
-		result |= Settings::ERenderState::CULL_FACE;
-
-		switch (m_cullFace)
-		{
-		case Settings::ECullFace::BACK:
-			result |= Settings::ECullFace::BACK;
-			break;
-		case Settings::ECullFace::FRONT:
-			result |= Settings::ECullFace::FRONT;
-			break;
-		}
+	case Settings::ECullFace::BACK:           result |= 0b0000'1000; break;
+	case Settings::ECullFace::FRONT:          result |= 0b0001'0000; break;
+	case Settings::ECullFace::FRONT_AND_BACK: result |= 0b0010'0000; break;
 	}
 
 	return result;
 }
 
-void Rendering::Renderer::ApplyState(uint8_t p_state)
+void Rendering::Renderer::ApplyStateMask(uint8_t p_mask)
 {
-	if(m_state == p_state)
-		return;
-	
-	m_depthWrite = p_state & Settings::ERenderState::DEPTH_WRITE;
-	m_depthTest  = p_state & Settings::ERenderState::DEPTH_TEST;
-
-	if(p_state & Settings::ERenderState::CULL_FACE)
+	if (p_mask != m_state)
 	{
-		m_cull = true;
 
-		if (p_state & Settings::ECullFace::BACK)
+		if ((p_mask & 0x01) != (m_state & 0x01)) m_renderDriver.SetDepthWriting(p_mask & 0x01);
+		if ((p_mask & 0x02) != (m_state & 0x02)) m_renderDriver.SetCapability(Settings::DEPTH_TEST, p_mask & 0x02);
+		if ((p_mask & 0x04) != (m_state & 0x04)) m_renderDriver.SetCapability(Settings::CULL_FACE, p_mask & 0x04);
+
+		if ((p_mask & 0x04) && ((p_mask & 0x08) != (m_state & 0x08) || (p_mask & 0x10) != (m_state & 0x10)))
 		{
-			m_cullFace = Settings::ECullFace::BACK;
+			const int backBit = p_mask & 0x08;
+			const int frontBit = p_mask & 0x10;
+			m_renderDriver.SetCullFace(backBit && frontBit ? Settings::FRONT_AND_BACK : (backBit ? Settings::BACK : Settings::FRONT));
 		}
-		else if (p_state & Settings::ECullFace::FRONT)
-		{
-			m_cullFace = Settings::ECullFace::FRONT;
-		}
+
+		m_state = p_mask;
 	}
-
-	m_state = p_state;
-}
-
-void Rendering::Renderer::SetState(uint8_t p_state)
-{
-	m_state = p_state;
-}
-
-void Rendering::Renderer::SetDepthTest(bool p_depthTest)
-{
-	m_depthTest = p_depthTest;
-}
-
-void Rendering::Renderer::SetDepthWrite(bool p_depthWrite)
-{
-	m_depthWrite = p_depthWrite;
-}
-
-void Rendering::Renderer::SetCull(bool p_value)
-{
-	m_cull = p_value;
-}
-
-void Rendering::Renderer::SetCullFace(Settings::ECullFace p_cullFace)
-{
-	m_cullFace = p_cullFace;
 }
 
 SDL_Renderer* Rendering::Renderer::GetSDLRenderer() const
 {
 	return m_driver.GetRenderer();
+}
+
+void Rendering::Renderer::OnResize(uint16_t p_width, uint16_t p_height)
+{
+	//m_textureBuffer.Resize(p_width, p_height);
+	//m_depthBuffer.Resize(p_width, p_height);
+
+	//SDL_DestroyTexture(m_sdlTexture);
+
+	//m_sdlTexture = SDL_CreateTexture(m_driver.GetRenderer(), SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(GLRasterizer::GetTextureBuffer().GetWidth()), static_cast<int>(GLRasterizer::GetTextureBuffer().GetHeight()));
 }

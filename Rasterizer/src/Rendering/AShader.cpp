@@ -2,9 +2,16 @@
 
 #include <glm/gtc/type_ptr.inl>
 
+#include "Rendering/GLRasterizer.h"
+
 static inline void CopyFloats(float* dest, const float* source, int count)
 {
 	std::memcpy(dest, source, sizeof(float) * count);
+}
+
+void Rendering::AShader::Bind()
+{
+	GLRasterizer::UseProgram(this);
 }
 
 glm::vec4 Rendering::AShader::ProcessVertex(const Geometry::Vertex& p_vertex, uint8_t p_vertexID)

@@ -6,7 +6,8 @@ namespace Rendering::Settings
 {
 	enum ECullFace : uint8_t
 	{
-		BACK  = 0b0001'0000,
-		FRONT = 0b0010'0000,
+		BACK  = 0,
+		FRONT = 1,
+		FRONT_AND_BACK = 2
 	};
 }

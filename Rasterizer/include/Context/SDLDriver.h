@@ -1,18 +1,18 @@
 #pragma once
 
+#include <SDL2/SDL_render.h>
+
 #include "Context/Window.h"
 
 #include "Context/Settings/DriverSettings.h"
 
-#include "Buffers/TextureBuffer.h"
-
 namespace Context
 {
-	class Driver
+	class SDLDriver
 	{
 	public:
-		Driver(Window& p_window, const Settings::DriverSettings& p_driverSettings);
-		~Driver();
+		SDLDriver(Window& p_window, const Settings::DriverSettings& p_driverSettings);
+		~SDLDriver();
 
 		void RenderClear() const;
 		void RenderCopy(SDL_Texture* p_texture) const;
