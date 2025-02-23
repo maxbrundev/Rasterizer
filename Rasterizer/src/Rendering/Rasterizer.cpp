@@ -9,7 +9,7 @@
 
 #include "Geometry/Triangle.h"
 #include "Rendering/GLRasterizer.h"
-#include "Rendering/Settings/ECullFace.h"
+#include "Rendering/Settings/EPrimitiveMode.h"
 #include "Rendering/Settings/ERenderingCapability.h"
 
 Rendering::Rasterizer::Rasterizer(Context::Window& p_window, uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight) :
@@ -79,7 +79,7 @@ void Rendering::Rasterizer::SetSamples(uint8_t p_samples)
 	m_msaaBuffer.SetSamplesAmount(p_samples);
 }
 
-void Rendering::Rasterizer::RasterizeMesh(Settings::ERasterizationMode p_drawMode, const Resources::Mesh& p_mesh, AShader& p_shader)
+void Rendering::Rasterizer::RasterizeMesh(Settings::EPrimitiveMode p_primitiveMode, const Resources::Mesh& p_mesh, AShader& p_shader)
 {
 	const auto& vertices = p_mesh.GetVertices();
 	const auto& indices = p_mesh.GetIndices();
@@ -88,14 +88,14 @@ void Rendering::Rasterizer::RasterizeMesh(Settings::ERasterizationMode p_drawMod
 	{
 		for (uint32_t i = 0; i < indices.size(); i += 3)
 		{
-			RasterizeTriangle(p_drawMode, vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]], p_shader);
+			RasterizeTriangle(p_primitiveMode, vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]], p_shader);
 		}
 	}
 	else if (vertices.size() % 3 == 0)
 	{
 		for (uint32_t i = 0; i < vertices.size(); i += 3)
 		{
-			RasterizeTriangle(p_drawMode, vertices[i], vertices[i + 1], vertices[i + 2], p_shader);
+			RasterizeTriangle(p_primitiveMode, vertices[i], vertices[i + 1], vertices[i + 2], p_shader);
 		}
 	}
 
@@ -105,7 +105,7 @@ void Rendering::Rasterizer::RasterizeMesh(Settings::ERasterizationMode p_drawMod
 	}
 }
 
-void Rendering::Rasterizer::RasterizeTriangle(Settings::ERasterizationMode p_drawMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, AShader& p_shader)
+void Rendering::Rasterizer::RasterizeTriangle(Settings::EPrimitiveMode p_primitiveMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, AShader& p_shader)
 {
 	std::array<glm::vec4, 3> processedVertices{ p_shader.ProcessVertex(p_vertex0, 0), p_shader.ProcessVertex(p_vertex1, 1) , p_shader.ProcessVertex(p_vertex2, 2) };
 
@@ -129,16 +129,16 @@ void Rendering::Rasterizer::RasterizeTriangle(Settings::ERasterizationMode p_dra
 			p_shader.SetVarying<glm::vec2>("v_TextCoords", currentPoly.TextCoords[i + 1], 1);
 			p_shader.SetVarying<glm::vec2>("v_TextCoords", currentPoly.TextCoords[i + 2], 2);
 
-			TransformAndRasterizeVertices(p_drawMode, clippedVertices, p_shader);
+			TransformAndRasterizeVertices(p_primitiveMode, clippedVertices, p_shader);
 		}
 	}
 	else
 	{
-		TransformAndRasterizeVertices(p_drawMode, processedVertices, p_shader);
+		TransformAndRasterizeVertices(p_primitiveMode, processedVertices, p_shader);
 	}
 }
 
-void Rendering::Rasterizer::TransformAndRasterizeVertices(const Settings::ERasterizationMode p_drawMode, const std::array<glm::vec4, 3>& processedVertices, AShader& p_shader)
+void Rendering::Rasterizer::TransformAndRasterizeVertices(Settings::EPrimitiveMode p_primitiveMode, const std::array<glm::vec4, 3>& processedVertices, AShader& p_shader)
 {
 	glm::vec3 vertexScreenPosition0 = ComputeScreenSpaceCoordinate(processedVertices[0]);
 	glm::vec3 vertexScreenPosition1 = ComputeScreenSpaceCoordinate(processedVertices[1]);
@@ -170,22 +170,33 @@ void Rendering::Rasterizer::TransformAndRasterizeVertices(const Settings::ERaste
 
 	float area = triangle.ComputeArea();
 
-
-	if ((m_state & Settings::ECullFace::BACK && area > 0.0f)
-		|| (m_state & Settings::ECullFace::FRONT && area < 0.0f))
+	if ((m_state & 0b0000'1000 && area > 0.0f)
+		|| (m_state & 0b0001'0000 && area < 0.0f)
+		|| (m_state & 0b0010'0000))
 		return;
 
-	switch (p_drawMode)
+	if (p_primitiveMode == Settings::EPrimitiveMode::TRIANGLES)
 	{
-	case Settings::ERasterizationMode::FILL:
-		ComputeFragments(triangle, transformedVertices, p_shader);
-		break;
-	case Settings::ERasterizationMode::LINE:
+		switch (m_rasterizationMode)
+		{
+		case Settings::ERasterizationMode::FILL:
+			ComputeFragments(triangle, transformedVertices, p_shader);
+			break;
+		case GLR_LINE:
+			RasterizeTriangleWireframe(triangle, transformedVertices, p_shader);
+			break;
+		case GLR_POINT:
+			RasterizeTrianglePoints(triangle, transformedVertices, p_shader);
+			break;
+		}
+	}
+	else if (p_primitiveMode == Settings::EPrimitiveMode::LINES)
+	{
 		RasterizeTriangleWireframe(triangle, transformedVertices, p_shader);
-		break;
-	case Settings::ERasterizationMode::POINT:
+	}
+	else if (p_primitiveMode == Settings::EPrimitiveMode::POINTS)
+	{
 		RasterizeTrianglePoints(triangle, transformedVertices, p_shader);
-		break;
 	}
 }
 

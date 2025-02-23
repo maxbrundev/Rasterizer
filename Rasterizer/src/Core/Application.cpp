@@ -125,8 +125,33 @@ void Core::Application::Run()
 		basicShader.SetUniformMat4("u_Projection", projection);
 		basicShader.SetUniformVec3("u_ViewPos", m_cameraPosition);
 
+#ifdef OLD_RASTERIZER
+
 #ifdef RENDER_TEST
-		//RENDER TEST
+		m_context.renderer->Draw(*m_currentModel, &m_defaultMaterial);
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
+		basicShader.SetUniformMat4("u_Model", model);
+		m_context.renderer->SetDepthTest(false);
+		m_context.renderer->SetDepthWrite(false);
+		m_context.renderer->SetRasterizationMode(Rendering::Settings::ERasterizationMode::LINE);
+		m_context.renderer->Draw(*m_currentModel, &m_defaultMaterial);
+		m_context.renderer->SetRasterizationMode(Rendering::Settings::ERasterizationMode::FILL);
+		m_context.renderer->SetDepthTest(true);
+		m_context.renderer->SetDepthWrite(true);
+
+		m_context.renderer->SetRasterizationMode(Rendering::Settings::ERasterizationMode::POINT);
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(4.0f, 0.0f, 0.0f));
+		basicShader.SetUniformMat4("u_Model", model);
+		m_context.renderer->Draw(*m_currentModel, &m_defaultMaterial);
+		m_context.renderer->SetRasterizationMode(Rendering::Settings::ERasterizationMode::FILL);
+
+#else
+		m_context.renderer->Draw(*m_currentModel, &m_defaultMaterial);
+#endif
+
+#else
+
+#ifdef RENDER_TEST
 		m_context.renderer->Draw(*m_currentModel, &m_defaultMaterial);
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
 		basicShader.SetUniformMat4("u_Model", model);
@@ -147,6 +172,7 @@ void Core::Application::Run()
 		m_context.renderer->Draw(*m_currentModel, &m_defaultMaterial);
 #endif
 
+#endif
 		m_context.renderer->Render();
 		m_context.inputManager->ClearEvents();
 

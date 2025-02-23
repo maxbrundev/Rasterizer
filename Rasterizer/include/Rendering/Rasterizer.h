@@ -19,6 +19,7 @@
 #include "Resources/Mesh.h"
 
 #include "Context/Window.h"
+#include "Settings/EPrimitiveMode.h"
 
 namespace Rendering
 {
@@ -28,7 +29,7 @@ namespace Rendering
 		Rasterizer(Context::Window& p_window, uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight);
 		~Rasterizer() = default;
 		
-		void RasterizeMesh(Settings::ERasterizationMode p_drawMode, const Resources::Mesh& p_mesh, AShader& p_shader);
+		void RasterizeMesh(Settings::EPrimitiveMode p_primitiveMode, const Resources::Mesh& p_mesh, AShader& p_shader);
 
 		void RasterizeLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, AShader& p_shader, const Data::Color& p_color);
 
@@ -40,11 +41,16 @@ namespace Rendering
 
 		Buffers::TextureBuffer& GetTextureBuffer();
 
+		void SetRasterizationMode(Settings::ERasterizationMode p_rasterizationMode)
+		{
+			m_rasterizationMode = p_rasterizationMode;
+		}
+
 	private:
 		void InitializeClippingFrustum();
 
-		void RasterizeTriangle(Settings::ERasterizationMode p_drawMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, AShader& p_shader);
-		void TransformAndRasterizeVertices(const Settings::ERasterizationMode p_drawMode, const std::array<glm::vec4, 3>& processedVertices, AShader& p_shader);
+		void RasterizeTriangle(Settings::EPrimitiveMode p_primitiveMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2, AShader& p_shader);
+		void TransformAndRasterizeVertices(Settings::EPrimitiveMode p_primitiveMode, const std::array<glm::vec4, 3>& processedVertices, AShader& p_shader);
 		void ComputeFragments(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, AShader& p_shader) const;
 
 		void SetFragment(const Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_y, const std::array<glm::vec4, 3>& p_transformedVertices, AShader& p_shader) const;
@@ -78,5 +84,7 @@ namespace Rendering
 		uint8_t m_sampleCount = 0;
 
 		std::array<Geometry::Plane, 6> m_clippingFrustum;
+
+		Settings::ERasterizationMode m_rasterizationMode = Settings::ERasterizationMode::FILL;
 	};
 }

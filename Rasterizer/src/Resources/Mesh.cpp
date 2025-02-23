@@ -56,8 +56,9 @@ uint32_t Resources::Mesh::GetIndexCount()
 
 void Resources::Mesh::InitializeBuffers(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices)
 {
-	//vertices = p_vertices;
-	//indices = p_indices;
+	//TODO: Clean
+	vertices = p_vertices;
+	indices = p_indices;
 
 	m_vertexArray.Bind();
 	m_vertexBuffer = std::make_unique<Buffers::VertexBuffer>(p_vertices.data(), p_vertices.size());

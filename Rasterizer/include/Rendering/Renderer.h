@@ -7,12 +7,12 @@
 
 #include "Rendering/Rasterizer.h"
 
-#include "Rendering/Settings/ERasterizationMode.h"
-
 #include "Rendering/AShader.h"
 #include "Resources/Model.h"
 #include "Resources/Texture.h"
 #include "Settings/EPrimitiveMode.h"
+
+#define OLD_RASTERIZER
 
 namespace Rendering
 {
@@ -37,6 +37,38 @@ namespace Rendering
 
 		SDL_Renderer* GetSDLRenderer() const;
 
+#ifdef OLD_RASTERIZER
+		void SetState(uint8_t p_state)
+		{
+			m_state = p_state;
+		}
+
+		void SetDepthTest(bool p_depthTest)
+		{
+			m_depthTest = p_depthTest;
+		}
+
+		void SetDepthWrite(bool p_depthWrite)
+		{
+			m_depthWrite = p_depthWrite;
+		}
+
+		void SetCull(bool p_value)
+		{
+			m_cull = p_value;
+		}
+
+		void SetCullFace(Settings::ECullFace p_cullFace)
+		{
+			m_cullFace = p_cullFace;
+		}
+
+		void SetRasterizationMode(Settings::ERasterizationMode p_rasterizationMode)
+		{
+			m_rasterizer->SetRasterizationMode(p_rasterizationMode);
+		}
+#endif
+
 	private:
 		void OnResize(uint16_t p_width, uint16_t p_height);
 
@@ -45,9 +77,16 @@ namespace Rendering
 		Driver& m_renderDriver;
 
 		uint8_t m_state = 0;
-		//std::unique_ptr<Rasterizer> m_rasterizer;
 
 		Resources::Texture* m_emptyTexture;
+
+#ifdef OLD_RASTERIZER
+		std::unique_ptr<Rasterizer> m_rasterizer;
+		bool m_depthTest = true;
+		bool m_depthWrite = true;
+		bool m_cull = true;
+		Settings::ECullFace m_cullFace = Settings::BACK;
+#endif
 
 		//TODO: FRAMEBUFFER CLASS
 		SDL_Texture* m_sdlTexture;

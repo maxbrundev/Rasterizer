@@ -16,9 +16,9 @@ constexpr bool CLIPPING = true;
 #define GLR_LINE  1
 #define GLR_POINT 2
 
-#define GLR_BACK            0
-#define GLR_FRONT           1
-#define GLR_FRONT_AND_BACK  2
+#define GLR_BACK           0
+#define GLR_FRONT          1
+#define GLR_FRONT_AND_BACK 2
 
 #define GLR_DEPTH_WRITE 0x01
 #define GLR_DEPTH_TEST  0x02
