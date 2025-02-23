@@ -59,10 +59,10 @@ void Resources::Mesh::InitializeBuffers(const std::vector<Geometry::Vertex>& p_v
 	//vertices = p_vertices;
 	//indices = p_indices;
 
+	m_vertexArray.Bind();
 	m_vertexBuffer = std::make_unique<Buffers::VertexBuffer>(p_vertices.data(), p_vertices.size());
 	m_indexBuffer = std::make_unique<Buffers::IndexBuffer>(p_indices.data(), p_indices.size());
-	m_vertexArray.index = 0;
-	m_vertexArray.BindAttribPointer(3, GLR_FLOAT, false, sizeof(Geometry::Vertex), (void*)0);
+	//m_vertexArray.BindAttribPointer(3, GLR_FLOAT, false, sizeof(Geometry::Vertex), (void*)0);
 	m_vertexArray.Unbind();
 	/*GLRasterizer::GenBuffers(1, &m_VBO);
 	GLRasterizer::BindBuffer(GLR_ARRAY_BUFFER, m_VBO);

@@ -24,10 +24,8 @@ constexpr bool CLIPPING = true;
 #define GLR_DEPTH_TEST  0x02
 #define GLR_CULL_FACE   0x04
 
-#define GLR_ARRAY_BUFFER         10
-#define GLR_ELEMENT_ARRAY_BUFFER 11
-#define GLR_STATIC_DRAW          20
-#define GLR_FLOAT                30
+#define GLR_ARRAY_BUFFER         0
+#define GLR_ELEMENT_ARRAY_BUFFER 1
 
 namespace GLRasterizer
 {
@@ -64,7 +62,5 @@ namespace GLRasterizer
 	void GenBuffers(uint32_t p_count, uint32_t* p_buffers);
 	void DeleteBuffers(uint32_t p_count, const uint32_t* p_buffers);
 	void BindBuffer(uint32_t p_target, uint32_t p_buffer);
-	void BufferData(uint32_t p_target, size_t p_size, const void* p_data, uint32_t p_usage);
-	void EnableVertexAttribArray(uint32_t p_index);
-	void VertexAttribPointer(uint32_t p_index, int p_size, uint32_t p_type, bool p_normalized, int p_stride, const void* p_pointer);
+	void BufferData(uint32_t p_target, size_t p_size, const void* p_data);
 }

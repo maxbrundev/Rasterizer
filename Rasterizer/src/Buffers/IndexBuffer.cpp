@@ -7,7 +7,7 @@ Buffers::IndexBuffer::IndexBuffer(const unsigned int* p_data, size_t p_elements)
 {
 	GLRasterizer::GenBuffers(1, &m_bufferID);
 	Bind();
-	GLRasterizer::BufferData(GLR_ELEMENT_ARRAY_BUFFER, p_elements * sizeof(uint32_t), p_data, GLR_STATIC_DRAW);
+	GLRasterizer::BufferData(GLR_ELEMENT_ARRAY_BUFFER, p_elements * sizeof(uint32_t), p_data);
 }
 
 Buffers::IndexBuffer::~IndexBuffer()

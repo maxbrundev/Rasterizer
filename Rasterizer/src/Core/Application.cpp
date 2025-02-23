@@ -15,7 +15,7 @@
 
 #include "Tools/Time/Clock.h"
 
-//#define RENDER_TEST
+#define RENDER_TEST
 
 Core::Application::Application(const Context::Settings::WindowSettings& p_windowSettings, const Context::Settings::DriverSettings& p_driverSettings) :
 m_context(p_windowSettings, p_driverSettings),
