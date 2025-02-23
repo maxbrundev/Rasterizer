@@ -1,7 +1,8 @@
 #pragma once
+
 #include <cstdint>
 
-namespace Buffers
+namespace Rendering::Rasterizer::Buffers
 {
 	class DepthBuffer
 	{

@@ -3,11 +3,7 @@
 #include <chrono>
 #include <glm/ext/matrix_transform.hpp>
 
-#include "Buffers/VertexBuffer.h"
-#include "Buffers/IndexBuffer.h"
-
-#include "Rendering/DefaultShader.h"
-#include "Rendering/GLRasterizer.h"
+#include "Rendering/Rasterizer/GLRasterizer.h"
 
 #include "Resources/Model.h"
 #include "Resources/Mesh.h"
@@ -73,18 +69,16 @@ void Core::Application::Run()
 
 	Data::Color backGround(70, 70, 70);
 
-	Buffers::VertexBuffer vertices;
-	vertices.Vertices = {
+	std::vector<Geometry::Vertex> vertices = {
 		{{-1.0, 0.0, -1.0}},
 		{{-1.0, 0.0, 1.0}},
 		{{1.0, 0.0, 1.0}},
 		{{1.0, 0.0, -1.0}}
 	};
 
-	Buffers::IndexBuffer indices;
-	indices.Indices = { 0, 1, 2, 2, 3, 0 };
+	std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0 };
 
-	Resources::Mesh planeMesh(vertices.Vertices, indices.Indices, 0);
+	Resources::Mesh planeMesh(vertices, indices, 0);
 
 	while (IsRunning())
 	{
@@ -128,7 +122,6 @@ void Core::Application::Run()
 		basicShader.SetUniformVec3("u_ViewPos", m_cameraPosition);
 
 #ifdef RENDER_TEST
-		//RENDER TEST
 		m_context.renderer->Draw(*m_currentModel, &m_defaultMaterial);
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
 		basicShader.SetUniformMat4("u_Model", model);
@@ -148,7 +141,6 @@ void Core::Application::Run()
 #else
 		m_context.renderer->Draw(*m_currentModel, &m_defaultMaterial);
 #endif
-
 		m_context.renderer->Render();
 		m_context.inputManager->ClearEvents();
 

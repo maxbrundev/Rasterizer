@@ -1,7 +1,8 @@
 #pragma once
-#include "Settings/ECullFace.h"
-#include "Settings/ERasterizationMode.h"
-#include "Settings/ERenderingCapability.h"
+
+#include "Rendering/Settings/ECullFace.h"
+#include "Rendering/Settings/ERasterizationMode.h"
+#include "Rendering/Settings/ERenderingCapability.h"
 
 namespace Rendering
 {

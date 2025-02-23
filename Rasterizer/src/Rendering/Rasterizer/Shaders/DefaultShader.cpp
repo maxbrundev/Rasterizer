@@ -1,6 +1,6 @@
-#include "Rendering/DefaultShader.h"
+#include "Rendering/Rasterizer/Shaders/DefaultShader.h"
 
-glm::vec4 Rendering::DefaultShader::VertexPass(const Geometry::Vertex& p_vertex)
+glm::vec4 Rendering::Rasterizer::Shaders::DefaultShader::VertexPass(const Geometry::Vertex& p_vertex)
 {
 	const glm::mat4 u_Model      = GetUniformAs<glm::mat4>("u_Model");
 	const glm::mat4 u_View       = GetUniformAs<glm::mat4>("u_View");
@@ -18,7 +18,7 @@ glm::vec4 Rendering::DefaultShader::VertexPass(const Geometry::Vertex& p_vertex)
 	return  u_Projection * u_View * glm::vec4(fragPos, 1.0);
 }
 
-Data::Color Rendering::DefaultShader::FragmentPass()
+Data::Color Rendering::Rasterizer::Shaders::DefaultShader::FragmentPass()
 {
 	glm::vec3 normal     = glm::normalize(GetVaryingAs<glm::vec3>("v_Normal"));
 	glm::vec2 textCoords = GetVaryingAs<glm::vec2>("v_TextCoords");

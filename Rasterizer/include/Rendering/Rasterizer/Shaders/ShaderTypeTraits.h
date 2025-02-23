@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-#include "Rendering/EShaderUniformType.h"
+#include "Rendering/Rasterizer/Shaders/EShaderUniformType.h"
 
 namespace Rendering
 {

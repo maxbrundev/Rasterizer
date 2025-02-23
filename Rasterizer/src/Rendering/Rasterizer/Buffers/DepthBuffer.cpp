@@ -1,35 +1,34 @@
-#include "Buffers/DepthBuffer.h"
+#include "Rendering/Rasterizer/Buffers/DepthBuffer.h"
 
 #include <algorithm>
 #include <limits>
 
-Buffers::DepthBuffer::DepthBuffer(uint32_t p_width, uint32_t p_height) :
+Rendering::Rasterizer::Buffers::DepthBuffer::DepthBuffer(uint32_t p_width, uint32_t p_height) :
 m_width(p_width),
 m_height(p_height),
 m_size(m_width * m_height),
 m_sizeInByte(m_size * sizeof(float)),
 m_data(new float[m_size])
 {
-	
 }
 
-Buffers::DepthBuffer::~DepthBuffer()
+Rendering::Rasterizer::Buffers::DepthBuffer::~DepthBuffer()
 {
 	delete[] m_data;
 	m_data = nullptr;
 }
 
-float Buffers::DepthBuffer::GetElement(uint32_t p_x, uint32_t p_y) const
+float Rendering::Rasterizer::Buffers::DepthBuffer::GetElement(uint32_t p_x, uint32_t p_y) const
 {
 	return m_data[p_y * m_width + p_x];
 }
 
-void Buffers::DepthBuffer::SetElement(uint32_t p_x, uint32_t p_y, const float& p_value) const
+void Rendering::Rasterizer::Buffers::DepthBuffer::SetElement(uint32_t p_x, uint32_t p_y, const float& p_value) const
 {
 	m_data[p_y * m_width + p_x] = p_value;
 }
 
-void Buffers::DepthBuffer::Clear() const
+void Rendering::Rasterizer::Buffers::DepthBuffer::Clear() const
 {
 	for (uint32_t i = 0; i < m_size; ++i)
 	{
@@ -37,7 +36,7 @@ void Buffers::DepthBuffer::Clear() const
 	}
 }
 
-void Buffers::DepthBuffer::Resize(uint32_t p_width, uint32_t p_height)
+void Rendering::Rasterizer::Buffers::DepthBuffer::Resize(uint32_t p_width, uint32_t p_height)
 {
 	float* newArray = new float[p_width * p_height];
 
@@ -58,12 +57,12 @@ void Buffers::DepthBuffer::Resize(uint32_t p_width, uint32_t p_height)
 	Clear();
 }
 
-uint32_t Buffers::DepthBuffer::GetWidth() const
+uint32_t Rendering::Rasterizer::Buffers::DepthBuffer::GetWidth() const
 {
 	return m_width;
 }
 
-uint32_t Buffers::DepthBuffer::GetHeight() const
+uint32_t Rendering::Rasterizer::Buffers::DepthBuffer::GetHeight() const
 {
 	return m_height;
 }

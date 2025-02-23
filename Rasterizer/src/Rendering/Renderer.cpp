@@ -1,6 +1,7 @@
 #include "Rendering/Renderer.h"
 
-#include "Rendering/GLRasterizer.h"
+
+#include "Rendering/Rasterizer/GLRasterizer.h"
 #include "Rendering/Settings/EPrimitiveMode.h"
 #include "Resources/Loaders/TextureLoader.h"
 
@@ -20,8 +21,6 @@ m_sdlTexture(nullptr)
 	m_sdlTexture = SDL_CreateTexture(m_driver.GetRenderer(), SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(800), static_cast<int>(600));
 
 	p_window.ResizeEvent.AddListener(std::bind(&Renderer::OnResize, this, std::placeholders::_1, std::placeholders::_2));
-
-	//m_rasterizer = std::make_unique<Rasterizer>(p_window, m_driver.GetRenderer(), 800, 600);
 }
 
 Rendering::Renderer::~Renderer()
@@ -34,13 +33,11 @@ Rendering::Renderer::~Renderer()
 void Rendering::Renderer::Clear(const Data::Color& p_color) const
 {
 	GLRasterizer::Clear(p_color);
-	//m_rasterizer->Clear(p_color);
 }
 
 void Rendering::Renderer::ClearDepth() const
 {
 	GLRasterizer::ClearDepth();
-	//m_rasterizer->ClearDepth();
 }
 
 void Rendering::Renderer::Draw(Resources::Model& p_model, Resources::Material* p_defaultMaterial)
@@ -48,8 +45,6 @@ void Rendering::Renderer::Draw(Resources::Model& p_model, Resources::Material* p
 	uint8_t state = FetchState();
 
 	ApplyStateMask(state);
-
-	//m_rasterizer->SetState(state);
 
 	auto materials = p_model.GetMaterials();
 
@@ -75,31 +70,29 @@ void Rendering::Renderer::DrawMesh(Settings::EPrimitiveMode p_drawMode, Resource
 
 		ApplyStateMask(state);
 
-		//m_rasterizer->SetState(state);
-		 
 		p_material.Bind(m_emptyTexture);
-		GLRasterizer::DrawElements(static_cast<uint8_t>(p_drawMode), p_mesh);
 
-		//m_rasterizer->RasterizeMesh(p_drawMode, p_mesh, *p_material.GetShader());
+		p_mesh.Bind();
+		GLRasterizer::DrawElements(static_cast<uint8_t>(p_drawMode), p_mesh.GetIndexCount());
+		p_mesh.Unbind();
 	}
 }
 
-void Rendering::Renderer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, AShader& p_shader, const Data::Color& p_color)
+void Rendering::Renderer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, Rasterizer::Shaders::AShader& p_shader, const Data::Color& p_color)
 {
 	uint8_t state = FetchState();
 
 	ApplyStateMask(state);
 
-	//m_rasterizer->SetState(state);
 	p_shader.Bind();
+
 	GLRasterizer::DrawLine({ p_point0 }, { p_point1 }, p_color);
-	//m_rasterizer->RasterizeLine({ p_point0 }, { p_point1 }, p_shader, p_color);
 }
 
 void Rendering::Renderer::Render() const
 {
-	//m_rasterizer->SendDataToGPU();
 	SendDataToGPU();
+
 	m_driver.RenderCopy(m_sdlTexture);
 
 	m_driver.RenderPresent();
@@ -113,7 +106,6 @@ void Rendering::Renderer::Clear() const
 void Rendering::Renderer::SetSamples(uint8_t p_samples) const
 {
 	GLRasterizer::SetSamples(p_samples);
-	//m_rasterizer->SetSamples(p_samples);
 }
 
 void Rendering::Renderer::SendDataToGPU() const

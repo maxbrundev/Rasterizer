@@ -3,13 +3,14 @@
 #include <string>
 #include <unordered_map>
 
-#include "EShaderUniformType.h"
-#include "ShaderTypeTraits.h"
 #include "Geometry/Vertex.h"
+
+#include "Rendering/Rasterizer/Shaders/EShaderUniformType.h"
+#include "Rendering/Rasterizer/Shaders/ShaderTypeTraits.h"
 
 #include "Resources/Texture.h"
 
-namespace Rendering
+namespace Rendering::Rasterizer::Shaders
 {
 	struct ShaderData
 	{

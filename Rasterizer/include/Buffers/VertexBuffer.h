@@ -1,19 +1,20 @@
 #pragma once
-
-#include <vector>
-
-#include "Geometry/Vertex.h"
+#include <cstdint>
 
 namespace Buffers
 {
-	struct VertexBuffer
+	class VertexBuffer
 	{
-		std::vector<Geometry::Vertex> Vertices;
+	public:
+		VertexBuffer(const void* p_data, size_t p_elements);
+		~VertexBuffer();
 
-		VertexBuffer() = default;
+		void Bind() const;
+		void Unbind() const;
 
-		VertexBuffer(const std::vector<Geometry::Vertex>& p_vertices) : Vertices(p_vertices)
-		{
-		}
+		uint32_t GetID();
+
+	private:
+		uint32_t m_bufferID;
 	};
 }

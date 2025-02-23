@@ -1,8 +1,8 @@
-#include "Buffers/TextureBuffer.h"
+#include "Rendering/Rasterizer/Buffers/TextureBuffer.h"
 
 #include <algorithm>
 
-Buffers::TextureBuffer::TextureBuffer(uint32_t p_width, uint32_t p_height) :
+Rendering::Rasterizer::Buffers::TextureBuffer::TextureBuffer(uint32_t p_width, uint32_t p_height) :
 m_width(p_width),
 m_height(p_height),
 m_size(m_width * m_height),
@@ -12,29 +12,29 @@ m_data(new uint32_t[m_size])
 {
 }
 
-Buffers::TextureBuffer::~TextureBuffer()
+Rendering::Rasterizer::Buffers::TextureBuffer::~TextureBuffer()
 {
 	delete[] m_data;
 	m_data = nullptr;
 }
 
-void Buffers::TextureBuffer::Clear(const Data::Color& p_color) const
+void Rendering::Rasterizer::Buffers::TextureBuffer::Clear(const Data::Color& p_color) const
 {
 	const uint32_t color = p_color.Pack();
 	std::fill(m_data, m_data + m_size - 1, color);
 }
 
-void Buffers::TextureBuffer::SetPixel(int p_x, int p_y, const Data::Color& p_color) const
+void Rendering::Rasterizer::Buffers::TextureBuffer::SetPixel(int p_x, int p_y, const Data::Color& p_color) const
 {
 	m_data[p_y * m_width + p_x] = p_color.Pack();
 }
 
-uint32_t Buffers::TextureBuffer::GetPixel(uint32_t p_x, uint32_t p_y) const
+uint32_t Rendering::Rasterizer::Buffers::TextureBuffer::GetPixel(uint32_t p_x, uint32_t p_y) const
 {
 	return m_data[p_y * m_width + p_x];
 }
 
-void Buffers::TextureBuffer::Resize(uint32_t p_width, uint32_t p_height)
+void Rendering::Rasterizer::Buffers::TextureBuffer::Resize(uint32_t p_width, uint32_t p_height)
 {
 	uint32_t* newArray = new uint32_t[p_width * p_height];
 
@@ -56,22 +56,22 @@ void Buffers::TextureBuffer::Resize(uint32_t p_width, uint32_t p_height)
 	Clear({ 0, 0, 0 });
 }
 
-uint32_t Buffers::TextureBuffer::GetWidth() const
+uint32_t Rendering::Rasterizer::Buffers::TextureBuffer::GetWidth() const
 {
 	return m_width;
 }
 
-uint32_t Buffers::TextureBuffer::GetHeight() const
+uint32_t Rendering::Rasterizer::Buffers::TextureBuffer::GetHeight() const
 {
 	return m_height;
 }
 
-uint32_t* Buffers::TextureBuffer::GetData()
+uint32_t* Rendering::Rasterizer::Buffers::TextureBuffer::GetData()
 {
 	return m_data;
 }
 
-uint32_t Buffers::TextureBuffer::GetRawSize()
+uint32_t Rendering::Rasterizer::Buffers::TextureBuffer::GetRawSize()
 {
 	return m_rowSize;
 }

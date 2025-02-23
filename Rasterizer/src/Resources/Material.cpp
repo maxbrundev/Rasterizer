@@ -1,6 +1,7 @@
 #include "Resources/Material.h"
 
-#include "Rendering/GLRasterizer.h"
+#include "Rendering/Rasterizer/GLRasterizer.h"
+
 #include "Resources/Loaders/TextureLoader.h"
 
 Resources::Material::Material(const std::string& p_name) :
@@ -40,7 +41,7 @@ bool Resources::Material::HasShader() const
 	return m_shader != nullptr;
 }
 
-Rendering::AShader* Resources::Material::GetShader() const
+Rendering::Rasterizer::Shaders::AShader* Resources::Material::GetShader() const
 {
 	return m_shader;
 }
@@ -50,7 +51,7 @@ const Resources::Texture* Resources::Material::GetTexture() const
 	return m_texture;
 }
 
-void Resources::Material::SetShader(Rendering::AShader* p_shader)
+void Resources::Material::SetShader(Rendering::Rasterizer::Shaders::AShader* p_shader)
 {
 	m_shader = p_shader;
 }

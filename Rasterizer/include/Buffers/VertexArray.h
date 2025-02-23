@@ -4,11 +4,11 @@
 
 namespace Buffers
 {
-	class IndexBuffer
+	class VertexArray
 	{
 	public:
-		IndexBuffer(const unsigned int* p_data, size_t p_elements);
-		~IndexBuffer();
+		VertexArray();
+		~VertexArray();
 
 		void Bind() const;
 		void Unbind() const;
@@ -17,5 +17,6 @@ namespace Buffers
 
 	private:
 		uint32_t m_bufferID;
+		
 	};
 }

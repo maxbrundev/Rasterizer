@@ -1,10 +1,9 @@
 #pragma once
 
-#include "Rendering/AShader.h"
+#include "Rendering/Rasterizer/Shaders/AShader.h"
 
-namespace Rendering
+namespace Rendering::Rasterizer::Shaders
 {
-
 	class DefaultShader : public AShader
 	{
 	public:
