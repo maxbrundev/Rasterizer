@@ -1,17 +1,20 @@
 #pragma once
-
-#include <vector>
+#include <cstdint>
 
 namespace Buffers
 {
-	struct IndexBuffer
+	class IndexBuffer
 	{
-		std::vector<uint32_t> Indices;
+	public:
+		IndexBuffer(const unsigned int* p_data, size_t p_elements);
+		~IndexBuffer();
 
-		IndexBuffer() = default;
+		void Bind() const;
+		void Unbind() const;
 
-		IndexBuffer(const std::vector<uint32_t>& p_indices) : Indices(p_indices)
-		{
-		}
+		uint32_t GetID() const;
+
+	private:
+		uint32_t m_bufferID;
 	};
 }

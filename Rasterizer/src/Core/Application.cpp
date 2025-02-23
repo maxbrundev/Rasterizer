@@ -15,7 +15,7 @@
 
 #include "Tools/Time/Clock.h"
 
-#define RENDER_TEST
+//#define RENDER_TEST
 
 Core::Application::Application(const Context::Settings::WindowSettings& p_windowSettings, const Context::Settings::DriverSettings& p_driverSettings) :
 m_context(p_windowSettings, p_driverSettings),
@@ -73,18 +73,16 @@ void Core::Application::Run()
 
 	Data::Color backGround(70, 70, 70);
 
-	Buffers::VertexBuffer vertices;
-	vertices.Vertices = {
+	std::vector<Geometry::Vertex> vertices = {
 		{{-1.0, 0.0, -1.0}},
 		{{-1.0, 0.0, 1.0}},
 		{{1.0, 0.0, 1.0}},
 		{{1.0, 0.0, -1.0}}
 	};
 
-	Buffers::IndexBuffer indices;
-	indices.Indices = { 0, 1, 2, 2, 3, 0 };
+	std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0 };
 
-	Resources::Mesh planeMesh(vertices.Vertices, indices.Indices, 0);
+	Resources::Mesh planeMesh(vertices, indices, 0);
 
 	while (IsRunning())
 	{

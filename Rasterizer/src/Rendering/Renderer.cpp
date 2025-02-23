@@ -78,8 +78,10 @@ void Rendering::Renderer::DrawMesh(Settings::EPrimitiveMode p_drawMode, Resource
 		//m_rasterizer->SetState(state);
 		 
 		p_material.Bind(m_emptyTexture);
-		GLRasterizer::DrawElements(static_cast<uint8_t>(p_drawMode), p_mesh);
 
+		p_mesh.Bind();
+		GLRasterizer::DrawElements(static_cast<uint8_t>(p_drawMode), p_mesh.GetIndexCount());
+		p_mesh.Unbind();
 		//m_rasterizer->RasterizeMesh(p_drawMode, p_mesh, *p_material.GetShader());
 	}
 }

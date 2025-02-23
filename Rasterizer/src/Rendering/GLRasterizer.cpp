@@ -1,6 +1,7 @@
 #include "Rendering/GLRasterizer.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
+#include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/compatibility.hpp>
 
@@ -12,7 +13,7 @@
 
 void RasterizeMesh(uint8_t p_primitiveMode, const Resources::Mesh& p_mesh);
 void RasterizeLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Data::Color& p_color);
-void RasterizeTriangle(uint8_t  p_primitiveMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2);
+void RasterizeTriangle(uint8_t p_primitiveMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2);
 void TransformAndRasterizeVertices(const uint8_t  p_primitiveMode, const std::array<glm::vec4, 3>& processedVertices);
 void ComputeFragments(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices);
 
@@ -91,6 +92,195 @@ namespace
 	}
 }
 
+struct VertexAttribute
+{
+	int      Size;
+	int      Stride;
+	size_t   Offset;
+	uint32_t Index;
+	uint32_t Type;
+	bool     Normalized;
+};
+
+struct VertexArrayObject
+{
+	std::vector<VertexAttribute>       Attributes;
+	std::unordered_map<uint32_t, bool> EnabledAttributes;
+
+	uint32_t ID;
+	uint32_t BoundArrayBuffer;
+	uint32_t BoundElementBuffer;
+};
+
+struct BufferObject
+{
+	std::vector<uint8_t> Data;
+	size_t   Size;
+	uint32_t ID;
+	uint32_t Target;
+	uint32_t Usage;
+};
+
+std::unordered_map<uint32_t, VertexArrayObject> VertexArrayObjects;
+uint32_t NextVertexArrayObject    = 1;
+uint32_t CurrentVertexArrayObject = 0;
+
+std::unordered_map<uint32_t, BufferObject> BufferObjects;
+uint32_t NextBuffer = 1;
+uint32_t CurrentArrayBuffer   = 0;
+uint32_t CurrentElementBuffer = 0;
+
+void GLRasterizer::GenVertexArrays(uint32_t p_count, uint32_t* p_arrays)
+{
+	for (uint32_t i = 0; i < p_count; i++) 
+	{
+		uint32_t id = NextVertexArrayObject++;
+
+		VertexArrayObject vertexArrayObject;
+		vertexArrayObject.ID = id;
+		vertexArrayObject.BoundArrayBuffer = 0;
+		vertexArrayObject.BoundElementBuffer = 0;
+		vertexArrayObject.Attributes.clear();
+		vertexArrayObject.EnabledAttributes.clear();
+		VertexArrayObjects[id] = vertexArrayObject;
+		p_arrays[i] = id;
+	}
+}
+
+void GLRasterizer::DeleteVertexArrays(uint32_t p_count, const uint32_t* p_arrays)
+{
+	for (uint32_t i = 0; i < p_count; i++) 
+	{
+		uint32_t id = p_arrays[i];
+
+		VertexArrayObjects.erase(id);
+
+		if (CurrentVertexArrayObject == id)
+			CurrentVertexArrayObject = 0;
+	}
+}
+
+void GLRasterizer::BindVertexArray(uint32_t p_array)
+{
+	if (p_array != 0 && VertexArrayObjects.find(p_array) == VertexArrayObjects.end()) 
+	{
+		std::cout << "VertexArray with ID " << p_array << " not found!\n";
+		return;
+	}
+
+	CurrentVertexArrayObject = p_array;
+}
+
+VertexArrayObject* GetBoundVertexArrayObject()
+{
+	if (CurrentVertexArrayObject == 0)
+		return nullptr;
+
+	auto it = VertexArrayObjects.find(CurrentVertexArrayObject);
+
+	return (it != VertexArrayObjects.end()) ? &it->second : nullptr;
+}
+
+void GLRasterizer::GenBuffers(uint32_t p_count, uint32_t* p_buffers)
+{
+	for (uint32_t i = 0; i < p_count; i++) 
+	{
+		uint32_t id = NextBuffer++;
+
+		BufferObject bufferObject;
+		bufferObject.ID = id;
+		bufferObject.Target = 0;
+		bufferObject.Size = 0;
+		bufferObject.Usage = 0;
+		bufferObject.Data.clear();
+		BufferObjects[id] = bufferObject;
+		p_buffers[i] = id;
+	}
+}
+
+void GLRasterizer::DeleteBuffers(uint32_t p_count, const uint32_t* p_buffers)
+{
+	for (uint32_t i = 0; i < p_count; i++) 
+	{
+		uint32_t id = p_buffers[i];
+
+		BufferObjects.erase(id);
+
+		if (CurrentArrayBuffer == id)
+			CurrentArrayBuffer = 0;
+
+		if (CurrentElementBuffer == id)
+			CurrentElementBuffer = 0;
+	}
+}
+
+void GLRasterizer::BindBuffer(uint32_t p_target, uint32_t p_buffer)
+{
+	if (p_target == GLR_ARRAY_BUFFER) 
+	{
+		CurrentArrayBuffer = p_buffer;
+
+		if (CurrentVertexArrayObject != 0)
+			VertexArrayObjects[CurrentVertexArrayObject].BoundArrayBuffer = p_buffer;
+	}
+	else if (p_target == GLR_ELEMENT_ARRAY_BUFFER)
+	{
+		CurrentElementBuffer = p_buffer;
+
+		if (CurrentVertexArrayObject != 0)
+			VertexArrayObjects[CurrentVertexArrayObject].BoundElementBuffer = p_buffer;
+	}
+}
+
+void GLRasterizer::BufferData(uint32_t p_target, size_t p_size, const void* p_data, uint32_t p_usage)
+{
+	uint32_t currentBuffer = (p_target == GLR_ARRAY_BUFFER) ? CurrentArrayBuffer : (p_target == GLR_ELEMENT_ARRAY_BUFFER) ? CurrentElementBuffer : 0;
+
+	if (currentBuffer == 0) {
+		std::cout << "No buffer bound for target " << p_target << "\n";
+		return;
+	}
+
+	BufferObject& bufferObject = BufferObjects[currentBuffer];
+	bufferObject.Target = p_target;
+	bufferObject.Size = p_size;
+	bufferObject.Usage = p_usage;
+	bufferObject.Data.resize(p_size);
+	std::memcpy(bufferObject.Data.data(), p_data, p_size);
+}
+
+void GLRasterizer::EnableVertexAttribArray(uint32_t p_index)
+{
+	if (CurrentVertexArrayObject == 0) {
+		std::cout << "No VAO bound in EnableVertexAttribArray\n";
+		return;
+	}
+
+	VertexArrayObjects[CurrentVertexArrayObject].EnabledAttributes[p_index] = true;
+}
+
+void GLRasterizer::VertexAttribPointer(uint32_t p_index, int p_size, uint32_t p_type, bool p_normalized, int p_stride, const void* p_pointer)
+{
+	if (CurrentVertexArrayObject == 0) {
+		std::cout << "No VAO bound in VertexAttribPointer\n";
+		return;
+	}
+
+	if (VertexArrayObjects[CurrentVertexArrayObject].EnabledAttributes.find(p_index) == VertexArrayObjects[CurrentVertexArrayObject].EnabledAttributes.end()) {
+		std::cout << "Warning: Attribute " << p_index << " was not enabled before setting pointer!\n";
+		VertexArrayObjects[CurrentVertexArrayObject].EnabledAttributes[p_index] = true;
+	}
+
+	VertexAttribute vertexAttribute;
+	vertexAttribute.Index = p_index;
+	vertexAttribute.Size = p_size;
+	vertexAttribute.Type = p_type;
+	vertexAttribute.Normalized = p_normalized;
+	vertexAttribute.Stride = p_stride;
+	vertexAttribute.Offset = reinterpret_cast<size_t>(p_pointer);
+	VertexArrayObjects[CurrentVertexArrayObject].Attributes.push_back(vertexAttribute);
+}
+
 void GLRasterizer::Initialize(uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight)
 {
 	RenderContext.TextureBuffer = new Buffers::TextureBuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
@@ -109,6 +299,106 @@ void GLRasterizer::Clear(const Data::Color& p_color)
 void GLRasterizer::ClearDepth()
 {
 	RenderContext.DepthBuffer->Clear();
+}
+
+void GLRasterizer::DrawElements(uint8_t p_primitiveMode, uint32_t p_indexCount)
+{
+	VertexArrayObject* vertexArrayObject = GetBoundVertexArrayObject();
+
+	if (vertexArrayObject == nullptr) 
+	{
+		std::cout << "No VAO bound!\n";
+		return;
+	}
+
+	if (vertexArrayObject->BoundElementBuffer == 0) 
+	{
+		std::cout << "No index buffer bound in VAO!\n";
+		return;
+	}
+
+	if (vertexArrayObject->BoundArrayBuffer == 0)
+	{
+		std::cout << "No vertex buffer bound in VAO!\n";
+		return;
+	}
+
+	auto itIndex = BufferObjects.find(vertexArrayObject->BoundElementBuffer);
+	if (itIndex == BufferObjects.end())
+	{
+		std::cout << "Index buffer not found!\n";
+		return;
+	}
+
+	auto itVertex = BufferObjects.find(vertexArrayObject->BoundArrayBuffer);
+	if (itVertex == BufferObjects.end())
+	{
+		std::cout << "Vertex buffer not found!\n";
+		return;
+	}
+
+	BufferObject& indexBufferObject = itIndex->second;
+
+	BufferObject& vertexBuffer = itVertex->second;
+
+	Geometry::Vertex* vertices = reinterpret_cast<Geometry::Vertex*>(vertexBuffer.Data.data());
+	uint32_t* indices = reinterpret_cast<uint32_t*>(indexBufferObject.Data.data());
+
+	size_t availableIndices = indexBufferObject.Size / sizeof(uint32_t);
+	uint32_t indexCount = std::min(p_indexCount, static_cast<uint32_t>(availableIndices));
+
+	for (size_t i = 0; i < indexCount; i += 3) 
+	{
+		RasterizeTriangle(p_primitiveMode, 
+			vertices[indices[i]], 
+			vertices[indices[i + 1]], 
+			vertices[indices[i + 2]]);
+	}
+
+	if (RenderContext.SampleCount > 1 && (RenderContext.SampleCount & 1) == 0)
+	{
+		ApplyMSAA();
+	}
+}
+
+void GLRasterizer::DrawArrays(uint8_t p_primitiveMode, uint32_t p_first, uint32_t p_count)
+{
+	VertexArrayObject* vertexArrayObject = GetBoundVertexArrayObject();
+
+	if (vertexArrayObject == nullptr) 
+	{
+		std::cout << "No VAO bound!\n";
+		return;
+	}
+
+	if (vertexArrayObject->BoundArrayBuffer == 0) 
+	{
+		std::cout << "No vertex buffer bound in VAO!\n";
+		return;
+	}
+
+	auto itVertex = BufferObjects.find(vertexArrayObject->BoundArrayBuffer);
+	if (itVertex == BufferObjects.end())
+	{
+		std::cout << "Vertex buffer not found!\n";
+		return;
+	}
+
+	BufferObject& vertexBuffer = itVertex->second;
+	Geometry::Vertex* vertices = reinterpret_cast<Geometry::Vertex*>(vertexBuffer.Data.data());
+
+	for (uint32_t i = p_first; i < p_first + p_count; i += 3)
+	{
+		RasterizeTriangle(p_primitiveMode,
+			vertices[i], 
+			vertices[i + 1], 
+			vertices[i + 2]);
+	}
+
+	if (RenderContext.SampleCount > 1 && (RenderContext.SampleCount & 1) == 0)
+	{
+		ApplyMSAA();
+	}
 }
 
 void GLRasterizer::DrawElements(uint8_t p_drawMode, const Resources::Mesh& p_mesh)
