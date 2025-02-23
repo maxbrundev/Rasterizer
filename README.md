@@ -18,6 +18,48 @@ A CPU-based software rasterizer designed to explore low-level rendering techniqu
 - Depth Testing
 - OBJ Parsing
 
+# GL Rasterizer API -> [WIP branch](https://github.com/maxbrundev/Rasterizer/tree/rework/gl_rasterizer_api)
+An OpenGL-inspired API that encapsulates its own Rendering State and manages internal buffers to provide a streamlined interface for Drawing, handling Buffers, and processing Shaders.
+```cpp
+uint32_t VAO;
+uint32_t VBO;
+uint32_t EBO;
+
+std::vector<Geometry::Vertex> vertices = {
+	{{-1.0f, 0.0f, -1.0f}},
+	{{-1.0f, 0.0f, 1.0f}},
+	{{1.0f, 0.0f, 1.0f}},
+	{{1.0f, 0.0f, -1.0f}}
+};
+
+std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0 };
+
+GLRasterizer::GenBuffers(1, &VBO);
+GLRasterizer::BindBuffer(GLR_ARRAY_BUFFER, VBO);
+GLRasterizer::BufferData(GLR_ARRAY_BUFFER,
+	vertices.size() * sizeof(Geometry::Vertex),
+	vertices.data());
+
+GLRasterizer::GenBuffers(1, &EBO);
+GLRasterizer::BindBuffer(GLR_ELEMENT_ARRAY_BUFFER, EBO);
+GLRasterizer::BufferData(GLR_ELEMENT_ARRAY_BUFFER,
+	indices.size() * sizeof(uint32_t),
+	indices.data());
+
+GLRasterizer::GenVertexArrays(1, &VAO);
+GLRasterizer::BindVertexArray(VAO);
+
+GLRasterizer::BindBuffer(GLR_ARRAY_BUFFER, VBO);
+GLRasterizer::BindBuffer(GLR_ELEMENT_ARRAY_BUFFER, EBO);
+
+GLRasterizer::BindVertexArray(0);
+
+GLRasterizer::UseProgram(shaderInstance);
+GLRasterizer::BindVertexArray(VAO);
+GLRasterizer::DrawElements(GLR_TRIANGLES, static_cast<uint32_t>(indices.size()));
+GLRasterizer::BindVertexArray(0);
+```
+
 # Roadmap
 - **Rendering Enhancements:**  
   - **Renderer:**  
