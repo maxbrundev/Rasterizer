@@ -1,26 +1,26 @@
-#include "Rendering/AShader.h"
+#include "Rendering/Rasterizer/Shaders/AShader.h"
 
 #include <glm/gtc/type_ptr.inl>
 
-#include "Rendering/GLRasterizer.h"
+#include "Rendering/Rasterizer/GLRasterizer.h"
 
 static inline void CopyFloats(float* dest, const float* source, int count)
 {
 	std::memcpy(dest, source, sizeof(float) * count);
 }
 
-void Rendering::AShader::Bind()
+void Rendering::Rasterizer::Shaders::AShader::Bind()
 {
 	GLRasterizer::UseProgram(this);
 }
 
-glm::vec4 Rendering::AShader::ProcessVertex(const Geometry::Vertex& p_vertex, uint8_t p_vertexID)
+glm::vec4 Rendering::Rasterizer::Shaders::AShader::ProcessVertex(const Geometry::Vertex& p_vertex, uint8_t p_vertexID)
 {
 	m_vertexIndex = p_vertexID;
 	return VertexPass(p_vertex);
 }
 
-void Rendering::AShader::ProcessInterpolation(const glm::vec3& p_barycentricCoords, float p_w0, float p_w1, float p_w2)
+void Rendering::Rasterizer::Shaders::AShader::ProcessInterpolation(const glm::vec3& p_barycentricCoords, float p_w0, float p_w1, float p_w2)
 {
 	for (auto& [key, varData] : m_varyings)
 	{
@@ -42,68 +42,68 @@ void Rendering::AShader::ProcessInterpolation(const glm::vec3& p_barycentricCoor
 	m_interpolatedReciprocal = (1.0f / p_w0) * p_barycentricCoords.z + (1.0f / p_w1) * p_barycentricCoords.y + (1.0f / p_w2) * p_barycentricCoords.x;
 }
 
-Data::Color Rendering::AShader::ProcessFragment()
+Data::Color Rendering::Rasterizer::Shaders::AShader::ProcessFragment()
 {
 	return FragmentPass();
 }
 
-void Rendering::AShader::SetUniformInt(const std::string_view p_name, int p_value)
+void Rendering::Rasterizer::Shaders::AShader::SetUniformInt(const std::string_view p_name, int p_value)
 {
 	ShaderData& shaderData = m_uniforms[p_name];
 	shaderData.Type = EShaderDataType::INT;
 	shaderData.Data[0] = static_cast<float>(p_value);
 }
 
-void Rendering::AShader::SetUniformFloat(const std::string_view p_name, float p_value)
+void Rendering::Rasterizer::Shaders::AShader::SetUniformFloat(const std::string_view p_name, float p_value)
 {
 	ShaderData& shaderData = m_uniforms[p_name];
 	shaderData.Type = EShaderDataType::FLOAT;
 	shaderData.Data[0] = p_value;
 }
 
-void Rendering::AShader::SetUniformVec2(const std::string_view p_name, const glm::vec2& p_value)
+void Rendering::Rasterizer::Shaders::AShader::SetUniformVec2(const std::string_view p_name, const glm::vec2& p_value)
 {
 	ShaderData& shaderData = m_uniforms[p_name];
 	shaderData.Type = EShaderDataType::VEC2;
 	CopyFloats(shaderData.Data, glm::value_ptr(p_value), 2);
 }
 
-void Rendering::AShader::SetUniformVec3(const std::string_view p_name, const glm::vec3& p_value)
+void Rendering::Rasterizer::Shaders::AShader::SetUniformVec3(const std::string_view p_name, const glm::vec3& p_value)
 {
 	ShaderData& shaderData = m_uniforms[p_name];
 	shaderData.Type = EShaderDataType::VEC3;
 	CopyFloats(shaderData.Data, glm::value_ptr(p_value), 3);
 }
 
-void Rendering::AShader::SetUniformVec4(const std::string_view p_name, const glm::vec4& p_value)
+void Rendering::Rasterizer::Shaders::AShader::SetUniformVec4(const std::string_view p_name, const glm::vec4& p_value)
 {
 	ShaderData& shaderData = m_uniforms[p_name];
 	shaderData.Type = EShaderDataType::VEC4;
 	CopyFloats(shaderData.Data, glm::value_ptr(p_value), 4);
 }
 
-void Rendering::AShader::SetUniformMat2(const std::string_view p_name, const glm::mat2& p_value)
+void Rendering::Rasterizer::Shaders::AShader::SetUniformMat2(const std::string_view p_name, const glm::mat2& p_value)
 {
 	ShaderData& shaderData = m_uniforms[p_name];
 	shaderData.Type = EShaderDataType::MAT2;
 	CopyFloats(shaderData.Data, glm::value_ptr(p_value), 4);
 }
 
-void Rendering::AShader::SetUniformMat3(const std::string_view p_name, const glm::mat3& p_value)
+void Rendering::Rasterizer::Shaders::AShader::SetUniformMat3(const std::string_view p_name, const glm::mat3& p_value)
 {
 	ShaderData& shaderData = m_uniforms[p_name];
 	shaderData.Type = EShaderDataType::MAT3;
 	CopyFloats(shaderData.Data, glm::value_ptr(p_value), 9);
 }
 
-void Rendering::AShader::SetUniformMat4(const std::string_view p_name, const glm::mat4& p_value)
+void Rendering::Rasterizer::Shaders::AShader::SetUniformMat4(const std::string_view p_name, const glm::mat4& p_value)
 {
 	ShaderData& shaderData = m_uniforms[p_name];
 	shaderData.Type = EShaderDataType::MAT4;
 	CopyFloats(shaderData.Data, glm::value_ptr(p_value), 16);
 }
 
-int Rendering::AShader::GetUniformAsInt(const std::string_view p_name) const
+int Rendering::Rasterizer::Shaders::AShader::GetUniformAsInt(const std::string_view p_name) const
 {
 	auto it = m_uniforms.find(p_name);
 
@@ -113,7 +113,7 @@ int Rendering::AShader::GetUniformAsInt(const std::string_view p_name) const
 	return static_cast<int>(it->second.Data[0]);
 }
 
-float Rendering::AShader::GetUniformAsFloat(const std::string_view p_name) const
+float Rendering::Rasterizer::Shaders::AShader::GetUniformAsFloat(const std::string_view p_name) const
 {
 	auto it = m_uniforms.find(p_name);
 
@@ -123,7 +123,7 @@ float Rendering::AShader::GetUniformAsFloat(const std::string_view p_name) const
 	return it->second.Data[0];
 }
 
-glm::vec2 Rendering::AShader::GetUniformAsVec2(const std::string_view p_name) const
+glm::vec2 Rendering::Rasterizer::Shaders::AShader::GetUniformAsVec2(const std::string_view p_name) const
 {
 	auto it = m_uniforms.find(p_name);
 
@@ -133,7 +133,7 @@ glm::vec2 Rendering::AShader::GetUniformAsVec2(const std::string_view p_name) co
 	return glm::vec2(it->second.Data[0], it->second.Data[1]);
 }
 
-glm::vec3 Rendering::AShader::GetUniformAsVec3(const std::string_view p_name) const
+glm::vec3 Rendering::Rasterizer::Shaders::AShader::GetUniformAsVec3(const std::string_view p_name) const
 {
 	auto it = m_uniforms.find(p_name);
 
@@ -143,7 +143,7 @@ glm::vec3 Rendering::AShader::GetUniformAsVec3(const std::string_view p_name) co
 	return glm::vec3(it->second.Data[0], it->second.Data[1], it->second.Data[2]);
 }
 
-glm::vec4 Rendering::AShader::GetUniformAsVec4(const std::string_view p_name) const
+glm::vec4 Rendering::Rasterizer::Shaders::AShader::GetUniformAsVec4(const std::string_view p_name) const
 {
 	auto it = m_uniforms.find(p_name);
 
@@ -158,7 +158,7 @@ glm::vec4 Rendering::AShader::GetUniformAsVec4(const std::string_view p_name) co
 	);
 }
 
-glm::mat2 Rendering::AShader::GetUniformAsMat2(const std::string_view p_name) const
+glm::mat2 Rendering::Rasterizer::Shaders::AShader::GetUniformAsMat2(const std::string_view p_name) const
 {
 	auto it = m_uniforms.find(p_name);
 
@@ -171,7 +171,7 @@ glm::mat2 Rendering::AShader::GetUniformAsMat2(const std::string_view p_name) co
 	                 uniformData[2], uniformData[3]);
 }
 
-glm::mat3 Rendering::AShader::GetUniformAsMat3(const std::string_view p_name) const
+glm::mat3 Rendering::Rasterizer::Shaders::AShader::GetUniformAsMat3(const std::string_view p_name) const
 {
 	auto it = m_uniforms.find(p_name);
 
@@ -187,7 +187,7 @@ glm::mat3 Rendering::AShader::GetUniformAsMat3(const std::string_view p_name) co
 	);
 }
 
-glm::mat4 Rendering::AShader::GetUniformAsMat4(const std::string_view p_name) const
+glm::mat4 Rendering::Rasterizer::Shaders::AShader::GetUniformAsMat4(const std::string_view p_name) const
 {
 	auto it = m_uniforms.find(p_name);
 
@@ -204,63 +204,63 @@ glm::mat4 Rendering::AShader::GetUniformAsMat4(const std::string_view p_name) co
 	);
 }
 
-void Rendering::AShader::SetFlatInt(const std::string_view p_name, int p_value)
+void Rendering::Rasterizer::Shaders::AShader::SetFlatInt(const std::string_view p_name, int p_value)
 {
 	ShaderData& shaderData = m_flats[p_name];
 	shaderData.Type = EShaderDataType::INT;
 	shaderData.Data[0] = static_cast<float>(p_value);
 }
 
-void Rendering::AShader::SetFlatFloat(const std::string_view p_name, float p_value)
+void Rendering::Rasterizer::Shaders::AShader::SetFlatFloat(const std::string_view p_name, float p_value)
 {
 	ShaderData& shaderData = m_flats[p_name];
 	shaderData.Type = EShaderDataType::FLOAT;
 	shaderData.Data[0] = p_value;
 }
 
-void Rendering::AShader::SetFlatVec2(const std::string_view p_name, const glm::vec2& p_value)
+void Rendering::Rasterizer::Shaders::AShader::SetFlatVec2(const std::string_view p_name, const glm::vec2& p_value)
 {
 	ShaderData& shaderData = m_flats[p_name];
 	shaderData.Type = EShaderDataType::VEC2;
 	CopyFloats(shaderData.Data, glm::value_ptr(p_value), 2);
 }
 
-void Rendering::AShader::SetFlatVec3(const std::string_view p_name, const glm::vec3& p_value)
+void Rendering::Rasterizer::Shaders::AShader::SetFlatVec3(const std::string_view p_name, const glm::vec3& p_value)
 {
 	ShaderData& shaderData = m_flats[p_name];
 	shaderData.Type = EShaderDataType::VEC3;
 	CopyFloats(shaderData.Data, glm::value_ptr(p_value), 3);
 }
 
-void Rendering::AShader::SetFlatVec4(const std::string_view p_name, const glm::vec4& p_value)
+void Rendering::Rasterizer::Shaders::AShader::SetFlatVec4(const std::string_view p_name, const glm::vec4& p_value)
 {
 	ShaderData& shaderData = m_flats[p_name];
 	shaderData.Type = EShaderDataType::VEC4;
 	CopyFloats(shaderData.Data, glm::value_ptr(p_value), 4);
 }
 
-void Rendering::AShader::SetFlatMat2(const std::string_view p_name, const glm::mat2& p_value)
+void Rendering::Rasterizer::Shaders::AShader::SetFlatMat2(const std::string_view p_name, const glm::mat2& p_value)
 {
 	ShaderData& shaderData = m_flats[p_name];
 	shaderData.Type = EShaderDataType::MAT2;
 	CopyFloats(shaderData.Data, glm::value_ptr(p_value), 4);
 }
 
-void Rendering::AShader::SetFlatMat3(const std::string_view p_name, const glm::mat3& p_value)
+void Rendering::Rasterizer::Shaders::AShader::SetFlatMat3(const std::string_view p_name, const glm::mat3& p_value)
 {
 	ShaderData& shaderData = m_flats[p_name];
 	shaderData.Type = EShaderDataType::MAT3;
 	CopyFloats(shaderData.Data, glm::value_ptr(p_value), 9);
 }
 
-void Rendering::AShader::SetFlatMat4(const std::string_view p_name, const glm::mat4& p_value)
+void Rendering::Rasterizer::Shaders::AShader::SetFlatMat4(const std::string_view p_name, const glm::mat4& p_value)
 {
 	ShaderData& shaderData = m_flats[p_name];
 	shaderData.Type = EShaderDataType::MAT4;
 	CopyFloats(shaderData.Data, glm::value_ptr(p_value), 16);
 }
 
-int Rendering::AShader::GetFlatAsInt(const std::string_view name) const
+int Rendering::Rasterizer::Shaders::AShader::GetFlatAsInt(const std::string_view name) const
 {
 	auto it = m_flats.find(name);
 
@@ -270,7 +270,7 @@ int Rendering::AShader::GetFlatAsInt(const std::string_view name) const
 	return static_cast<int>(it->second.Data[0]);
 }
 
-float Rendering::AShader::GetFlatAsFloat(const std::string_view p_name) const
+float Rendering::Rasterizer::Shaders::AShader::GetFlatAsFloat(const std::string_view p_name) const
 {
 	auto it = m_flats.find(p_name);
 
@@ -280,7 +280,7 @@ float Rendering::AShader::GetFlatAsFloat(const std::string_view p_name) const
 	return it->second.Data[0];
 }
 
-glm::vec2 Rendering::AShader::GetFlatAsVec2(const std::string_view p_name) const
+glm::vec2 Rendering::Rasterizer::Shaders::AShader::GetFlatAsVec2(const std::string_view p_name) const
 {
 	auto it = m_flats.find(p_name);
 
@@ -293,7 +293,7 @@ glm::vec2 Rendering::AShader::GetFlatAsVec2(const std::string_view p_name) const
 	);
 }
 
-glm::vec3 Rendering::AShader::GetFlatAsVec3(const std::string_view p_name) const
+glm::vec3 Rendering::Rasterizer::Shaders::AShader::GetFlatAsVec3(const std::string_view p_name) const
 {
 	auto it = m_flats.find(p_name);
 
@@ -307,7 +307,7 @@ glm::vec3 Rendering::AShader::GetFlatAsVec3(const std::string_view p_name) const
 	);
 }
 
-glm::vec4 Rendering::AShader::GetFlatAsVec4(const std::string_view p_name) const
+glm::vec4 Rendering::Rasterizer::Shaders::AShader::GetFlatAsVec4(const std::string_view p_name) const
 {
 	auto it = m_flats.find(p_name);
 
@@ -322,7 +322,7 @@ glm::vec4 Rendering::AShader::GetFlatAsVec4(const std::string_view p_name) const
 	);
 }
 
-glm::mat2 Rendering::AShader::GetFlatAsMat2(const std::string_view p_name) const
+glm::mat2 Rendering::Rasterizer::Shaders::AShader::GetFlatAsMat2(const std::string_view p_name) const
 {
 	auto it = m_flats.find(p_name);
 
@@ -334,7 +334,7 @@ glm::mat2 Rendering::AShader::GetFlatAsMat2(const std::string_view p_name) const
 	                 flatData[2], flatData[3]);
 }
 
-glm::mat3 Rendering::AShader::GetFlatAsMat3(const std::string_view p_name) const
+glm::mat3 Rendering::Rasterizer::Shaders::AShader::GetFlatAsMat3(const std::string_view p_name) const
 {
 	auto it = m_flats.find(p_name);
 
@@ -349,7 +349,7 @@ glm::mat3 Rendering::AShader::GetFlatAsMat3(const std::string_view p_name) const
 	);
 }
 
-glm::mat4 Rendering::AShader::GetFlatAsMat4(const std::string_view p_name) const
+glm::mat4 Rendering::Rasterizer::Shaders::AShader::GetFlatAsMat4(const std::string_view p_name) const
 {
 	auto it = m_flats.find(p_name);
 
@@ -365,7 +365,7 @@ glm::mat4 Rendering::AShader::GetFlatAsMat4(const std::string_view p_name) const
 	);
 }
 
-void Rendering::AShader::SetVaryingInt(const std::string_view p_name, int p_value, uint8_t p_vertexIndex)
+void Rendering::Rasterizer::Shaders::AShader::SetVaryingInt(const std::string_view p_name, int p_value, uint8_t p_vertexIndex)
 {
 	if (p_vertexIndex == 255) p_vertexIndex = m_vertexIndex;
 	ShaderVarying& var = m_varyings[p_name];
@@ -373,7 +373,7 @@ void Rendering::AShader::SetVaryingInt(const std::string_view p_name, int p_valu
 	var.Data[p_vertexIndex][0] = static_cast<float>(p_value);
 }
 
-void Rendering::AShader::SetVaryingFloat(const std::string_view p_name, float p_value, uint8_t p_vertexIndex)
+void Rendering::Rasterizer::Shaders::AShader::SetVaryingFloat(const std::string_view p_name, float p_value, uint8_t p_vertexIndex)
 {
 	if (p_vertexIndex == 255) p_vertexIndex = m_vertexIndex;
 	ShaderVarying& shaderVarying = m_varyings[p_name];
@@ -381,7 +381,7 @@ void Rendering::AShader::SetVaryingFloat(const std::string_view p_name, float p_
 	shaderVarying.Data[p_vertexIndex][0] = p_value;
 }
 
-void Rendering::AShader::SetVaryingVec2(const std::string_view p_name, const glm::vec2& p_value, uint8_t p_vertexIndex)
+void Rendering::Rasterizer::Shaders::AShader::SetVaryingVec2(const std::string_view p_name, const glm::vec2& p_value, uint8_t p_vertexIndex)
 {
 	if (p_vertexIndex == 255) p_vertexIndex = m_vertexIndex;
 	ShaderVarying& shaderVarying = m_varyings[p_name];
@@ -389,7 +389,7 @@ void Rendering::AShader::SetVaryingVec2(const std::string_view p_name, const glm
 	CopyFloats(shaderVarying.Data[p_vertexIndex], glm::value_ptr(p_value), 2);
 }
 
-void Rendering::AShader::SetVaryingVec3(const std::string_view p_name, const glm::vec3& p_value, uint8_t p_vertexIndex)
+void Rendering::Rasterizer::Shaders::AShader::SetVaryingVec3(const std::string_view p_name, const glm::vec3& p_value, uint8_t p_vertexIndex)
 {
 	if (p_vertexIndex == 255) p_vertexIndex = m_vertexIndex;
 	ShaderVarying& shaderVarying = m_varyings[p_name];
@@ -397,7 +397,7 @@ void Rendering::AShader::SetVaryingVec3(const std::string_view p_name, const glm
 	CopyFloats(shaderVarying.Data[p_vertexIndex], glm::value_ptr(p_value), 3);
 }
 
-void Rendering::AShader::SetVaryingVec4(const std::string_view p_name, const glm::vec4& p_value, uint8_t p_vertexIndex)
+void Rendering::Rasterizer::Shaders::AShader::SetVaryingVec4(const std::string_view p_name, const glm::vec4& p_value, uint8_t p_vertexIndex)
 {
 	if (p_vertexIndex == 255) p_vertexIndex = m_vertexIndex;
 	ShaderVarying& shaderVarying = m_varyings[p_name];
@@ -405,7 +405,7 @@ void Rendering::AShader::SetVaryingVec4(const std::string_view p_name, const glm
 	CopyFloats(shaderVarying.Data[p_vertexIndex], glm::value_ptr(p_value), 4);
 }
 
-void Rendering::AShader::SetVaryingMat2(const std::string_view p_name, const glm::mat2& p_value, uint8_t p_vertexIndex)
+void Rendering::Rasterizer::Shaders::AShader::SetVaryingMat2(const std::string_view p_name, const glm::mat2& p_value, uint8_t p_vertexIndex)
 {
 	if (p_vertexIndex == 255) p_vertexIndex = m_vertexIndex;
 	ShaderVarying& shaderVarying = m_varyings[p_name];
@@ -413,7 +413,7 @@ void Rendering::AShader::SetVaryingMat2(const std::string_view p_name, const glm
 	CopyFloats(shaderVarying.Data[p_vertexIndex], glm::value_ptr(p_value), 4);
 }
 
-void Rendering::AShader::SetVaryingMat3(const std::string_view p_name, const glm::mat3& p_value, uint8_t p_vertexIndex)
+void Rendering::Rasterizer::Shaders::AShader::SetVaryingMat3(const std::string_view p_name, const glm::mat3& p_value, uint8_t p_vertexIndex)
 {
 	if (p_vertexIndex == 255) p_vertexIndex = m_vertexIndex;
 	ShaderVarying& shaderVarying = m_varyings[p_name];
@@ -421,7 +421,7 @@ void Rendering::AShader::SetVaryingMat3(const std::string_view p_name, const glm
 	CopyFloats(shaderVarying.Data[p_vertexIndex], glm::value_ptr(p_value), 9);
 }
 
-void Rendering::AShader::SetVaryingMat4(const std::string_view p_name, const glm::mat4& p_value, uint8_t p_vertexIndex)
+void Rendering::Rasterizer::Shaders::AShader::SetVaryingMat4(const std::string_view p_name, const glm::mat4& p_value, uint8_t p_vertexIndex)
 {
 	if (p_vertexIndex == 255) p_vertexIndex = m_vertexIndex;
 	ShaderVarying& shaderVarying = m_varyings[p_name];
@@ -429,7 +429,7 @@ void Rendering::AShader::SetVaryingMat4(const std::string_view p_name, const glm
 	CopyFloats(shaderVarying.Data[p_vertexIndex], glm::value_ptr(p_value), 16);
 }
 
-int Rendering::AShader::GetVaryingAsInt(const std::string_view p_name) const
+int Rendering::Rasterizer::Shaders::AShader::GetVaryingAsInt(const std::string_view p_name) const
 {
 	auto it = m_varyings.find(p_name);
 
@@ -439,7 +439,7 @@ int Rendering::AShader::GetVaryingAsInt(const std::string_view p_name) const
 	return static_cast<int>(it->second.Interpolated[0]);
 }
 
-float Rendering::AShader::GetVaryingAsFloat(const std::string_view p_name) const
+float Rendering::Rasterizer::Shaders::AShader::GetVaryingAsFloat(const std::string_view p_name) const
 {
 	auto it = m_varyings.find(p_name);
 
@@ -449,7 +449,7 @@ float Rendering::AShader::GetVaryingAsFloat(const std::string_view p_name) const
 	return it->second.Interpolated[0];
 }
 
-glm::vec2 Rendering::AShader::GetVaryingAsVec2(const std::string_view p_name) const
+glm::vec2 Rendering::Rasterizer::Shaders::AShader::GetVaryingAsVec2(const std::string_view p_name) const
 {
 	auto it = m_varyings.find(p_name);
 
@@ -462,7 +462,7 @@ glm::vec2 Rendering::AShader::GetVaryingAsVec2(const std::string_view p_name) co
 	);
 }
 
-glm::vec3 Rendering::AShader::GetVaryingAsVec3(const std::string_view p_name) const
+glm::vec3 Rendering::Rasterizer::Shaders::AShader::GetVaryingAsVec3(const std::string_view p_name) const
 {
 	auto it = m_varyings.find(p_name);
 	if (it == m_varyings.end()) 
@@ -475,7 +475,7 @@ glm::vec3 Rendering::AShader::GetVaryingAsVec3(const std::string_view p_name) co
 	);
 }
 
-glm::vec4 Rendering::AShader::GetVaryingAsVec4(const std::string_view p_name) const
+glm::vec4 Rendering::Rasterizer::Shaders::AShader::GetVaryingAsVec4(const std::string_view p_name) const
 {
 	auto it = m_varyings.find(p_name);
 
@@ -490,7 +490,7 @@ glm::vec4 Rendering::AShader::GetVaryingAsVec4(const std::string_view p_name) co
 	);
 }
 
-glm::mat2 Rendering::AShader::GetVaryingAsMat2(const std::string_view p_name) const
+glm::mat2 Rendering::Rasterizer::Shaders::AShader::GetVaryingAsMat2(const std::string_view p_name) const
 {
 	auto it = m_varyings.find(p_name);
 
@@ -504,7 +504,7 @@ glm::mat2 Rendering::AShader::GetVaryingAsMat2(const std::string_view p_name) co
 	);
 }
 
-glm::mat3 Rendering::AShader::GetVaryingAsMat3(const std::string_view p_name) const
+glm::mat3 Rendering::Rasterizer::Shaders::AShader::GetVaryingAsMat3(const std::string_view p_name) const
 {
 	auto it = m_varyings.find(p_name);
 
@@ -519,7 +519,7 @@ glm::mat3 Rendering::AShader::GetVaryingAsMat3(const std::string_view p_name) co
 	);
 }
 
-glm::mat4 Rendering::AShader::GetVaryingAsMat4(const std::string_view p_name) const
+glm::mat4 Rendering::Rasterizer::Shaders::AShader::GetVaryingAsMat4(const std::string_view p_name) const
 {
 	auto it = m_varyings.find(p_name);
 
@@ -535,12 +535,12 @@ glm::mat4 Rendering::AShader::GetVaryingAsMat4(const std::string_view p_name) co
 	);
 }
 
-void Rendering::AShader::SetSample(const std::string_view p_name, Resources::Texture* p_texture)
+void Rendering::Rasterizer::Shaders::AShader::SetSample(const std::string_view p_name, Resources::Texture* p_texture)
 {
 	m_samples[p_name] = p_texture;
 }
 
-Resources::Texture* Rendering::AShader::GetSample(const std::string_view p_name) const
+Resources::Texture* Rendering::Rasterizer::Shaders::AShader::GetSample(const std::string_view p_name) const
 {
 	auto it = m_samples.find(p_name);
 
@@ -550,7 +550,7 @@ Resources::Texture* Rendering::AShader::GetSample(const std::string_view p_name)
 	return it->second;
 }
 
-int Rendering::AShader::GetTypeCount(EShaderDataType p_type)
+int Rendering::Rasterizer::Shaders::AShader::GetTypeCount(EShaderDataType p_type)
 {
 	switch (p_type)
 	{
@@ -566,7 +566,7 @@ int Rendering::AShader::GetTypeCount(EShaderDataType p_type)
 	}
 }
 
-uint8_t Rendering::AShader::ComputeCurrentMipmapIndex(uint8_t p_mipmapsCount) const
+uint8_t Rendering::Rasterizer::Shaders::AShader::ComputeCurrentMipmapIndex(uint8_t p_mipmapsCount) const
 {
 	const auto& u_ViewPos = GetUniformAsVec3("u_ViewPos");
 	const auto& v_FragPos = GetFlatAsVec3("v_FragPos");
@@ -580,7 +580,7 @@ uint8_t Rendering::AShader::ComputeCurrentMipmapIndex(uint8_t p_mipmapsCount) co
 	return distanceRatio;
 }
 
-glm::vec4 Rendering::AShader::Texture(const Resources::Texture& p_texture, const glm::vec2& p_texCoords) const
+glm::vec4 Rendering::Rasterizer::Shaders::AShader::Texture(const Resources::Texture& p_texture, const glm::vec2& p_texCoords) const
 {
 	uint32_t width = p_texture.Width;
 	uint32_t height = p_texture.Height;

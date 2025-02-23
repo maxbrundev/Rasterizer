@@ -1,12 +1,12 @@
-#include "Rendering/GLRasterizer.h"
+#include "Rendering/Rasterizer/GLRasterizer.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/compatibility.hpp>
 
-#include "Buffers/DepthBuffer.h"
-#include "Buffers/MSAABuffer.h"
+#include "Rendering/Rasterizer/Buffers/DepthBuffer.h"
+#include "Rendering/Rasterizer/Buffers/MSAABuffer.h"
 #include "Geometry/Plane.h"
 #include "Geometry/Polygon.h"
 #include "Geometry/Triangle.h"
@@ -45,7 +45,7 @@ namespace
 		uint8_t PolygonMode        = GLR_FILL;
 		uint8_t CullFace           = GLR_BACK;
 		uint8_t SampleCount        = 0;
-		Rendering::AShader* Shader = nullptr;
+		Rendering::Rasterizer::Shaders::AShader* Shader = nullptr;
 	};
 
 	struct VertexArrayObject
@@ -65,9 +65,9 @@ namespace
 
 	RenderContext RenderContext;
 
-	Buffers::TextureBuffer* TextureBuffer = nullptr;
-	Buffers::DepthBuffer* DepthBuffer     = nullptr;
-	Buffers::MSAABuffer* MSAABuffer       = nullptr;
+	Rendering::Rasterizer::Buffers::TextureBuffer* TextureBuffer = nullptr;
+	Rendering::Rasterizer::Buffers::DepthBuffer* DepthBuffer     = nullptr;
+	Rendering::Rasterizer::Buffers::MSAABuffer* MSAABuffer       = nullptr;
 
 	std::array<Geometry::Plane, 6> ClippingFrustum;
 
@@ -199,9 +199,9 @@ void GLRasterizer::BufferData(uint32_t p_target, size_t p_size, const void* p_da
 
 void GLRasterizer::Initialize(uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight)
 {
-	TextureBuffer = new Buffers::TextureBuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
-	MSAABuffer    = new Buffers::MSAABuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
-	DepthBuffer   = new Buffers::DepthBuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
+	TextureBuffer = new Rendering::Rasterizer::Buffers::TextureBuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
+	MSAABuffer    = new Rendering::Rasterizer::Buffers::MSAABuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
+	DepthBuffer   = new Rendering::Rasterizer::Buffers::DepthBuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
 
 	InitializeClippingFrustum();
 }
@@ -327,7 +327,7 @@ void GLRasterizer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1
 	RasterizeLine(Geometry::Vertex(p_point0 ), Geometry::Vertex(p_point1), p_color);
 }
 
-void GLRasterizer::UseProgram(Rendering::AShader* p_shader)
+void GLRasterizer::UseProgram(Rendering::Rasterizer::Shaders::AShader* p_shader)
 {
 	RenderContext.Shader = p_shader;
 }
@@ -434,7 +434,7 @@ void GLRasterizer::Terminate()
 	DepthBuffer = nullptr;
 }
 
-Buffers::TextureBuffer* GLRasterizer::GetFrameBuffer()
+Rendering::Rasterizer::Buffers::TextureBuffer* GLRasterizer::GetFrameBuffer()
 {
 	return TextureBuffer;
 }
@@ -444,7 +444,7 @@ uint32_t* GLRasterizer::GetFrameBufferDate()
 	return TextureBuffer->GetData();
 }
 
-Buffers::TextureBuffer& GLRasterizer::GetTextureBuffer()
+Rendering::Rasterizer::Buffers::TextureBuffer& GLRasterizer::GetTextureBuffer()
 {
 	return *TextureBuffer;
 }

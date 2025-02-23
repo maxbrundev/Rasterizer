@@ -1,6 +1,6 @@
 #include "Resources/Mesh.h"
 
-#include "Rendering/GLRasterizer.h"
+#include "Rendering/Rasterizer/GLRasterizer.h"
 
 Resources::Mesh::Mesh(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices, uint32_t p_materialIndex) :
 m_vertexCount(static_cast<uint32_t>(p_vertices.size())),

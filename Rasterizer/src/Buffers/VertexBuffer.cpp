@@ -1,6 +1,6 @@
 #include "Buffers/VertexBuffer.h"
 
-#include "Rendering/GLRasterizer.h"
+#include "Rendering/Rasterizer/GLRasterizer.h"
 
 Buffers::VertexBuffer::VertexBuffer(const void* p_data, size_t p_elements)
 {

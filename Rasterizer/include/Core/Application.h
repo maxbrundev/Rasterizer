@@ -4,7 +4,7 @@
 
 #include "Context/Settings/WindowSettings.h"
 #include "Context/Settings/DriverSettings.h"
-#include "Rendering/DefaultShader.h"
+#include "Rendering/Rasterizer/Shaders/DefaultShader.h"
 
 namespace Core
 {
@@ -28,7 +28,7 @@ namespace Core
 		glm::vec3 m_cameraPosition;
 
 		Resources::Model* m_currentModel = nullptr;
-		Rendering::DefaultShader basicShader;
+		Rendering::Rasterizer::Shaders::DefaultShader basicShader;
 		Resources::Material m_defaultMaterial;
 		bool m_isRunning;
 	};

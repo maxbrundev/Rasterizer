@@ -2,8 +2,9 @@
 
 #include <cstdint>
 
-#include "Buffers/TextureBuffer.h"
-#include "Rendering/AShader.h"
+#include "Rendering/Rasterizer/Buffers/TextureBuffer.h"
+#include "Rendering/Rasterizer/Shaders/AShader.h"
+
 #include "Resources/Mesh.h"
 
 constexpr bool CLIPPING = true;
@@ -40,7 +41,7 @@ namespace GLRasterizer
 	void DrawElements(uint8_t p_drawMode, const Resources::Mesh& p_mesh);
 	void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const Data::Color& p_color);
 
-	void UseProgram(Rendering::AShader* p_shader);
+	void UseProgram(Rendering::Rasterizer::Shaders::AShader* p_shader);
 	void SetSamples(uint8_t p_samples);
 	void PolygonMode(uint8_t p_mode);
 	void Enable(uint8_t p_state);
@@ -51,9 +52,9 @@ namespace GLRasterizer
 	void GetBool(uint8_t p_name, bool* p_params);
 	void GetInt(uint8_t p_name, int* p_params);
 
-	Buffers::TextureBuffer* GetFrameBuffer();
+	Rendering::Rasterizer::Buffers::TextureBuffer* GetFrameBuffer();
 	uint32_t* GetFrameBufferDate();
-	Buffers::TextureBuffer& GetTextureBuffer();
+	Rendering::Rasterizer::Buffers::TextureBuffer& GetTextureBuffer();
 
 	void GenVertexArrays(uint32_t p_count, uint32_t* p_arrays);
 	void DeleteVertexArrays(uint32_t p_count, const uint32_t* p_arrays);

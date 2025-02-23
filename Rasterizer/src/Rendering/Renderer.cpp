@@ -1,6 +1,7 @@
 #include "Rendering/Renderer.h"
 
-#include "Rendering/GLRasterizer.h"
+
+#include "Rendering/Rasterizer/GLRasterizer.h"
 #include "Rendering/Settings/EPrimitiveMode.h"
 #include "Resources/Loaders/TextureLoader.h"
 
@@ -15,11 +16,7 @@ m_emptyTexture(Resources::Loaders::TextureLoader::CreateColor
 )),
 m_sdlTexture(nullptr)
 {
-#ifdef OLD_RASTERIZER
-	m_rasterizer = std::make_unique<Rasterizer>(p_window, 800, 600);
-#else
 	GLRasterizer::Initialize(800, 600);
-#endif
 
 	m_sdlTexture = SDL_CreateTexture(m_driver.GetRenderer(), SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(800), static_cast<int>(600));
 
@@ -35,20 +32,12 @@ Rendering::Renderer::~Renderer()
 
 void Rendering::Renderer::Clear(const Data::Color& p_color) const
 {
-#ifdef OLD_RASTERIZER
-	m_rasterizer->Clear(p_color);
-#else
 	GLRasterizer::Clear(p_color);
-#endif
 }
 
 void Rendering::Renderer::ClearDepth() const
 {
-#ifdef OLD_RASTERIZER
-	m_rasterizer->ClearDepth();
-#else
 	GLRasterizer::ClearDepth();
-#endif
 }
 
 void Rendering::Renderer::Draw(Resources::Model& p_model, Resources::Material* p_defaultMaterial)
@@ -56,10 +45,6 @@ void Rendering::Renderer::Draw(Resources::Model& p_model, Resources::Material* p
 	uint8_t state = FetchState();
 
 	ApplyStateMask(state);
-
-#ifdef OLD_RASTERIZER
-	m_rasterizer->SetState(state);
-#endif
 
 	auto materials = p_model.GetMaterials();
 
@@ -85,38 +70,23 @@ void Rendering::Renderer::DrawMesh(Settings::EPrimitiveMode p_drawMode, Resource
 
 		ApplyStateMask(state);
 
-#ifdef OLD_RASTERIZER
-		m_rasterizer->SetState(state);
-#endif
 		p_material.Bind(m_emptyTexture);
 
-#ifdef OLD_RASTERIZER
-		m_rasterizer->RasterizeMesh(p_drawMode, p_mesh, *p_material.GetShader());
-#else
 		p_mesh.Bind();
 		GLRasterizer::DrawElements(static_cast<uint8_t>(p_drawMode), p_mesh.GetIndexCount());
 		p_mesh.Unbind();
-#endif
 	}
 }
 
-void Rendering::Renderer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, AShader& p_shader, const Data::Color& p_color)
+void Rendering::Renderer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, Rasterizer::Shaders::AShader& p_shader, const Data::Color& p_color)
 {
 	uint8_t state = FetchState();
 
 	ApplyStateMask(state);
 
-#ifdef OLD_RASTERIZER
-	m_rasterizer->SetState(state);
-#endif
-
 	p_shader.Bind();
 
-#ifdef OLD_RASTERIZER
-	m_rasterizer->RasterizeLine({ p_point0 }, { p_point1 }, p_shader, p_color);
-#else
 	GLRasterizer::DrawLine({ p_point0 }, { p_point1 }, p_color);
-#endif
 }
 
 void Rendering::Renderer::Render() const
@@ -135,49 +105,16 @@ void Rendering::Renderer::Clear() const
 
 void Rendering::Renderer::SetSamples(uint8_t p_samples) const
 {
-#ifdef OLD_RASTERIZER
-	m_rasterizer->SetSamples(p_samples);
-#else
 	GLRasterizer::SetSamples(p_samples);
-#endif
 }
 
 void Rendering::Renderer::SendDataToGPU() const
 {
-#ifdef OLD_RASTERIZER
-	SDL_UpdateTexture(m_sdlTexture, nullptr, m_rasterizer->GetTextureBuffer().GetData(), m_rasterizer->GetTextureBuffer().GetRawSize());
-#else
 	SDL_UpdateTexture(m_sdlTexture, nullptr, GLRasterizer::GetTextureBuffer().GetData(), GLRasterizer::GetTextureBuffer().GetRawSize());
-#endif
 }
 
 uint8_t Rendering::Renderer::FetchState()
 {
-#ifdef OLD_RASTERIZER
-	uint8_t result = 0;
-
-	if (m_depthWrite) result |= Settings::DEPTH_WRITE;
-	if (m_depthTest)  result |= Settings::DEPTH_TEST;
-	if (m_cull)
-	{
-		result |= Settings::CULL_FACE;
-
-		switch (m_cullFace)
-		{
-		case Settings::ECullFace::BACK:
-			result |= 0b0000'1000;
-			break;
-		case Settings::ECullFace::FRONT:
-			result |= 0b0001'0000;
-			break;
-		case Settings::FRONT_AND_BACK:
-			result |= 0b0010'0000;
-			break;
-		}
-	}
-
-	return result;
-#else
 	uint8_t result = 0;
 
 	if (m_renderDriver.GetBool(GLR_DEPTH_WRITE))             result |= 0b0000'0001;
@@ -192,40 +129,10 @@ uint8_t Rendering::Renderer::FetchState()
 	}
 
 	return result;
-#endif
-
-	
 }
 
 void Rendering::Renderer::ApplyStateMask(uint8_t p_mask)
 {
-#ifdef OLD_RASTERIZER
-	if (p_mask != m_state)
-	{
-		m_depthWrite = p_mask & Settings::DEPTH_WRITE;
-		m_depthTest = p_mask & Settings::DEPTH_TEST;
-
-		if (p_mask & Settings::CULL_FACE)
-		{
-			m_cull = true;
-
-			if (p_mask & 0b0000'1000)
-			{
-				m_cullFace = Settings::ECullFace::BACK;
-			}
-			else if (p_mask & 0b0001'0000)
-			{
-				m_cullFace = Settings::ECullFace::FRONT;
-			}
-			else if (p_mask & 0b0010'0000)
-			{
-				m_cullFace = Settings::ECullFace::FRONT_AND_BACK;
-			}
-		}
-
-		m_state = p_mask;
-	}
-#else
 	if (p_mask != m_state)
 	{
 
@@ -242,7 +149,6 @@ void Rendering::Renderer::ApplyStateMask(uint8_t p_mask)
 
 		m_state = p_mask;
 	}
-#endif
 }
 
 SDL_Renderer* Rendering::Renderer::GetSDLRenderer() const

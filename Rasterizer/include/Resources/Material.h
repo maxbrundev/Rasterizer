@@ -1,7 +1,9 @@
 #pragma once
 
 #include <string>
-#include "Rendering/AShader.h"
+
+#include "Rendering/Rasterizer/Shaders/AShader.h"
+
 #include "Resources/Texture.h"
 
 namespace Resources
@@ -16,17 +18,17 @@ namespace Resources
 
 		bool HasShader() const;
 
-		Rendering::AShader* GetShader() const;
+		Rendering::Rasterizer::Shaders::AShader* GetShader() const;
 		const Texture* GetTexture() const;
 
-		void SetShader(Rendering::AShader* p_shader);
+		void SetShader(Rendering::Rasterizer::Shaders::AShader* p_shader);
 		void SetTexture(Texture* p_texture);
 
 	public:
 		const std::string Name;
 
 	private:
-		Rendering::AShader* m_shader;
+		Rendering::Rasterizer::Shaders::AShader* m_shader;
 		Texture* m_texture;
 	};
 }

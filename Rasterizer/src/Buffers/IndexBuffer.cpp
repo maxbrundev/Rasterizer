@@ -1,7 +1,7 @@
 
 #include "Buffers/IndexBuffer.h"
 
-#include "Rendering/GLRasterizer.h"
+#include "Rendering/Rasterizer/GLRasterizer.h"
 
 Buffers::IndexBuffer::IndexBuffer(const unsigned int* p_data, size_t p_elements)
 {

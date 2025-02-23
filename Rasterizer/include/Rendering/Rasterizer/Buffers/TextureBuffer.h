@@ -4,7 +4,7 @@
 
 #include "Data/Color.h"
 
-namespace Buffers
+namespace Rendering::Rasterizer::Buffers
 {
 	class TextureBuffer
 	{
