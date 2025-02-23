@@ -18,7 +18,7 @@ A CPU-based software rasterizer designed to explore low-level rendering techniqu
 - Depth Testing
 - OBJ Parsing
 
-# GL Rasterizer API -> [WIP branch](https://github.com/maxbrundev/Rasterizer/tree/rework/gl_rasterizer_api)
+# GL Rasterizer API
 An OpenGL-inspired API that encapsulates its own Rendering State and manages internal buffers to provide a streamlined interface for Drawing, handling Buffers, and processing Shaders.
 ```cpp
 uint32_t VAO;
