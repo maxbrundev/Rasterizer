@@ -5,8 +5,6 @@
 #include "Rendering/Rasterizer/Buffers/TextureBuffer.h"
 #include "Rendering/Rasterizer/Shaders/AShader.h"
 
-#include "Resources/Mesh.h"
-
 constexpr bool CLIPPING = true;
 
 #define GLR_TRIANGLES 0
@@ -38,7 +36,6 @@ namespace GLRasterizer
 	
 	void DrawElements(uint8_t primitiveMode, uint32_t indexCount);
 	void DrawArrays(uint8_t primitiveMode, uint32_t first, uint32_t count);
-	void DrawElements(uint8_t p_drawMode, const Resources::Mesh& p_mesh);
 	void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const Data::Color& p_color);
 
 	void UseProgram(Rendering::Rasterizer::Shaders::AShader* p_shader);

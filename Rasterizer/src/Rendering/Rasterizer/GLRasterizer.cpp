@@ -13,10 +13,9 @@
 
 void InitializeClippingFrustum();
 
-void RasterizeMesh(uint8_t p_primitiveMode, const Resources::Mesh& p_mesh);
-void RasterizeLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Data::Color& p_color);
 void RasterizeTriangle(uint8_t p_primitiveMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2);
-void TransformAndRasterizeVertices(const uint8_t  p_primitiveMode, const std::array<glm::vec4, 3>& processedVertices);
+void RasterizeLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Data::Color& p_color);
+void TransformAndRasterizeVertices(const uint8_t p_primitiveMode, const std::array<glm::vec4, 3>& processedVertices);
 void ComputeFragments(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices);
 
 void SetFragment(const Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_y, const std::array<glm::vec4, 3>& p_transformedVertices);
@@ -317,11 +316,6 @@ void GLRasterizer::DrawArrays(uint8_t p_primitiveMode, uint32_t p_first, uint32_
 	}
 }
 
-void GLRasterizer::DrawElements(uint8_t p_drawMode, const Resources::Mesh& p_mesh)
-{
-	RasterizeMesh(p_drawMode, p_mesh);
-}
-
 void GLRasterizer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const Data::Color& p_color)
 {
 	RasterizeLine(Geometry::Vertex(p_point0 ), Geometry::Vertex(p_point1), p_color);
@@ -485,32 +479,6 @@ void InitializeClippingFrustum()
 	ClippingFrustum[5].Normal.z = -1.0f;
 }
 
-void RasterizeMesh(uint8_t p_primitiveMode, const Resources::Mesh& p_mesh)
-{
-	const auto& vertices = p_mesh.GetVertices();
-	const auto& indices = p_mesh.GetIndices();
-
-	if (!indices.empty())
-	{
-		for (uint32_t i = 0; i < indices.size(); i += 3)
-		{
-			RasterizeTriangle(p_primitiveMode, vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
-		}
-	}
-	else if (vertices.size() % 3 == 0)
-	{
-		for (uint32_t i = 0; i < vertices.size(); i += 3)
-		{
-			RasterizeTriangle(p_primitiveMode, vertices[i], vertices[i + 1], vertices[i + 2]);
-		}
-	}
-
-	if (RenderContext.SampleCount > 1 && (RenderContext.SampleCount & 1) == 0)
-	{
-		ApplyMSAA();
-	}
-}
-
 void RasterizeTriangle(uint8_t p_primitiveMode, const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_vertex1, const Geometry::Vertex& p_vertex2)
 {
 	std::array<glm::vec4, 3> processedVertices{ RenderContext.Shader->ProcessVertex(p_vertex0, 0), RenderContext.Shader->ProcessVertex(p_vertex1, 1) , RenderContext.Shader->ProcessVertex(p_vertex2, 2) };
@@ -579,7 +547,7 @@ void TransformAndRasterizeVertices(const uint8_t p_primitiveMode, const std::arr
 
 	if ((RenderContext.CullFace == GLR_BACK && area > 0.0f) ||
 		(RenderContext.CullFace == GLR_FRONT && area < 0.0f) ||
-		(RenderContext.CullFace == GLR_FRONT_AND_BACK))
+		RenderContext.CullFace == GLR_FRONT_AND_BACK)
 		return;
 
 	if (p_primitiveMode == GLR_TRIANGLES)
@@ -605,7 +573,6 @@ void TransformAndRasterizeVertices(const uint8_t p_primitiveMode, const std::arr
 	{
 		RasterizeTrianglePoints(triangle, transformedVertices);
 	}
-	
 }
 
 void ComputeFragments(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices)

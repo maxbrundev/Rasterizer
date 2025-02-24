@@ -21,12 +21,12 @@ namespace Resources
 		virtual void Bind() override;
 		virtual void Unbind() override;
 
-		const std::vector<Geometry::Vertex>& GetVertices() const;
-		const std::vector<uint32_t>& GetIndices() const;
-		uint32_t GetMaterialIndex() const;
 		virtual uint32_t GetVertexCount() override;
 		virtual uint32_t GetIndexCount() override;
+
 		uint32_t GetVAO() const { return m_vertexArray.GetID(); /*return m_VAO;*/ }
+		uint32_t GetMaterialIndex() const;
+
 	private:
 		void InitializeBuffers(const std::vector<Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices);
 
@@ -38,12 +38,5 @@ namespace Resources
 		Buffers::VertexArray m_vertexArray;
 		std::unique_ptr<Buffers::VertexBuffer> m_vertexBuffer;
 		std::unique_ptr<Buffers::IndexBuffer> m_indexBuffer;
-
-		std::vector<Geometry::Vertex> vertices;
-		std::vector<uint32_t> indices;
-
-		uint32_t m_VAO = 0;
-		uint32_t m_VBO = 0;
-		uint32_t m_EBO = 0;
 	};
 }
