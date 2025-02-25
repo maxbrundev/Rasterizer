@@ -46,7 +46,7 @@ void Rendering::Renderer::Draw(Resources::Model& p_model, Resources::Material* p
 
 	ApplyStateMask(state);
 
-	auto materials = p_model.GetMaterials();
+	auto& materials = p_model.GetMaterials();
 
 	for (const auto mesh : p_model.GetMeshes())
 	{

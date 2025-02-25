@@ -7,13 +7,13 @@
 
 namespace Geometry
 {
-	constexpr int MAX_POLY_VERTICES_COUNT = 12;
-	constexpr int MAX_POLY_TEXTCOORDS_COUNT = 12;
+	constexpr int MAX_POLY_COUNT = 12;
 
 	struct Polygon
 	{
-		std::array<glm::vec4, MAX_POLY_VERTICES_COUNT> Vertices;
-		std::array <glm::vec2, MAX_POLY_TEXTCOORDS_COUNT> TextCoords;
+		std::array<glm::vec4, MAX_POLY_COUNT> Vertices;
+		std::array <glm::vec2, MAX_POLY_COUNT> TextCoords;
+		std::array <glm::vec3, MAX_POLY_COUNT> Normals;
 		uint8_t VerticesCount;
 	};
 }

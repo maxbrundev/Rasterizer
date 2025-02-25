@@ -488,6 +488,7 @@ void RasterizeTriangle(uint8_t p_primitiveMode, const Geometry::Vertex& p_vertex
 		Geometry::Polygon currentPoly;
 		currentPoly.Vertices = { processedVertices[0], processedVertices[1], processedVertices[2] };
 		currentPoly.TextCoords = { p_vertex0.textCoords, p_vertex1.textCoords, p_vertex2.textCoords };
+		currentPoly.Normals = { p_vertex0.normal, p_vertex1.normal, p_vertex2.normal };
 		currentPoly.VerticesCount = 3;
 
 		for (const auto& plane : ClippingFrustum)
@@ -502,6 +503,10 @@ void RasterizeTriangle(uint8_t p_primitiveMode, const Geometry::Vertex& p_vertex
 			RenderContext.Shader->SetVarying<glm::vec2>("v_TextCoords", currentPoly.TextCoords[0], 0);
 			RenderContext.Shader->SetVarying<glm::vec2>("v_TextCoords", currentPoly.TextCoords[i + 1], 1);
 			RenderContext.Shader->SetVarying<glm::vec2>("v_TextCoords", currentPoly.TextCoords[i + 2], 2);
+
+			RenderContext.Shader->SetVarying<glm::vec3>("v_Normal", currentPoly.Normals[0], 0);
+			RenderContext.Shader->SetVarying<glm::vec3>("v_Normal", currentPoly.Normals[i + 1], 1);
+			RenderContext.Shader->SetVarying<glm::vec3>("v_Normal", currentPoly.Normals[i + 2], 2);
 
 			TransformAndRasterizeVertices(p_primitiveMode, clippedVertices);
 		}
@@ -910,13 +915,15 @@ glm::vec2 ComputeRasterSpaceCoordinate(glm::vec2 p_vertexNormalizedPosition)
 
 void ClipAgainstPlane(Geometry::Polygon& p_polygon, const Geometry::Plane& p_plane)
 {
-	glm::vec4 insideVertices[Geometry::MAX_POLY_VERTICES_COUNT];
-	glm::vec2 insideTextCoords[Geometry::MAX_POLY_VERTICES_COUNT];
+	glm::vec4 insideVertices[Geometry::MAX_POLY_COUNT];
+	glm::vec2 insideTextCoords[Geometry::MAX_POLY_COUNT];
+	glm::vec3 insideNormal[Geometry::MAX_POLY_COUNT];
 
 	uint8_t insideVerticesCount = 0;
 
 	glm::vec4 previousVertex = p_polygon.Vertices[p_polygon.VerticesCount > 0 ? p_polygon.VerticesCount - 1 : 0];
 	glm::vec2 previousTextCoords = p_polygon.TextCoords[p_polygon.VerticesCount > 0 ? p_polygon.VerticesCount - 1 : 0];
+	glm::vec3 previousNormal = p_polygon.Normals[p_polygon.VerticesCount > 0 ? p_polygon.VerticesCount - 1 : 0];
 
 	float previousDotValue = glm::dot(previousVertex, glm::vec4(p_plane.Normal, 0)) + p_plane.Distance * (p_plane.Distance < previousVertex.w && p_plane.Distance != 1.0f ? 1.0f : previousVertex.w);
 
@@ -942,8 +949,16 @@ void ClipAgainstPlane(Geometry::Polygon& p_polygon, const Geometry::Plane& p_pla
 				glm::lerp(previousTextCoords.y, p_polygon.TextCoords[i].y, t)
 			};
 
+			glm::vec3 interpolatedNormals =
+			{
+				glm::lerp(previousNormal.x, p_polygon.Normals[i].x, t),
+				glm::lerp(previousNormal.y, p_polygon.Normals[i].y, t),
+				glm::lerp(previousNormal.z, p_polygon.Normals[i].z, t)
+			};
+
 			insideVertices[insideVerticesCount] = intersectionPoint;
 			insideTextCoords[insideVerticesCount] = interpolatedTextCoords;
+			insideNormal[insideVerticesCount] = interpolatedNormals;
 			insideVerticesCount++;
 		}
 
@@ -951,18 +966,21 @@ void ClipAgainstPlane(Geometry::Polygon& p_polygon, const Geometry::Plane& p_pla
 		{
 			insideVertices[insideVerticesCount] = p_polygon.Vertices[i];
 			insideTextCoords[insideVerticesCount] = p_polygon.TextCoords[i];
+			insideNormal[insideVerticesCount] = p_polygon.Normals[i];
 			insideVerticesCount++;
 		}
 
 		previousDotValue = currentDotValue;
 		previousVertex = p_polygon.Vertices[i];
 		previousTextCoords = p_polygon.TextCoords[i];
+		previousNormal = p_polygon.Normals[i];
 	}
 
 	for (int i = 0; i < insideVerticesCount; i++)
 	{
 		p_polygon.Vertices[i] = insideVertices[i];
 		p_polygon.TextCoords[i] = insideTextCoords[i];
+		p_polygon.Normals[i] = insideNormal[i];
 	}
 
 	p_polygon.VerticesCount = insideVerticesCount;
