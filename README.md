@@ -101,7 +101,7 @@ To generate the project, execute `GenerateProject.bat`. By default, `GeneratePro
 [![cppRasterizer](https://img.youtube.com/vi/UjUxgVGn0rU/0.jpg)](https://www.youtube.com/watch?v=UjUxgVGn0rU)
 
 **Sponza rendered MSAA x8 thanks to the WIP resources management rework**
-![sponzaRasterizer](https://github.com/user-attachments/assets/d1ae94e0-54eb-4235-b38d-67464a4f21f3)
+![sponzaRasterizer](https://github.com/user-attachments/assets/e8228b72-4a93-4125-a2f8-388d8e82d5be)
 
 **Polygon Rasterization Mode**
 ![primitiveMode](https://github.com/user-attachments/assets/d3d75daa-4ea8-4e84-9cc6-651b9d64f77f)
