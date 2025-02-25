@@ -14,6 +14,7 @@ namespace Geometry
 	{
 		std::array<glm::vec4, MAX_POLY_VERTICES_COUNT> Vertices;
 		std::array <glm::vec2, MAX_POLY_TEXTCOORDS_COUNT> TextCoords;
+		std::array <glm::vec3, MAX_POLY_TEXTCOORDS_COUNT> Normals;
 		uint8_t VerticesCount;
 	};
 }
