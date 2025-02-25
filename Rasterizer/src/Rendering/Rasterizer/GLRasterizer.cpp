@@ -915,9 +915,9 @@ glm::vec2 ComputeRasterSpaceCoordinate(glm::vec2 p_vertexNormalizedPosition)
 
 void ClipAgainstPlane(Geometry::Polygon& p_polygon, const Geometry::Plane& p_plane)
 {
-	glm::vec4 insideVertices[Geometry::MAX_POLY_VERTICES_COUNT];
-	glm::vec2 insideTextCoords[Geometry::MAX_POLY_VERTICES_COUNT];
-	glm::vec3 insideNormal[Geometry::MAX_POLY_VERTICES_COUNT];
+	glm::vec4 insideVertices[Geometry::MAX_POLY_COUNT];
+	glm::vec2 insideTextCoords[Geometry::MAX_POLY_COUNT];
+	glm::vec3 insideNormal[Geometry::MAX_POLY_COUNT];
 
 	uint8_t insideVerticesCount = 0;
 
