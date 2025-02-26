@@ -114,8 +114,8 @@ bool Resources::Parsers::OBJParser::ParseFile(const std::string& p_filePath, std
 		for (const auto& index : group.Indices)
 		{
 			glm::vec3 position  = tempVertices[std::get<0>(index)];
-			glm::vec2 texCoords = tempUvs.empty() ? glm::vec2{} : tempUvs[std::get<1>(index)];
-			glm::vec3 normal    = tempNormals.empty() ? glm::vec3{} : tempNormals[std::get<2>(index)];
+			glm::vec2 texCoords = std::get<1>(index) < tempUvs.size() ? tempUvs[std::get<1>(index)] : glm::vec2{};
+			glm::vec3 normal    = std::get<2>(index) < tempNormals.size() ? tempNormals[std::get<2>(index)] : glm::vec3{};
 
 			std::tuple<glm::vec3, glm::vec2, glm::vec3> vertex = std::make_tuple(position, texCoords, normal);
 

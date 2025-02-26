@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "Rendering/Rasterizer/Buffers/TextureBuffer.h"
+#include "Rendering/Rasterizer/Buffers/FrameBuffer.h"
 #include "Rendering/Rasterizer/Shaders/AShader.h"
 
 constexpr bool CLIPPING = true;
@@ -49,9 +49,8 @@ namespace GLRasterizer
 	void GetBool(uint8_t p_name, bool* p_params);
 	void GetInt(uint8_t p_name, int* p_params);
 
-	Rendering::Rasterizer::Buffers::TextureBuffer* GetFrameBuffer();
+	Rendering::Rasterizer::Buffers::FrameBuffer<RGBA8>* GetFrameBuffer();
 	uint32_t* GetFrameBufferDate();
-	Rendering::Rasterizer::Buffers::TextureBuffer& GetTextureBuffer();
 
 	void GenVertexArrays(uint32_t p_count, uint32_t* p_arrays);
 	void DeleteVertexArrays(uint32_t p_count, const uint32_t* p_arrays);

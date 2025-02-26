@@ -5,7 +5,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/compatibility.hpp>
 
-#include "Rendering/Rasterizer/Buffers/DepthBuffer.h"
+#include "Rendering/Rasterizer/Buffers/FrameBuffer.h"
 #include "Rendering/Rasterizer/Buffers/MSAABuffer.h"
 #include "Geometry/Plane.h"
 #include "Geometry/Polygon.h"
@@ -64,9 +64,9 @@ namespace
 
 	RenderContext RenderContext;
 
-	Rendering::Rasterizer::Buffers::TextureBuffer* TextureBuffer = nullptr;
-	Rendering::Rasterizer::Buffers::DepthBuffer* DepthBuffer     = nullptr;
-	Rendering::Rasterizer::Buffers::MSAABuffer* MSAABuffer       = nullptr;
+	Rendering::Rasterizer::Buffers::FrameBuffer<RGBA8>* FrameBuffer = nullptr;
+	Rendering::Rasterizer::Buffers::FrameBuffer<Depth>* DepthBuffer   = nullptr;
+	Rendering::Rasterizer::Buffers::MSAABuffer* MSAABuffer            = nullptr;
 
 	std::array<Geometry::Plane, 6> ClippingFrustum;
 
@@ -198,22 +198,22 @@ void GLRasterizer::BufferData(uint32_t p_target, size_t p_size, const void* p_da
 
 void GLRasterizer::Initialize(uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight)
 {
-	TextureBuffer = new Rendering::Rasterizer::Buffers::TextureBuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
-	MSAABuffer    = new Rendering::Rasterizer::Buffers::MSAABuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
-	DepthBuffer   = new Rendering::Rasterizer::Buffers::DepthBuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
+	FrameBuffer = new Rendering::Rasterizer::Buffers::FrameBuffer<RGBA8>(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
+	DepthBuffer = new Rendering::Rasterizer::Buffers::FrameBuffer<Depth>(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
+	MSAABuffer  = new Rendering::Rasterizer::Buffers::MSAABuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
 
 	InitializeClippingFrustum();
 }
 
 void GLRasterizer::Clear(const Data::Color& p_color)
 {
-	TextureBuffer->Clear(p_color);
+	FrameBuffer->Clear(p_color);
 	MSAABuffer->Clear(p_color);
 }
 
 void GLRasterizer::ClearDepth()
 {
-	DepthBuffer->Clear();
+	DepthBuffer->Clear(RGBA8());
 }
 
 void GLRasterizer::DrawElements(uint8_t p_primitiveMode, uint32_t p_indexCount)
@@ -418,8 +418,8 @@ void GLRasterizer::GetInt(uint8_t p_name, int* p_params)
 
 void GLRasterizer::Terminate()
 {
-	delete TextureBuffer;
-	TextureBuffer = nullptr;
+	delete FrameBuffer;
+	FrameBuffer = nullptr;
 
 	delete MSAABuffer;
 	MSAABuffer = nullptr;
@@ -428,19 +428,14 @@ void GLRasterizer::Terminate()
 	DepthBuffer = nullptr;
 }
 
-Rendering::Rasterizer::Buffers::TextureBuffer* GLRasterizer::GetFrameBuffer()
+Rendering::Rasterizer::Buffers::FrameBuffer<RGBA8>* GLRasterizer::GetFrameBuffer()
 {
-	return TextureBuffer;
+	return FrameBuffer;
 }
 
 uint32_t* GLRasterizer::GetFrameBufferDate()
 {
-	return TextureBuffer->GetData();
-}
-
-Rendering::Rasterizer::Buffers::TextureBuffer& GLRasterizer::GetTextureBuffer()
-{
-	return *TextureBuffer;
+	return FrameBuffer->GetData();
 }
 
 void InitializeClippingFrustum()
@@ -585,8 +580,8 @@ void ComputeFragments(const Geometry::Triangle& p_triangle, const std::array<glm
 	auto xMin = std::max(0, p_triangle.BoundingBox2D.Min.x);
 	auto yMin = std::max(0, p_triangle.BoundingBox2D.Min.y);
 
-	auto xMax = std::min(p_triangle.BoundingBox2D.Max.x, static_cast<int32_t>(TextureBuffer->GetWidth()));
-	auto yMax = std::min(p_triangle.BoundingBox2D.Max.y, static_cast<int32_t>(TextureBuffer->GetHeight()));
+	auto xMax = std::min(p_triangle.BoundingBox2D.Max.x, static_cast<int32_t>(FrameBuffer->GetWidth()));
+	auto yMax = std::min(p_triangle.BoundingBox2D.Max.y, static_cast<int32_t>(FrameBuffer->GetHeight()));
 
 	for (uint32_t x = xMin; x < xMax; x++)
 	{
@@ -618,7 +613,7 @@ void SetFragment(const Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_
 	{
 		const float depth = p_transformedVertices[0].z * barycentricCoords.z + p_transformedVertices[2].z * barycentricCoords.x + barycentricCoords.y * p_transformedVertices[1].z;
 
-		if (!(RenderContext.State & GLR_DEPTH_TEST) || depth <= DepthBuffer->GetElement(p_x, p_y))
+		if (!(RenderContext.State & GLR_DEPTH_TEST) || depth <= DepthBuffer->GetPixel(p_x, p_y))
 		{
 			RenderContext.Shader->ProcessInterpolation(barycentricCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, p_transformedVertices[2].w);
 
@@ -626,11 +621,11 @@ void SetFragment(const Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_
 
 			float alpha = color.a / 255.0f;
 
-			TextureBuffer->SetPixel(p_x, p_y, Data::Color::Mix(Data::Color(TextureBuffer->GetPixel(p_x, p_y)), color, alpha));
+			FrameBuffer->SetPixel(p_x, p_y, Data::Color::Mix(Data::Color(FrameBuffer->GetPixel(p_x, p_y)), color, alpha));
 
 			if (RenderContext.State & GLR_DEPTH_WRITE)
 			{
-				DepthBuffer->SetElement(p_x, p_y, depth);
+				DepthBuffer->SetPixel(p_x, p_y, depth);
 			}
 		}
 	}
@@ -645,7 +640,7 @@ void SetSampleFragment(const Geometry::Triangle& p_triangle, uint32_t p_x, uint3
 	{
 		const float depth = p_transformedVertices[0].z * barycentricCoords.z + p_transformedVertices[2].z * barycentricCoords.x + barycentricCoords.y * p_transformedVertices[1].z;
 
-		if (!(RenderContext.State & GLR_DEPTH_TEST) || depth <= DepthBuffer->GetElement(p_x, p_y))
+		if (!(RenderContext.State & GLR_DEPTH_TEST) || depth <= DepthBuffer->GetPixel(p_x, p_y))
 		{
 			RenderContext.Shader->ProcessInterpolation(barycentricCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, p_transformedVertices[2].w);
 
@@ -677,8 +672,8 @@ void RasterizeLine(const Geometry::Triangle& p_triangle, const std::array<glm::v
 	int sy = y0 < y1 ? 1 : -1;
 	int err = dx - dy;
 
-	int width = static_cast<int>(TextureBuffer->GetWidth());
-	int height = static_cast<int>(TextureBuffer->GetHeight());
+	int width = static_cast<int>(FrameBuffer->GetWidth());
+	int height = static_cast<int>(FrameBuffer->GetHeight());
 
 	float totalDistance = sqrt(dx * dx + dy * dy);
 
@@ -690,7 +685,7 @@ void RasterizeLine(const Geometry::Triangle& p_triangle, const std::array<glm::v
 
 			float depth = transformedVertices[0].z * barycentricCoords.z + transformedVertices[2].z * barycentricCoords.x + barycentricCoords.y * transformedVertices[1].z;
 
-			if (!(RenderContext.State & GLR_DEPTH_TEST) || depth <= DepthBuffer->GetElement(x0, y0))
+			if (!(RenderContext.State & GLR_DEPTH_TEST) || depth <= DepthBuffer->GetPixel(x0, y0))
 			{
 				RenderContext.Shader->ProcessInterpolation(barycentricCoords, transformedVertices[0].w, transformedVertices[1].w, transformedVertices[2].w);
 
@@ -698,11 +693,11 @@ void RasterizeLine(const Geometry::Triangle& p_triangle, const std::array<glm::v
 
 				float alpha = color.a / 255.0f;
 
-				TextureBuffer->SetPixel(x0, y0, Data::Color::Mix(Data::Color(TextureBuffer->GetPixel(x0, y0)), color, alpha));
+				FrameBuffer->SetPixel(x0, y0, Data::Color::Mix(Data::Color(FrameBuffer->GetPixel(x0, y0)), color, alpha));
 
 				if (RenderContext.State & GLR_DEPTH_WRITE)
 				{
-					DepthBuffer->SetElement(x0, y0, depth);
+					DepthBuffer->SetPixel(x0, y0, depth);
 				}
 			}
 		}
@@ -737,8 +732,8 @@ void RasterizeLine(const glm::vec4& p_start, const glm::vec4& p_end, const Data:
 	int sy = y0 < y1 ? 1 : -1;
 	int err = dx - dy;
 
-	int width = static_cast<int>(TextureBuffer->GetWidth());
-	int height = static_cast<int>(TextureBuffer->GetHeight());
+	int width = static_cast<int>(FrameBuffer->GetWidth());
+	int height = static_cast<int>(FrameBuffer->GetHeight());
 
 	float totalDistance = sqrt(dx * dx + dy * dy);
 
@@ -750,13 +745,13 @@ void RasterizeLine(const glm::vec4& p_start, const glm::vec4& p_end, const Data:
 
 		if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
 		{
-			if (!(RenderContext.State & GLR_DEPTH_TEST) || depth <= DepthBuffer->GetElement(x0, y0))
+			if (!(RenderContext.State & GLR_DEPTH_TEST) || depth <= DepthBuffer->GetPixel(x0, y0))
 			{
-				TextureBuffer->SetPixel(x0, y0, p_color);
+				FrameBuffer->SetPixel(x0, y0, p_color);
 
 				if (RenderContext.State & GLR_DEPTH_WRITE)
 				{
-					DepthBuffer->SetElement(x0, y0, depth);
+					DepthBuffer->SetPixel(x0, y0, depth);
 				}
 			}
 		}
@@ -786,8 +781,8 @@ void RasterizeTrianglePoints(const Geometry::Triangle& p_triangle, const std::ar
 
 void DrawPoint(const Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, const glm::vec4& p_point)
 {
-	int width = static_cast<int>(TextureBuffer->GetWidth());
-	int height = static_cast<int>(TextureBuffer->GetHeight());
+	int width = static_cast<int>(FrameBuffer->GetWidth());
+	int height = static_cast<int>(FrameBuffer->GetHeight());
 
 	if (p_point.x >= 0 && p_point.x < width && p_point.y >= 0 && p_point.y < height)
 	{
@@ -795,7 +790,7 @@ void DrawPoint(const Geometry::Triangle& p_triangle, const std::array<glm::vec4,
 
 		const float depth = transformedVertices[0].z * barycentricCoords.z + transformedVertices[2].z * barycentricCoords.x + barycentricCoords.y * transformedVertices[1].z;
 
-		if (!(RenderContext.State & GLR_DEPTH_TEST) || depth <= DepthBuffer->GetElement(p_point.x, p_point.y))
+		if (!(RenderContext.State & GLR_DEPTH_TEST) || depth <= DepthBuffer->GetPixel(p_point.x, p_point.y))
 		{
 			RenderContext.Shader->ProcessInterpolation(barycentricCoords, transformedVertices[0].w, transformedVertices[1].w, transformedVertices[2].w);
 
@@ -803,11 +798,11 @@ void DrawPoint(const Geometry::Triangle& p_triangle, const std::array<glm::vec4,
 
 			float alpha = color.a / 255.0f;
 
-			TextureBuffer->SetPixel(p_point.x, p_point.y, Data::Color::Mix(Data::Color(TextureBuffer->GetPixel(p_point.x, p_point.y)), color, alpha));
+			FrameBuffer->SetPixel(p_point.x, p_point.y, Data::Color::Mix(Data::Color(FrameBuffer->GetPixel(p_point.x, p_point.y)), color, alpha));
 
 			if (RenderContext.State & GLR_DEPTH_WRITE)
 			{
-				DepthBuffer->SetElement(p_point.x, p_point.y, depth);
+				DepthBuffer->SetPixel(p_point.x, p_point.y, depth);
 			}
 		}
 	}
@@ -815,12 +810,12 @@ void DrawPoint(const Geometry::Triangle& p_triangle, const std::array<glm::vec4,
 
 void DrawPoint(const glm::vec2& p_point, const Data::Color& p_color)
 {
-	int width = static_cast<int>(TextureBuffer->GetWidth());
-	int height = static_cast<int>(TextureBuffer->GetHeight());
+	int width = static_cast<int>(FrameBuffer->GetWidth());
+	int height = static_cast<int>(FrameBuffer->GetHeight());
 
 	if (p_point.x >= 0 && p_point.x < width && p_point.y >= 0 && p_point.y < height)
 	{
-		TextureBuffer->SetPixel(p_point.x, p_point.y, p_color);
+		FrameBuffer->SetPixel(p_point.x, p_point.y, p_color);
 	}
 }
 
@@ -850,8 +845,8 @@ void RasterizeLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_
 	int sy = y0 < y1 ? 1 : -1;
 	int err = dx - dy;
 
-	int width = static_cast<int>(TextureBuffer->GetWidth());
-	int height = static_cast<int>(TextureBuffer->GetHeight());
+	int width = static_cast<int>(FrameBuffer->GetWidth());
+	int height = static_cast<int>(FrameBuffer->GetHeight());
 
 	float totalDistance = sqrt(dx * dx + dy * dy);
 
@@ -863,13 +858,13 @@ void RasterizeLine(const Geometry::Vertex& p_vertex0, const Geometry::Vertex& p_
 
 		if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
 		{
-			if (!(RenderContext.State & GLR_DEPTH_TEST) || depth <= DepthBuffer->GetElement(x0, y0))
+			if (!(RenderContext.State & GLR_DEPTH_TEST) || depth <= DepthBuffer->GetPixel(x0, y0))
 			{
-				TextureBuffer->SetPixel(x0, y0, p_color);
+				FrameBuffer->SetPixel(x0, y0, p_color);
 
 				if (RenderContext.State & GLR_DEPTH_WRITE)
 				{
-					DepthBuffer->SetElement(x0, y0, depth);
+					DepthBuffer->SetPixel(x0, y0, depth);
 				}
 			}
 		}
@@ -907,8 +902,8 @@ glm::vec2 ComputeNormalizedDeviceCoordinate(const glm::vec3& p_vertexScreenSpace
 
 glm::vec2 ComputeRasterSpaceCoordinate(glm::vec2 p_vertexNormalizedPosition) 
 {
-	p_vertexNormalizedPosition.x = std::round(p_vertexNormalizedPosition.x * TextureBuffer->GetWidth());
-	p_vertexNormalizedPosition.y = std::round(p_vertexNormalizedPosition.y * TextureBuffer->GetHeight());
+	p_vertexNormalizedPosition.x = std::round(p_vertexNormalizedPosition.x * FrameBuffer->GetWidth());
+	p_vertexNormalizedPosition.y = std::round(p_vertexNormalizedPosition.y * FrameBuffer->GetHeight());
 
 	return p_vertexNormalizedPosition;
 }
@@ -988,8 +983,8 @@ void ClipAgainstPlane(Geometry::Polygon& p_polygon, const Geometry::Plane& p_pla
 
 void ApplyMSAA()
 {
-	const uint32_t width = TextureBuffer->GetWidth();
-	const uint32_t height = TextureBuffer->GetHeight();
+	const uint32_t width = FrameBuffer->GetWidth();
+	const uint32_t height = FrameBuffer->GetHeight();
 
 	float depth = 0.0f;
 
@@ -1023,11 +1018,11 @@ void ApplyMSAA()
 			Data::Color sampledColorTotal(static_cast<uint8_t>(color.x), static_cast<uint8_t>(color.y), static_cast<uint8_t>(color.z), static_cast<uint8_t>(color.w));
 			const float alpha = static_cast<float>(sampledColorTotal.a) / 255.0f;
 
-			TextureBuffer->SetPixel(x, y, Data::Color::Mix(Data::Color(TextureBuffer->GetPixel(x, y)), sampledColorTotal, alpha));
+			FrameBuffer->SetPixel(x, y, Data::Color::Mix(Data::Color(FrameBuffer->GetPixel(x, y)), sampledColorTotal, alpha));
 
 			if (RenderContext.State & GLR_DEPTH_WRITE)
 			{
-				DepthBuffer->SetElement(x, y, depth);
+				DepthBuffer->SetPixel(x, y, depth);
 			}
 		}
 	}

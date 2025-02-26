@@ -12,10 +12,10 @@ Data::Color::Color(uint8_t p_r, uint8_t p_g, uint8_t p_b, uint8_t p_a) : r(p_r),
 }
 
 Data::Color::Color(uint32_t p_packedData) :
-	a(p_packedData),
-	b(p_packedData >> 8),
-	g(p_packedData >> 16),
-	r(p_packedData >> 24)
+a(p_packedData),
+b(p_packedData >> 8),
+g(p_packedData >> 16),
+r(p_packedData >> 24)
 {
 }
 

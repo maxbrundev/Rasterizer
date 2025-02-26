@@ -16,7 +16,7 @@ m_emptyTexture(Resources::Loaders::TextureLoader::CreateColor
 )),
 m_sdlTexture(nullptr)
 {
-	GLRasterizer::Initialize(800, 600);
+	GLRasterizer::Initialize(1920, 1080);
 
 	m_sdlTexture = SDL_CreateTexture(m_driver.GetRenderer(), SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(800), static_cast<int>(600));
 
@@ -110,7 +110,7 @@ void Rendering::Renderer::SetSamples(uint8_t p_samples) const
 
 void Rendering::Renderer::SendDataToGPU() const
 {
-	SDL_UpdateTexture(m_sdlTexture, nullptr, GLRasterizer::GetTextureBuffer().GetData(), GLRasterizer::GetTextureBuffer().GetRawSize());
+	SDL_UpdateTexture(m_sdlTexture, nullptr, GLRasterizer::GetFrameBuffer()->GetData(), GLRasterizer::GetFrameBuffer()->GetRawSize());
 }
 
 uint8_t Rendering::Renderer::FetchState()
