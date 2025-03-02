@@ -18,6 +18,9 @@ A CPU-based software rasterizer designed to explore low-level rendering techniqu
 - Depth Testing
 - OBJ Parsing
 
+- WIP Shadow Mapping  
+![shadows](https://github.com/user-attachments/assets/b7fe34ea-b330-40dc-96af-07dbb3e8de5d)
+
 # GL Rasterizer API
 An OpenGL-inspired API that encapsulates its own Rendering State and manages internal buffers to provide a streamlined interface for Drawing, handling Buffers, and processing Shaders.
 ```cpp
