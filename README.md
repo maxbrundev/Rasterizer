@@ -84,8 +84,9 @@ GLRasterizer::BindVertexArray(0);
   - Scene management  
   ...
 
-- **Global Optimization:**  
-Global optimization pass to improve overall performance and efficiency.
+- **Global Optimization:**
+  - SIMD
+  - Tile Based Rasterization
 
 # Software
 - Visual Studio 2022
