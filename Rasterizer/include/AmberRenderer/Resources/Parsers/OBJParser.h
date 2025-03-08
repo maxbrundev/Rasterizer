@@ -18,35 +18,27 @@ namespace AmberRenderer::Resources::Parsers
 		bool ParseFile(const std::string& p_filePath, std::vector<Mesh*>& p_meshes, std::vector<MaterialData>& p_materialsData);
 
 		template<typename T>
-		void ParseLine(const std::string_view& p_line, const std::string_view& p_header, std::vector<T>& p_values);
+		void ParseLine(const std::string_view& p_line, const std::string_view& p_format, std::vector<T>& p_values);
 
 		void ParseIndices(const std::string_view& p_line, std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& p_indices);
 
 	private:
 		std::string m_directory;
+		bool m_enableMultithreading = true;
 	};
 
 	template <typename T>
-	void OBJParser::ParseLine(const std::string_view& p_line, const std::string_view& p_header, std::vector<T>& p_values)
+	void OBJParser::ParseLine(const std::string_view& p_line, const std::string_view& p_format, std::vector<T>& p_values)
 	{
 		T result;
 
-		std::string scanStrFormat = std::string(p_header);
-
-		constexpr size_t valueAmount = sizeof(T) / sizeof(float);
-
-		for (size_t i = 0; i < valueAmount; ++i)
+		if constexpr (sizeof(T) / sizeof(float) == 2)
 		{
-			scanStrFormat += "%f";
-		}
-
-		if constexpr (valueAmount == 2)
-		{
-			sscanf_s(p_line.data(), scanStrFormat.c_str(), &result.x, &result.y);
+			sscanf_s(p_line.data(), p_format.data(), &result.x, &result.y);
 		}
 		else
 		{
-			sscanf_s(p_line.data(), scanStrFormat.c_str(), &result.x, &result.y, &result.z);
+			sscanf_s(p_line.data(), p_format.data(), &result.x, &result.y, &result.z);
 		}
 
 		p_values.emplace_back(std::move(result));

@@ -23,35 +23,27 @@ std::vector<AmberRenderer::Resources::Parsers::MaterialData> AmberRenderer::Reso
 
 	while (std::getline(file, line))
 	{
-		//TODO: Trim line.
-		if (line.empty())
+		std::string_view view(line);
+
+		if (view.empty() || view.front() == '#')
 			continue;
 
-		if (line.rfind("newmtl", 0) == 0)
+		if (view.substr(0, 7) == "newmtl ")
 		{
 			if (!currentMaterial.Name.empty())
 				materials.push_back(currentMaterial);
 
-			std::istringstream isStringStream(line);
-			std::string token;
+			size_t pos = view.find_first_of(" \t", 7);
 
-			if (!(isStringStream >> token))
-				continue;
+			if (pos == std::string::npos)
+				pos = view.size();
 
-			if (!(isStringStream >> currentMaterial.Name))
-				continue;
-
+			currentMaterial.Name = std::string(view.substr(7, pos - 7));
 			currentMaterial.DiffuseTexturePath.clear();
 		}
-		else if (line.rfind("map_Kd", 0) == 0)
+		else if (line.substr(0, 7) == "map_Kd ")
 		{
-			std::istringstream isStringStream(line);
-			std::string token;
-
-			if (!(isStringStream >> token))
-				continue;
-
-			isStringStream >> currentMaterial.DiffuseTexturePath;
+			currentMaterial.DiffuseTexturePath = line.substr(7);
 		}
 	}
 

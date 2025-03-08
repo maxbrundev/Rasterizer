@@ -2,7 +2,10 @@
 
 #include <algorithm>
 #include <array>
+#include <execution>
 #include <fstream>
+#include <future>
+#include <iostream>
 #include <map>
 #include <sstream>
 
@@ -10,6 +13,30 @@
 
 #include "AmberRenderer/Resources/Parsers/MTLParser.h"
 #include "AmberRenderer/Tools/Utils/String.h"
+
+struct VertexKeyHash
+{
+	std::size_t operator()(const AmberRenderer::Geometry::Vertex& p_vertexKey) const noexcept
+	{
+		auto hashCombine = [](std::size_t p_seed, float p_value) -> std::size_t
+		{
+			std::size_t hash = std::hash<float>{}(p_value);
+			return p_seed ^ (hash + 0x9e3779b9 + (p_seed << 6) + (p_seed >> 2));
+		};
+
+		std::size_t seed = 0;
+		seed = hashCombine(seed, p_vertexKey.position.x);
+		seed = hashCombine(seed, p_vertexKey.position.y);
+		seed = hashCombine(seed, p_vertexKey.position.z);
+		seed = hashCombine(seed, p_vertexKey.texCoords.x);
+		seed = hashCombine(seed, p_vertexKey.texCoords.y);
+		seed = hashCombine(seed, p_vertexKey.normal.x);
+		seed = hashCombine(seed, p_vertexKey.normal.y);
+		seed = hashCombine(seed, p_vertexKey.normal.z);
+
+		return seed;
+	}
+};
 
 bool AmberRenderer::Resources::Parsers::OBJParser::LoadOBJ(const std::string& p_filePath, std::vector<Mesh*>& p_meshes, std::vector<MaterialData>& p_materialsData)
 {
@@ -71,15 +98,15 @@ bool AmberRenderer::Resources::Parsers::OBJParser::ParseFile(const std::string& 
 		}
 		else if (line.find("v ") == 0)
 		{
-			ParseLine<glm::vec3>(line, "v ", tempVertices);
+			ParseLine<glm::vec3>(line, "v %f%f%f", tempVertices);
 		}
 		else if (line.find("vt ") == 0)
 		{
-			ParseLine<glm::vec2>(line, "vt ", tempUvs);
+			ParseLine<glm::vec2>(line, "vt %f%f", tempUvs);
 		}
 		else if (line.find("vn ") == 0)
 		{
-			ParseLine<glm::vec3>(line, "vn ", tempNormals);
+			ParseLine<glm::vec3>(line, "vn %f%f%f", tempNormals);
 		}
 		else if (line.find("usemtl ") == 0)
 		{
@@ -104,41 +131,65 @@ bool AmberRenderer::Resources::Parsers::OBJParser::ParseFile(const std::string& 
 		p_materialsData.emplace_back("default", "");
 	}
 
-	for (const Group& group : groups)
+	struct MeshData
 	{
-		std::vector<std::tuple<glm::vec3, glm::vec2, glm::vec3>> vertexData;
-		std::vector<Geometry::Vertex> vertices;
-		std::vector<uint32_t> indices;
+		std::vector<Geometry::Vertex> Vertices;
+		std::vector<uint32_t> Indices;
+		uint8_t MaterialIndex = 0;
+	};
 
+	std::vector<MeshData> results(groups.size());
+	std::vector<size_t> groupIndices(groups.size());
+	std::iota(groupIndices.begin(), groupIndices.end(), 0);
+
+	const int numVertices = static_cast<int>(tempVertices.size());
+	const int numUvs      = static_cast<int>(tempUvs.size());
+	const int numNormals  = static_cast<int>(tempNormals.size());
+
+	std::for_each(std::execution::par, groupIndices.begin(), groupIndices.end(), [&](size_t p_index) 
+	{
+		const Group& group = groups[p_index];
+
+		MeshData data;
+		data.Vertices.reserve(group.Indices.size());
+		data.Indices.reserve(group.Indices.size());
+
+		std::unordered_map<Geometry::Vertex, uint32_t, VertexKeyHash> vertexMap;
+		vertexMap.reserve(group.Indices.size());
+		
 		for (const auto& index : group.Indices)
 		{
-			glm::vec3 position  = tempVertices[std::get<0>(index)];
-			glm::vec2 texCoords = std::get<1>(index) < tempUvs.size() ? tempUvs[std::get<1>(index)] : glm::vec2{};
-			glm::vec3 normal    = std::get<2>(index) < tempNormals.size() ? tempNormals[std::get<2>(index)] : glm::vec3{};
+			int posIndex = std::get<0>(index);
+			int uvIndex = std::get<1>(index);
+			int normIndex = std::get<2>(index);
 
-			std::tuple<glm::vec3, glm::vec2, glm::vec3> vertex = std::make_tuple(position, texCoords, normal);
+			if (posIndex < 0)
+				posIndex = numVertices + (posIndex + 1);
+			if (uvIndex < 0)
+				uvIndex = numUvs + (uvIndex + 1);
+			if (normIndex < 0)
+				normIndex = numNormals + (normIndex + 1);
 
-			if (auto it = std::find(vertexData.begin(), vertexData.end(), vertex); it == vertexData.end())
+			Geometry::Vertex vertex
 			{
-				vertexData.push_back(vertex);
-				indices.push_back(static_cast<uint32_t>(vertexData.size() - 1));
+				tempVertices[posIndex],
+				(uvIndex >= 0 && uvIndex < numUvs) ? tempUvs[uvIndex] : glm::vec2{},
+				(normIndex >= 0 && normIndex < numNormals) ? tempNormals[normIndex] : glm::vec3{}
+			};
+
+			auto it = vertexMap.find(vertex);
+			if (it == vertexMap.end())
+			{
+				uint32_t newIndex = static_cast<uint32_t>(vertexMap.size());
+				vertexMap[vertex] = newIndex;
+				data.Vertices.push_back(vertex);
+				data.Indices.push_back(newIndex);
 			}
 			else
 			{
-				indices.push_back(static_cast<uint32_t>(std::distance(vertexData.begin(), it)));
+				data.Indices.push_back(it->second);
 			}
 		}
-		for (const auto& [position, texCoords, normal] : vertexData)
-		{
-			Geometry::Vertex vert;
-			vert.position = position;
-			vert.texCoords = texCoords;
-			vert.normal = normal;
-
-			vertices.push_back(vert);
-		}
-
-		uint8_t materialIndex = 0;
 
 		auto it = std::find_if(p_materialsData.begin(), p_materialsData.end(), [&](const MaterialData& p_materialData)
 		{
@@ -147,32 +198,67 @@ bool AmberRenderer::Resources::Parsers::OBJParser::ParseFile(const std::string& 
 
 		if (it != p_materialsData.end())
 		{
-			materialIndex = static_cast<uint8_t>(std::distance(p_materialsData.begin(), it));
+			data.MaterialIndex = static_cast<uint8_t>(std::distance(p_materialsData.begin(), it));
+		}
+		else
+		{
+			data.MaterialIndex = 0;
 		}
 
-		p_meshes.push_back(new Mesh(vertices, indices, materialIndex));
+		results[p_index] = std::move(data);
+	});
+
+	for (const auto& data : results)
+	{
+		p_meshes.push_back(new Mesh(data.Vertices, data.Indices, data.MaterialIndex));
 	}
+	
 
 	return true;
 }
 
 void AmberRenderer::Resources::Parsers::OBJParser::ParseIndices(const std::string_view& p_line, std::vector<std::tuple<uint32_t, uint32_t, uint32_t>>& p_indices)
 {
-	std::array<int, 9> indices = { -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+	std::array<int, 12> indices = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
 
-	int count = sscanf_s(p_line.data(), "f %d/%d/%d %d/%d/%d %d/%d/%d", 
+	int indicesCount = sscanf_s(p_line.data(),
+		"f %d/%d/%d %d/%d/%d %d/%d/%d %d/%d/%d",
+		&indices[0], &indices[1], &indices[2],
+		&indices[3], &indices[4], &indices[5],
+		&indices[6], &indices[7], &indices[8],
+		&indices[9], &indices[10], &indices[11]);
+
+	if (indicesCount == 12)
+	{
+		std::for_each(indices.begin(), indices.end(), [](int& p_indexValue) 
+		{
+			p_indexValue--;
+		});
+
+		p_indices.emplace_back(indices[0], indices[1], indices[2]);
+		p_indices.emplace_back(indices[3], indices[4], indices[5]);
+		p_indices.emplace_back(indices[6], indices[7], indices[8]);
+
+		p_indices.emplace_back(indices[0], indices[1], indices[2]);
+		p_indices.emplace_back(indices[6], indices[7], indices[8]);
+		p_indices.emplace_back(indices[9], indices[10], indices[11]);
+
+		return;
+	}
+
+	indicesCount = sscanf_s(p_line.data(), "f %d/%d/%d %d/%d/%d %d/%d/%d", 
 		&indices[0], &indices[1], &indices[2],
 		&indices[3], &indices[4], &indices[5],
 		&indices[6], &indices[7], &indices[8]);
 
-	if (count < 9)
+	if (indicesCount < 9)
 	{
-		count = sscanf_s(p_line.data(), "f %d/%d %d/%d %d/%d", 
+		indicesCount = sscanf_s(p_line.data(), "f %d/%d %d/%d %d/%d", 
 			&indices[0], &indices[1],
 			&indices[3], &indices[4],
 			&indices[6], &indices[7]);
 
-		if (count < 6)
+		if (indicesCount < 6)
 		{
 			sscanf_s(p_line.data(), "f %d//%d %d//%d %d//%d", 
 				&indices[0], &indices[2],
@@ -181,9 +267,9 @@ void AmberRenderer::Resources::Parsers::OBJParser::ParseIndices(const std::strin
 		}
 	}
 
-	std::for_each(indices.begin(), indices.end(), [](int& indexValue)
+	std::for_each(indices.begin(), indices.end(), [](int& p_indexValue)
 	{
-		indexValue--;
+		p_indexValue--;
 	});
 
 	p_indices.emplace_back(indices[0], indices[1], indices[2]);
