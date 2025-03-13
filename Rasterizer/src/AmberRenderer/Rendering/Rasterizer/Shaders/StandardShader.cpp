@@ -29,9 +29,7 @@ AmberRenderer::Data::Color AmberRenderer::Rendering::Rasterizer::Shaders::Standa
 	const glm::vec2 texCoords = GetVaryingAs<glm::vec2>("v_TexCoords");
 	const glm::vec3 fragpos   = GetVaryingAs<glm::vec3>("v_FragPos");
 
-	auto diffuseTexture = GetSample("u_DiffuseMap");
-
-	const glm::vec4 diffuse = Texture(*diffuseTexture, texCoords);
+	const glm::vec4 diffuse = Texture("u_DiffuseMap", texCoords);
 	const glm::vec3 lambert = Lambert(fragpos, normal, LightPosition, LightDiffuse, LightAmbient);
 
 	return diffuse * glm::vec4(lambert, 1.0f);

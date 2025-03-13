@@ -188,7 +188,7 @@ namespace AmberRenderer::Rendering::Rasterizer::Buffers
 
 		//TODO: Clean.
 		Resources::Texture* m_texture;
-	private:
+	public:
 		uint32_t m_width;
 		uint32_t m_height;
 		uint32_t m_size;

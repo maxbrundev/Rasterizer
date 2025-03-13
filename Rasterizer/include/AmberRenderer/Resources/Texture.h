@@ -22,34 +22,26 @@ namespace AmberRenderer::Resources
 	{
 		friend class Loaders::TextureLoader;
 
-		struct MipmapsData
-		{
-			uint8_t* Data;
-			uint32_t Width;
-			uint32_t Height;
-
-			MipmapsData(uint8_t* p_data, uint32_t p_width, uint32_t p_height) : Data(p_data), Width(p_width), Height(p_height)
-			{
-			}
-		};
-
 	public:
-		Texture(std::string p_filePath, uint32_t p_width, uint32_t p_height, uint32_t p_bitsPerPixel, unsigned char* p_data, Settings::ETextureFilteringMode p_filter, Settings::ETextureWrapMode p_wrapping, bool p_generateMipmap);
-		~Texture();
+		Texture(const std::string& p_filePath, uint32_t p_id, uint32_t p_width, uint32_t p_height, uint32_t p_bitsPerPixel, Settings::ETextureFilteringMode p_minFilter, Settings::ETextureFilteringMode p_magFilter, Settings::ETextureWrapMode p_wrapS, Settings::ETextureWrapMode p_wrapT, bool p_generateMipmap);
+		~Texture() = default;
 		
-
-	private:
-		void GenerateMipmaps();
+		void Bind(uint32_t p_slot = 0) const;
+		void Unbind() const;
 
 	public:
+		const uint32_t ID;
 		const std::string Path;
 		const uint32_t Width;
 		const uint32_t Height;
 		const uint32_t BitsPerPixel;
+		const Settings::ETextureFilteringMode MinFilter;
+		const Settings::ETextureFilteringMode MagFilter;
+		const Settings::ETextureWrapMode WrapS;
+		const Settings::ETextureWrapMode WrapT;
+
 		uint8_t* Data;
-		const Settings::ETextureFilteringMode Filter;
-		const Settings::ETextureWrapMode Wrapping;
+
 		bool HasMipmaps;
-		std::vector<MipmapsData> Mipmaps;
 	};
 }

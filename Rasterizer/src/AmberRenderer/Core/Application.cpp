@@ -37,9 +37,6 @@ AmberRenderer::Core::Application::~Application()
 
 void AmberRenderer::Core::Application::Initialize()
 {
-	m_shadowBuffer = new Rendering::Rasterizer::Buffers::FrameBuffer<RGBA8>(1024, 1024);
-	m_shadowDepthBuffer = new Rendering::Rasterizer::Buffers::FrameBuffer<float>(1024, 1024);
-
 #ifndef RENDER_TEST
 	m_context.Device->DropFileEvent.AddListener([this](const std::string& p_filePath) 
 	{
@@ -126,27 +123,49 @@ void AmberRenderer::Core::Application::Run()
 	GLRasterizer::BindBuffer(GLR_ARRAY_BUFFER, VBO);
 	GLRasterizer::BindVertexArray(0);
 
-	unsigned char* emptyDepthData = new unsigned char[1024 * 1024 * 4];
-	std::memset(emptyDepthData, 0, 1024 * 1024 * 4);
-
 	//TODO: Clean Texture generation.
-	m_shadowMapTexture = new Resources::Texture("", 1024, 1024, 32, emptyDepthData, Resources::Settings::ETextureFilteringMode::NEAREST, Resources::Settings::ETextureWrapMode::CLAMP, false);
-
-	delete[] emptyDepthData;
-
-	m_shadowDepthBuffer->BindTexture(m_shadowMapTexture);
+	uint32_t m_shadowFBO;
+	unsigned int depthMap;
+	GLRasterizer::GenTextures(1, &depthMap);
+	GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
+	GLRasterizer::TexImage2D(GLR_TEXTURE_2D, 0, GLR_DEPTH_COMPONENT, 1024, 1024, 0, GLR_DEPTH_COMPONENT, GLR_FLOAT, nullptr);
+	GLRasterizer::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_MIN_FILTER, GLR_NEAREST);
+	GLRasterizer::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_MAG_FILTER, GLR_NEAREST);
+	GLRasterizer::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_WRAP_S, GLR_REPEAT);
+	GLRasterizer::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_WRAP_T, GLR_REPEAT);
+	GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
+	GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
+	GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
 
 	m_camera.SetProjectionMode(Rendering::Settings::EProjectionMode::PERSPECTIVE);
 
 	Rendering::Rasterizer::Shaders::QuadNDC QuadNDCShader;
-	QuadNDCShader.SetSample("u_DepthMap", m_shadowMapTexture);
+	GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
+
+
+	GLRasterizer::GenFramebuffers(1, &m_shadowFBO);
+	GLRasterizer::BindFramebuffer(GLR_FRAMEBUFFER, m_shadowFBO);
+	GLRasterizer::FramebufferTexture2D(GLR_FRAMEBUFFER,
+		GLR_DEPTH_ATTACHMENT,
+		GLR_TEXTURE_2D,
+		depthMap,
+		0);
+	GLRasterizer::DrawBuffer(GL_NONE);
+	GLRasterizer::ReadBuffer(GL_NONE);
+	GLRasterizer::BindFramebuffer(GLR_FRAMEBUFFER, 0);
+
+	QuadNDCShader.SetUniform("u_DepthMap", 0);
+	GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
 
 	auto woodTexture = Resources::Loaders::TextureLoader::CreateColor
 	(
 		(255 << 24) | (255 << 16) | (255 << 8) | 255,
 		Resources::Settings::ETextureFilteringMode::NEAREST,
-		Resources::Settings::ETextureWrapMode::CLAMP
+		Resources::Settings::ETextureFilteringMode::NEAREST
 	);
+
+	GLRasterizer::BindTexture(GLR_TEXTURE_2D, woodTexture->ID);
+	GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
 
 	Resources::Material shadowMapDepthMaterial;
 	shadowMapDepthMaterial.SetShader(&m_shadowMapDepthShader);
@@ -154,7 +173,7 @@ void AmberRenderer::Core::Application::Run()
 	Rendering::Rasterizer::Shaders::ShadowMapping shadowMapping;
 	Resources::Material shadowMapMaterial;
 	shadowMapMaterial.SetShader(&shadowMapping);
-
+	shadowMapping.SetUniform("u_DepthMap", 1);
 	float accumulatedTime = 0.0f;
 
 	float radius = 2.0f;
@@ -167,8 +186,7 @@ void AmberRenderer::Core::Application::Run()
 	glm::mat4 lightProjection = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, nearPlane, farPlane);
 	glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
-	//TODO: Fix.
-	//GLRasterizer::WindowHint(GLR_SAMPLES, 4);
+	//GLRasterizer::WindowHint(GLR_SAMPLES, 8);
 	//GLRasterizer::Enable(GLR_MULTISAMPLE);
 
 	while (IsRunning())
@@ -193,31 +211,35 @@ void AmberRenderer::Core::Application::Run()
 		lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		lightSpaceMatrix = lightProjection * lightView;
 
-		m_shadowMapDepthShader.SetUniformMat4("u_lightSpaceMatrix", lightSpaceMatrix);
+		m_shadowMapDepthShader.SetUniform("u_lightSpaceMatrix", lightSpaceMatrix);
 
+		GLRasterizer::BindFramebuffer(GLR_FRAMEBUFFER, m_shadowFBO);
 		m_context.Renderer->SetViewport(0, 0, 1024, 1024);
-		GLRasterizer::SetActiveBuffers(m_shadowBuffer, m_shadowDepthBuffer);
-
 		m_context.Renderer->Clear(false, true);
 
 		glm::mat4 cubeModel(1.0f);
 		cubeModel = glm::translate(cubeModel, glm::vec3(0.0f, 3.0f, 2.0f));
-		
-		m_shadowMapDepthShader.SetUniformMat4("u_Model", cubeModel);
+		m_shadowMapDepthShader.SetUniform("u_Model", cubeModel);
+		m_context.Renderer->Draw(*m_currentModel, &shadowMapDepthMaterial);
+
+		glm::mat4 cube2Model(1.0f);
+		cube2Model = glm::translate(cube2Model, glm::vec3(0.0f, 1.0f, 2.0f));
+		cube2Model = glm::scale(cube2Model, glm::vec3(2.0f, 0.2f, 2.0f));
+
+		m_shadowMapDepthShader.SetUniform("u_Model", cube2Model);
 		m_context.Renderer->Draw(*m_currentModel, &shadowMapDepthMaterial);
 
 		glm::mat4 planeModel(1.0f);
 		planeModel = glm::translate(planeModel, glm::vec3(0.0f, 0.0f, 0.0f));
 		planeModel = glm::scale(planeModel, glm::vec3(1.0f, 1.0f, 1.0f));
-		m_shadowMapDepthShader.SetUniformMat4("u_Model", planeModel);
-		
+		m_shadowMapDepthShader.SetUniform("u_Model", planeModel);
 		GLRasterizer::UseProgram(&m_shadowMapDepthShader);
 		GLRasterizer::BindVertexArray(planeVAO);
 		GLRasterizer::DrawArrays(GLR_TRIANGLES, 0, FLOORMesh.GetVertexCount());
 		GLRasterizer::BindVertexArray(0);
 
-		m_shadowDepthBuffer->Bind();
-		GLRasterizer::SetActiveBuffers(GLRasterizer::GetFrameBuffer(), GLRasterizer::GetDepthBuffer());
+		GLRasterizer::BindFramebuffer(GLR_FRAMEBUFFER, 0);
+		
 		GLRasterizer::Viewport(0, 0, 800, 600);
 		m_context.Renderer->Clear(true, true);
 
@@ -231,25 +253,37 @@ void AmberRenderer::Core::Application::Run()
 			material->SetShader(&shadowMapping);
 		}
 
-		shadowMapping.SetUniformMat4("u_View", view);
-		shadowMapping.SetUniformMat4("u_Projection", projection);
-		shadowMapping.SetUniformVec3("u_lightPos", lightPos);
-		shadowMapping.SetUniformMat4("u_lightSpaceMatrix", lightSpaceMatrix);
-		shadowMapping.SetSample("u_DepthMap", m_shadowMapTexture);
+		shadowMapping.SetUniform("u_View", view);
+		shadowMapping.SetUniform("u_Projection", projection);
+		shadowMapping.SetUniform("u_lightPos", lightPos);
+		shadowMapping.SetUniform("u_lightSpaceMatrix", lightSpaceMatrix);
 
-		shadowMapping.SetUniformMat4("u_Model", cubeModel);
+		shadowMapping.SetUniform("u_Model", cubeModel);
+		GLRasterizer::ActiveTexture(GL_TEXTURE0 + 1);
+		GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
 		m_context.Renderer->Draw(*m_currentModel, &shadowMapMaterial);
-		
-		shadowMapping.SetUniformMat4("u_Model", planeModel);
-		shadowMapping.SetSample("u_DiffuseMap", woodTexture);
+		GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
+
+		shadowMapping.SetUniform("u_Model", cube2Model);
+		GLRasterizer::ActiveTexture(GL_TEXTURE0 + 1);
+		GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
+		m_context.Renderer->Draw(*m_currentModel, &shadowMapMaterial);
+		GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
+
+		shadowMapping.SetUniform("u_Model", planeModel);
 		GLRasterizer::UseProgram(&shadowMapping);
 		GLRasterizer::BindVertexArray(planeVAO);
+		GLRasterizer::ActiveTexture(GL_TEXTURE0 + 1);
+		GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
 		GLRasterizer::DrawArrays(GLR_TRIANGLES, 0, FLOORMesh.GetVertexCount());
+		GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
 		GLRasterizer::BindVertexArray(0);
 
 		//Debug depth texture.
 		GLRasterizer::UseProgram(&QuadNDCShader);
 		GLRasterizer::BindVertexArray(VAO);
+		GLRasterizer::ActiveTexture(GL_TEXTURE0);
+		GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
 		GLRasterizer::DrawArrays(GLR_TRIANGLE_STRIP, 0,  planeMesh.GetVertexCount());
 		GLRasterizer::BindVertexArray(0);
 
@@ -258,9 +292,6 @@ void AmberRenderer::Core::Application::Run()
 
 		clock.Update();
 	}
-
-	delete m_shadowMapTexture;
-	m_shadowMapTexture = nullptr;
 }
 
 bool AmberRenderer::Core::Application::IsRunning() const

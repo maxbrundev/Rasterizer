@@ -23,7 +23,7 @@ glm::vec4 AmberRenderer::Rendering::Rasterizer::Shaders::ShadowMapping::VertexPa
 }
 
 constexpr glm::vec3 LightDiffuse = glm::vec3(1.0f);
-constexpr glm::vec3 LightAmbient = glm::vec3(0.1f);
+constexpr glm::vec3 LightAmbient = glm::vec3(0.3f);
 
 AmberRenderer::Data::Color AmberRenderer::Rendering::Rasterizer::Shaders::ShadowMapping::FragmentPass()
 {
@@ -32,26 +32,45 @@ AmberRenderer::Data::Color AmberRenderer::Rendering::Rasterizer::Shaders::Shadow
 	const glm::vec3 fragPos = GetVaryingAs<glm::vec3>("v_FragPos");
 	const glm::vec3 lightPos = GetUniformAs<glm::vec3>("u_lightPos");
 
-	auto u_DiffuseMap = GetSample("u_DiffuseMap");
-	const glm::vec4 diffuseTexel = Texture(*u_DiffuseMap, texCoords);
+	//auto u_DiffuseMap = GetSample("u_DiffuseMap");
+	const glm::vec4 diffuseTexel = Texture("u_DiffuseMap", texCoords);
+
+
 
 	const glm::vec4 fragPosLightSpace = GetVaryingAs<glm::vec4>("v_FragPosLightSpace");
 	glm::vec3 projCoords = glm::vec3(fragPosLightSpace) / fragPosLightSpace.w;
 	projCoords = projCoords * 0.5f + 0.5f;
 
-	auto u_DepthMap = GetSample("u_DepthMap");
-	float closestDepth = Texture(*u_DepthMap, glm::vec2(projCoords.x, projCoords.y)).x;
+	//auto u_DepthMap = GetSample("u_DepthMap");
+	float closestDepth = Texture("u_DepthMap", glm::vec2(projCoords.x, projCoords.y)).x;
 	float currentDepth = projCoords.z;
 	float bias = glm::max(0.05f * (1.0f - dot(normal, glm::vec3(0, 1, 0))), 0.005f);
-	float shadow = (currentDepth - bias > closestDepth) ? 1.0f : 0.0f;
+
+
+	float shadow = 0.0f;
+
+	glm::vec2 texelSize = glm::vec2(1.0f /( 1024 * 1024));
+	for (int x = -1; x <= 1; ++x)
+	{
+		for (int y = -1; y <= 1; ++y)
+		{
+			float pcfDepth = Texture("u_DepthMap", glm::vec2(projCoords.x, projCoords.y) + glm::vec2(x, y) * texelSize).x;
+			shadow += currentDepth - bias > pcfDepth ? 1.0f : 0.0f;
+		}
+	}
+	shadow /= 9.0f;
+
+	// keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
+	if (projCoords.z > 1.0)
+		shadow = 0.0;
+
+	//float shadow = (currentDepth - bias > closestDepth) ? 1.0f : 0.0f;
 
 	glm::vec3 lightDir = glm::normalize(lightPos - fragPos);
 	float diff = glm::max(glm::dot(normal, lightDir), 0.0f);
 	glm::vec3 diffuse = LightDiffuse * diff;
-	glm::vec3 ambient = LightAmbient;
-	glm::vec3 lighting = ambient + diffuse;
 
-	glm::vec3 finalColor = lighting * glm::vec3(diffuseTexel) * (1.0f - shadow);
+	glm::vec3 finalColor = diffuse * glm::vec3(diffuseTexel) *  (LightAmbient + (1.0f - shadow));
 
 	finalColor = glm::clamp(finalColor, 0.0f, 1.0f);
 

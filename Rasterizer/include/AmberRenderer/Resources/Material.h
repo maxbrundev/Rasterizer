@@ -15,6 +15,7 @@ namespace AmberRenderer::Resources
 		~Material();
 
 		void Bind(Texture* p_emptyTexture) const;
+		void Unbind() const;
 
 		bool HasShader() const;
 

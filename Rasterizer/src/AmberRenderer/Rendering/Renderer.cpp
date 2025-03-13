@@ -11,7 +11,7 @@ m_emptyTexture(Resources::Loaders::TextureLoader::CreateColor
 (
 	(255 << 24) | (255 << 16) | (255 << 8) | 255,
 	Resources::Settings::ETextureFilteringMode::NEAREST,
-	Resources::Settings::ETextureWrapMode::CLAMP
+	Resources::Settings::ETextureFilteringMode::NEAREST
 )),
 m_sdlTexture(nullptr)
 {
@@ -85,6 +85,8 @@ void AmberRenderer::Rendering::Renderer::DrawMesh(Settings::EPrimitiveMode p_dra
 			GLRasterizer::DrawArrays(static_cast<uint8_t>(p_drawMode), 0, p_mesh.GetVertexCount());
 		}
 		p_mesh.Unbind();
+
+		p_material.Unbind();
 	}
 }
 

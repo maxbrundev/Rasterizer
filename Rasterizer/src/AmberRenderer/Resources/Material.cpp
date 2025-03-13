@@ -27,12 +27,22 @@ void AmberRenderer::Resources::Material::Bind(Texture* p_emptyTexture) const
 
 		if (m_texture != nullptr)
 		{
-			m_shader->SetSample("u_DiffuseMap", m_texture);
+			m_texture->Bind();
+			m_shader->SetUniform("u_DiffuseMap", 0);
 		}
 		else
 		{
-			m_shader->SetSample("u_DiffuseMap", p_emptyTexture);
+			p_emptyTexture->Bind();
+			m_shader->SetUniform("u_DiffuseMap", 0);
 		}
+	}
+}
+
+void AmberRenderer::Resources::Material::Unbind() const
+{
+	if (m_texture != nullptr)
+	{
+		m_texture->Unbind();
 	}
 }
 

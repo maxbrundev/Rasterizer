@@ -101,12 +101,7 @@ namespace AmberRenderer::Rendering::Rasterizer::Shaders
 			if (it == m_varyings.end())
 				return T{};
 
-			if (p_name == "v_TexCoords" || p_name == "v_Normal")
-			{
-				return ShaderTypeTraits<T>::ReadFromBuffer(it->second.Interpolated);
-			}
-
-			return ShaderTypeTraits<T>::ReadFromBuffer(it->second.Interpolated) / m_interpolatedReciprocal;
+			return ShaderTypeTraits<T>::ReadFromBuffer(it->second.Interpolated);
 		}
 
 		template<typename T>
@@ -115,76 +110,19 @@ namespace AmberRenderer::Rendering::Rasterizer::Shaders
 			auto it = m_varyings.find(p_name);
 			if (it == m_varyings.end())
 				return T{};
-			// Read the value from the per-vertex data slot rather than the interpolated result.
+
 			return ShaderTypeTraits<T>::ReadFromBuffer(it->second.Data[p_vertexIndex]);
 		}
 
-		void SetUniformInt(const std::string_view p_name, int p_value);
-		void SetUniformFloat(const std::string_view p_name, float p_value);
-		void SetUniformVec2(const std::string_view p_name, const glm::vec2& p_value);
-		void SetUniformVec3(const std::string_view p_name, const glm::vec3& p_value);
-		void SetUniformVec4(const std::string_view p_name, const glm::vec4& p_value);
-		void SetUniformMat2(const std::string_view p_name, const glm::mat2& p_value);
-		void SetUniformMat3(const std::string_view p_name, const glm::mat3& p_value);
-		void SetUniformMat4(const std::string_view p_name, const glm::mat4& p_value);
+		int GetTypeCount(EShaderDataType p_type) const;
 
-		int GetUniformAsInt(const std::string_view p_name) const;
-		float GetUniformAsFloat(const std::string_view p_name) const;
-		glm::vec2 GetUniformAsVec2(const std::string_view p_name) const;
-		glm::vec3 GetUniformAsVec3(const std::string_view p_name) const;
-		glm::vec4 GetUniformAsVec4(const std::string_view p_name) const;
-		glm::mat2 GetUniformAsMat2(const std::string_view p_name) const;
-		glm::mat3 GetUniformAsMat3(const std::string_view p_name) const;
-		glm::mat4 GetUniformAsMat4(const std::string_view p_name) const;
-
-		void SetFlatInt(const std::string_view p_name, int p_value);
-		void SetFlatFloat(const std::string_view p_name, float p_value);
-		void SetFlatVec2(const std::string_view p_name, const glm::vec2& p_value);
-		void SetFlatVec3(const std::string_view p_name, const glm::vec3& p_value);
-		void SetFlatVec4(const std::string_view p_name, const glm::vec4& p_value);
-		void SetFlatMat2(const std::string_view p_name, const glm::mat2& p_value);
-		void SetFlatMat3(const std::string_view p_name, const glm::mat3& p_value);
-		void SetFlatMat4(const std::string_view p_name, const glm::mat4& p_value);
-
-		int GetFlatAsInt(const std::string_view p_name) const;
-		float GetFlatAsFloat(const std::string_view p_name) const;
-		glm::vec2 GetFlatAsVec2(const std::string_view p_name) const;
-		glm::vec3 GetFlatAsVec3(const std::string_view p_name) const;
-		glm::vec4 GetFlatAsVec4(const std::string_view p_name) const;
-		glm::mat2 GetFlatAsMat2(const std::string_view p_name) const;
-		glm::mat3 GetFlatAsMat3(const std::string_view p_name) const;
-		glm::mat4 GetFlatAsMat4(const std::string_view p_name) const;
-
-		void SetVaryingInt(const std::string_view p_name, int p_value, uint8_t p_vertexIndex = 255);
-		void SetVaryingFloat(const std::string_view p_name, float p_value, uint8_t p_vertexIndex = 255);
-		void SetVaryingVec2(const std::string_view p_name, const glm::vec2& p_value, uint8_t p_vertexIndex = 255);
-		void SetVaryingVec3(const std::string_view p_name, const glm::vec3& p_value, uint8_t p_vertexIndex = 255);
-		void SetVaryingVec4(const std::string_view p_name, const glm::vec4& p_value, uint8_t p_vertexIndex = 255);
-		void SetVaryingMat2(const std::string_view p_name, const glm::mat2& p_value, uint8_t p_vertexIndex = 255);
-		void SetVaryingMat3(const std::string_view p_name, const glm::mat3& p_value, uint8_t p_vertexIndex = 255);
-		void SetVaryingMat4(const std::string_view p_name, const glm::mat4& p_value, uint8_t p_vertexIndex = 255);
-
-		int GetVaryingAsInt(const std::string_view p_name) const;
-		float GetVaryingAsFloat(const std::string_view p_name) const;
-		glm::vec2 GetVaryingAsVec2(const std::string_view p_name) const;
-		glm::vec3 GetVaryingAsVec3(const std::string_view p_name) const;
-		glm::vec4 GetVaryingAsVec4(const std::string_view p_name) const;
-		glm::mat2 GetVaryingAsMat2(const std::string_view p_name) const;
-		glm::mat3 GetVaryingAsMat3(const std::string_view p_name) const;
-		glm::mat4 GetVaryingAsMat4(const std::string_view p_name) const;
-
-		void SetSample(const std::string_view p_name, Resources::Texture* p_texture);
-		Resources::Texture* GetSample(const std::string_view p_name) const;
-
-		int GetTypeCount(EShaderDataType p_type);
-
-		glm::vec3 Lambert(const glm::vec3& p_fragPos, const glm::vec3& p_normal, const glm::vec3& p_lightPos, const glm::vec3& p_lightDiffuse, const glm::vec3& p_lightAmbient) const;
+		glm::vec4 Texture(const std::string_view p_samplerName, const glm::vec2& p_texCoords) const;
 
 	protected:
 		virtual glm::vec4 VertexPass(const Geometry::Vertex& p_vertex) = 0;
 		virtual Data::Color FragmentPass() = 0;
 
-		glm::vec4 Texture(const Resources::Texture& p_texture, const glm::vec2& p_texCoords) const;
+		glm::vec3 Lambert(const glm::vec3& p_fragPos, const glm::vec3& p_normal, const glm::vec3& p_lightPos, const glm::vec3& p_lightDiffuse, const glm::vec3& p_lightAmbient) const;
 
 	private:
 		uint8_t ComputeCurrentMipmapIndex(uint8_t p_mipmapsAmount) const;
@@ -198,7 +136,5 @@ namespace AmberRenderer::Rendering::Rasterizer::Shaders
 		std::unordered_map<std::string_view, ShaderData> m_uniforms;
 		std::unordered_map<std::string_view, ShaderData> m_flats;
 		std::unordered_map<std::string_view, ShaderVarying> m_varyings;
-
-		std::unordered_map<std::string_view, Resources::Texture*> m_samples;
 	};
 }

@@ -17,9 +17,9 @@ AmberRenderer::Data::Color AmberRenderer::Rendering::Rasterizer::Shaders::QuadND
 {
 	const glm::vec2 texCoords = GetVaryingAs<glm::vec2>("v_TexCoords");
 
-	auto depthTexture = GetSample("u_DepthMap");
-
-	float depth = Texture(*depthTexture, texCoords).x;
+	// auto depthTexture = GetSample("u_DepthMap");
+	float depth = Texture("shadowMap", texCoords).x;
+	//float depth = Texture(*depthTexture, texCoords).x;
 
 	return glm::vec4(depth, depth, depth, 1.0f);
 }

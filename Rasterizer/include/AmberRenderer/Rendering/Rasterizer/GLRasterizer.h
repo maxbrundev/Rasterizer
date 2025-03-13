@@ -33,6 +33,54 @@ constexpr bool CLIPPING = true;
 
 #define GLR_SAMPLES 0x10
 
+#define GLR_TEXTURE_2D           0
+#define GLR_DEPTH_COMPONENT      0x1902
+#define GLR_RGBA8                 0x1908
+#define GLR_FLOAT                0x1406
+#define GLR_UNSIGNED_BYTE        0x1401
+#define GLR_TEXTURE_MIN_FILTER   0x2801
+#define GLR_TEXTURE_MAG_FILTER   0x2800
+#define GLR_TEXTURE_WRAP_S       0x2802
+#define GLR_TEXTURE_WRAP_T       0x2803
+
+#define GLR_CLAMP 0
+#define GLR_REPEAT 1
+
+#define GLR_NEAREST 0
+#define GLR_LINEAR 1
+#define GLR_NEAREST_MIPMAP_NEAREST 2
+#define GLR_LINEAR_MIPMAP_LINEAR 3
+#define GLR_LINEAR_MIPMAP_NEAREST 4
+#define GLR_NEAREST_MIPMAP_LINEAR 5
+
+#define GL_TEXTURE0 0
+
+#define GLR_FRAMEBUFFER       0x8D40
+#define GLR_COLOR_ATTACHMENT  0x8CE0
+#define GLR_DEPTH_ATTACHMENT  0x8D00
+#define GL_NONE    0
+
+struct TextureObject
+{
+	uint32_t ID;
+	uint32_t Target;
+	uint32_t InternalFormat;
+	uint32_t Width;
+	uint32_t Height;
+
+	union
+	{
+		uint8_t* Data8;
+		//TODO: Investigate the necessary of a 32 bit buffer.
+		//float* Data32;
+	};
+
+	uint8_t MinFilter;
+	uint8_t MagFilter;
+	uint8_t WrapS;
+	uint8_t WrapT;
+};
+
 namespace GLRasterizer
 {
 	void Initialize(uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight);
@@ -70,4 +118,18 @@ namespace GLRasterizer
 	void DeleteBuffers(uint32_t p_count, const uint32_t* p_buffers);
 	void BindBuffer(uint32_t p_target, uint32_t p_buffer);
 	void BufferData(uint32_t p_target, size_t p_size, const void* p_data);
+
+	void GenTextures(uint32_t p_count, uint32_t* p_textures);
+	void DeleteTextures(uint32_t p_count, const uint32_t* p_textures);
+	void BindTexture(uint32_t p_target, uint32_t p_texture);
+	void TexImage2D(uint32_t p_target, uint32_t p_level, uint32_t p_internalFormat, uint32_t p_width, uint32_t p_height, uint32_t p_border, uint32_t p_format, uint32_t p_type, const void* p_data);
+	void TexParameteri(uint32_t p_target, uint32_t p_pname, uint8_t p_param);
+	void ActiveTexture(uint32_t p_unit);
+	TextureObject* GetTextureObject(uint32_t textureUnit);
+
+	void GenFramebuffers(uint32_t count, uint32_t* framebuffers);
+	void BindFramebuffer(uint32_t target, uint32_t framebuffer);
+	void FramebufferTexture2D(uint32_t target, uint32_t attachment, uint32_t textarget, uint32_t texture, int level);
+	void DrawBuffer(uint32_t mode);
+	void ReadBuffer(uint32_t mode);
 }

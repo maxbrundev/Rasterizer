@@ -1,5 +1,6 @@
 #include "AmberRenderer/Resources/Loaders/ModelLoader.h"
 
+#include "AmberRenderer/Rendering/Rasterizer/GLRasterizer.h"
 #include "AmberRenderer/Resources/Loaders/TextureLoader.h"
 #include "AmberRenderer/Resources/Parsers/MaterialData.h"
 
@@ -23,7 +24,7 @@ AmberRenderer::Resources::Model* AmberRenderer::Resources::Loaders::ModelLoader:
 
 			if (!materialData.DiffuseTexturePath.empty())
 			{
-				texture = TextureLoader::Create(materialData.DiffuseTexturePath, true, Resources::Settings::ETextureFilteringMode::NEAREST, Resources::Settings::ETextureWrapMode::REPEAT, false);
+				texture = TextureLoader::Create(materialData.DiffuseTexturePath, Resources::Settings::ETextureFilteringMode::NEAREST, Resources::Settings::ETextureFilteringMode::NEAREST, Resources::Settings::ETextureWrapMode::REPEAT, Resources::Settings::ETextureWrapMode::REPEAT, true, false);
 			}
 
 			Material* material = new Material(materialData.Name);

@@ -4,7 +4,7 @@
 
 namespace AmberRenderer::Resources::Settings
 {
-	enum class ETextureFilteringMode : uint8_t
+	enum ETextureFilteringMode : uint8_t
 	{
 		NEAREST,
 		LINEAR,

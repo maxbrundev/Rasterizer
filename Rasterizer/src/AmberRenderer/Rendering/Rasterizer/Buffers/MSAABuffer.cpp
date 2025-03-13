@@ -1,5 +1,8 @@
 #include "AmberRenderer/Rendering/Rasterizer/Buffers/MSAABuffer.h"
 
+#include <algorithm>
+#include <cmath>
+
 AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::MSAABuffer(uint32_t p_width, uint32_t p_height) :
 m_width(p_width),
 m_height(p_height),
@@ -30,20 +33,28 @@ void AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::SetSamplesAmount
 	m_data = new Sample[m_width * m_height * m_samplesAmount];
 }
 
-void AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::Clear(const Data::Color& p_color) const
+void AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::Clear() const
 {
 	if(m_samplesAmount == 0)
 		return;
-
-	const uint32_t color = p_color.Pack();
 
 	const uint32_t samplesCount = m_width * m_height * m_samplesAmount;
 
 	for (uint32_t i = 0; i < samplesCount; i++)
 	{
-		m_data[i].Color = color;
+		m_data[i].Color = m_clearColor;
 		m_data[i].Depth = std::numeric_limits<float>::max();
 	}
+}
+
+void AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::SetColor(float p_red, float p_green, float p_blue, float p_alpha)
+{
+	uint8_t r = static_cast<uint8_t>(std::round(std::clamp(p_red, 0.0f, 1.0f) * 255.0f));
+	uint8_t g = static_cast<uint8_t>(std::round(std::clamp(p_green, 0.0f, 1.0f) * 255.0f));
+	uint8_t b = static_cast<uint8_t>(std::round(std::clamp(p_blue, 0.0f, 1.0f) * 255.0f));
+	uint8_t a = static_cast<uint8_t>(std::round(std::clamp(p_alpha, 0.0f, 1.0f) * 255.0f));
+
+	m_clearColor = (r << 24) | (g << 16) | (b << 8) | a;
 }
 
 uint32_t AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::GetWidth() const

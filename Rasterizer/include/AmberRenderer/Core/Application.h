@@ -32,10 +32,6 @@ namespace AmberRenderer::Core
 		Resources::Model* m_currentModel = nullptr;
 		Rendering::Rasterizer::Shaders::ShadowMappingDepth m_shadowMapDepthShader;
 
-		Rendering::Rasterizer::Buffers::FrameBuffer<Depth>* m_shadowDepthBuffer = nullptr;
-		Rendering::Rasterizer::Buffers::FrameBuffer<RGBA8>* m_shadowBuffer = nullptr;
-		Resources::Texture* m_shadowMapTexture = nullptr;
-
 		bool m_isRunning;
 	};
 }

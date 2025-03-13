@@ -5,32 +5,75 @@
 
 #include <iostream>
 
+#include "AmberRenderer/Rendering/Rasterizer/GLRasterizer.h"
+#include "AmberRenderer/Tools/Utils/String.h"
+
 std::string AmberRenderer::Resources::Loaders::TextureLoader::FILE_TRACE;
 
-AmberRenderer::Resources::Texture* AmberRenderer::Resources::Loaders::TextureLoader::Create(std::string p_filePath, bool p_flipVertically, Settings::ETextureFilteringMode p_filter, Settings::ETextureWrapMode p_wrapping, bool p_generateMipmap)
+AmberRenderer::Resources::Texture* AmberRenderer::Resources::Loaders::TextureLoader::Create(std::string p_filePath, Settings::ETextureFilteringMode p_minFilter, Settings::ETextureFilteringMode p_magFilter, Settings::ETextureWrapMode p_wrapS, Settings::ETextureWrapMode p_wrapT, bool p_flipVertically, bool p_generateMipmap)
 {
 	FILE_TRACE = p_filePath;
 
+	uint32_t textureID;
 	int textureWidth;
 	int textureHeight;
 	int bitsPerPixel;
+
+	GLRasterizer::GenTextures(1, &textureID);
 
 	stbi_set_flip_vertically_on_load(p_flipVertically);
 
 	if (unsigned char* dataBuffer = stbi_load(p_filePath.c_str(), &textureWidth, &textureHeight, &bitsPerPixel, 4); dataBuffer)
 	{
-		Texture* texture = new Texture(std::move(p_filePath), textureWidth, textureHeight, bitsPerPixel, dataBuffer, p_filter, p_wrapping, p_generateMipmap);
+		GLRasterizer::BindTexture(GLR_TEXTURE_2D, textureID);
 
-		return texture;
+		GLRasterizer::TexImage2D(GLR_TEXTURE_2D, 0, GLR_RGBA8, textureWidth, textureHeight, 0, GLR_RGBA8 /*GLR_RGBA*/, GLR_UNSIGNED_BYTE, dataBuffer);
+
+		if (p_generateMipmap)
+		{
+			//TODO:
+			//GenerateMipMap(GL_TEXTURE_2D);
+		}
+
+		GLRasterizer::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_WRAP_S, p_wrapS);
+		GLRasterizer::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_WRAP_T, p_wrapT);
+		GLRasterizer::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_MIN_FILTER, p_minFilter);
+		GLRasterizer::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_MAG_FILTER, p_magFilter);
+
+		stbi_image_free(dataBuffer);
+		GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
+
+		std::string name = Tools::Utils::String::ExtractFileNameFromPath(p_filePath);
+
+		return new Texture(p_filePath, textureID, textureWidth, textureHeight, bitsPerPixel, p_minFilter, p_magFilter, p_wrapS, p_wrapT, p_generateMipmap);
 	}
 	else
 	{
-		std::cout << "Texture failed to load at path: " << FILE_TRACE << '\n';
+		std::cout << "Texture failed to load at path: " << FILE_TRACE << std::endl;
 
 		stbi_image_free(dataBuffer);
+		GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
 	}
 
 	return nullptr;
+}
+
+AmberRenderer::Resources::Texture* AmberRenderer::Resources::Loaders::TextureLoader::CreateColor(uint32_t p_data, Settings::ETextureFilteringMode p_minFilter, Settings::ETextureFilteringMode p_magFilter)
+{
+	uint32_t textureID;
+	GLRasterizer::GenTextures(1, &textureID);
+	GLRasterizer::BindTexture(GLR_TEXTURE_2D, textureID);
+
+	GLRasterizer::TexImage2D(GLR_TEXTURE_2D, 0, GLR_RGBA8, 1, 1, 0, GLR_RGBA8 /*GLR_RGBA*/, GLR_UNSIGNED_BYTE, &p_data);
+
+	GLRasterizer::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_WRAP_S, GLR_REPEAT);
+	GLRasterizer::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_WRAP_T, GLR_REPEAT);
+	GLRasterizer::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_MIN_FILTER, p_minFilter);
+	GLRasterizer::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_MAG_FILTER, p_magFilter);
+
+	GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
+
+	return new Texture("", textureID, 1, 1, 32, p_minFilter, p_magFilter, Settings::REPEAT, Settings::REPEAT, false);
 }
 
 bool AmberRenderer::Resources::Loaders::TextureLoader::Destroy(Texture*& p_textureInstance)
@@ -46,21 +89,14 @@ bool AmberRenderer::Resources::Loaders::TextureLoader::Destroy(Texture*& p_textu
 	return false;
 }
 
-AmberRenderer::Resources::Texture* AmberRenderer::Resources::Loaders::TextureLoader::CreateColor(uint32_t color, Settings::ETextureFilteringMode p_filter, Settings::ETextureWrapMode p_wrapping)
+bool AmberRenderer::Resources::Loaders::TextureLoader::Delete(Texture* p_textureInstance)
 {
-	uint32_t width = 1;
-	uint32_t height = 1;
-	uint32_t bitsPerPixel = 32;
+	if (p_textureInstance)
+	{
+		GLRasterizer::DeleteTextures(1, &p_textureInstance->ID);
 
-	unsigned char data[4];
+		return true;
+	}
 
-	data[0] = (color >> 24) & 0xFF;
-	data[1] = (color >> 16) & 0xFF;
-	data[2] = (color >> 8) & 0xFF;
-	data[3] = color & 0xFF;
-
-	unsigned char* textureData = new unsigned char[4];
-	std::memcpy(textureData, data, 4);
-
-	return new Texture("color", width, height, bitsPerPixel, textureData, p_filter, p_wrapping, false);
+	return false;
 }
