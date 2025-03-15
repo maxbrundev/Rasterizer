@@ -24,7 +24,7 @@ namespace AmberRenderer::Resources
 		virtual uint32_t GetVertexCount() override;
 		virtual uint32_t GetIndexCount() override;
 
-		uint32_t GetVAO() const { return m_vertexArray.GetID(); /*return m_VAO;*/ }
+		uint32_t GetVAO() const { return m_vertexArray.GetID(); }
 		uint32_t GetMaterialIndex() const;
 
 	private:

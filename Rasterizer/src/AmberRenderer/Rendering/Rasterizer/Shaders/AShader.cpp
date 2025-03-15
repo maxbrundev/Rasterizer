@@ -187,17 +187,3 @@ glm::vec3 AmberRenderer::Rendering::Rasterizer::Shaders::AShader::Lambert(const 
 	const float diffuse = glm::max(glm::dot(p_normal, glm::normalize(p_lightPos - p_fragPos)), 0.0f);
 	return glm::clamp(p_lightDiffuse * diffuse + p_lightAmbient, 0.0f, 1.0f);
 }
-
-uint8_t AmberRenderer::Rendering::Rasterizer::Shaders::AShader::ComputeCurrentMipmapIndex(uint8_t p_mipmapsCount) const
-{
-	const auto& u_ViewPos = GetUniformAs<glm::vec3>("u_ViewPos");
-	const auto& v_FragPos = GetVaryingAs<glm::vec3>("v_FragPos");
-
-	const uint8_t maxLevel = p_mipmapsCount - 1;
-
-	const auto viewPosToFragPos = glm::vec3(v_FragPos - u_ViewPos);
-
-	uint8_t distanceRatio = static_cast<uint8_t>(glm::clamp(glm::length(glm::round(viewPosToFragPos)) / MIPMAPS_DISTANCE_STEP, 0.0f, static_cast<float>(maxLevel)));
-
-	return distanceRatio;
-}

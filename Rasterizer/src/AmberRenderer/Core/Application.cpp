@@ -8,10 +8,9 @@
 #include "AmberRenderer/Rendering/Rasterizer/Shaders/ShadowMapping.h"
 #include "AmberRenderer/Rendering/Rasterizer/Shaders/ShadowMappingDepth.h"
 
-#include "AmberRenderer/Resources/Model.h"
 #include "AmberRenderer/Resources/Mesh.h"
+#include "AmberRenderer/Resources/Model.h"
 #include "AmberRenderer/Resources/Loaders/ModelLoader.h"
-#include "AmberRenderer/Resources/Loaders/TextureLoader.h"
 
 #include "AmberRenderer/Tools/Time/Clock.h"
 

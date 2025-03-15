@@ -124,9 +124,6 @@ namespace AmberRenderer::Rendering::Rasterizer::Shaders
 
 		glm::vec3 Lambert(const glm::vec3& p_fragPos, const glm::vec3& p_normal, const glm::vec3& p_lightPos, const glm::vec3& p_lightDiffuse, const glm::vec3& p_lightAmbient) const;
 
-	private:
-		uint8_t ComputeCurrentMipmapIndex(uint8_t p_mipmapsAmount) const;
-
 	protected:
 		uint8_t m_vertexIndex = 0;
 
