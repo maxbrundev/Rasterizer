@@ -1149,12 +1149,23 @@ void ComputeFragments(const AmberRenderer::Geometry::Triangle& p_triangle, const
 		{
 			if (RenderContext.State & GLR_MULTISAMPLE && ActiveFrameBuffer)
 			{
-				for (uint8_t sampleIndex = 0; sampleIndex < RenderContext.Samples; sampleIndex++)
-				{
-					float samplePosX = static_cast<float>(x) + (static_cast<float>(sampleIndex) + 0.5f) / static_cast<float>(RenderContext.Samples);
-					float samplePosY = static_cast<float>(y) + (static_cast<float>(sampleIndex) + 0.5f) / static_cast<float>(RenderContext.Samples);
+				uint8_t gridSize = static_cast<uint8_t>(std::ceil(std::sqrt(RenderContext.Samples)));
 
-					SetSampleFragment(p_triangle, x, y, samplePosX, samplePosY, sampleIndex, transformedVertices);
+				uint8_t sampleCount = 0;
+
+				for (uint8_t j = 0; j < gridSize; ++j)
+				{
+					for (uint8_t i = 0; i < gridSize; ++i)
+					{
+						if (sampleCount >= RenderContext.Samples)
+							break;
+
+						float samplePosX = x + (i + 0.5f) / gridSize;
+						float samplePosY = y + (j + 0.5f) / gridSize;
+
+						SetSampleFragment(p_triangle, x, y, samplePosX, samplePosY, sampleCount, transformedVertices);
+						++sampleCount;
+					}
 				}
 			}
 			else
