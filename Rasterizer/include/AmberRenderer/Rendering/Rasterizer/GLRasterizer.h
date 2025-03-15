@@ -7,58 +7,108 @@
 
 constexpr bool CLIPPING = true;
 
-#define GLR_TRIANGLES 0
-#define GLR_LINES     1
-#define GLR_POINTS    2
+// -----------------------------------------------------------------------------
+// PRIMITIVE TYPES
+// -----------------------------------------------------------------------------
+#define GLR_TRIANGLES      0
+#define GLR_LINES          1
+#define GLR_POINTS         2
 #define GLR_TRIANGLE_STRIP 3
 
+// -----------------------------------------------------------------------------
+// POLYGON MODES
+// -----------------------------------------------------------------------------
 #define GLR_FILL  0
 #define GLR_LINE  1
 #define GLR_POINT 2
 
+// -----------------------------------------------------------------------------
+// FACE-CULLING MODES
+// -----------------------------------------------------------------------------
 #define GLR_BACK           0
 #define GLR_FRONT          1
 #define GLR_FRONT_AND_BACK 2
 
+// -----------------------------------------------------------------------------
+// STATE ENABLE/DISABLE
+// -----------------------------------------------------------------------------
 #define GLR_DEPTH_WRITE 0x01
 #define GLR_DEPTH_TEST  0x02
 #define GLR_CULL_FACE   0x04
 #define GLR_MULTISAMPLE 0x08
 
-#define GLR_ARRAY_BUFFER         0
-#define GLR_ELEMENT_ARRAY_BUFFER 1
+#define GLR_SAMPLES 0
 
+// -----------------------------------------------------------------------------
+// CLEAR FLAGS
+// -----------------------------------------------------------------------------
 #define GLR_COLOR_BUFFER_BIT 0x01
 #define GLR_DEPTH_BUFFER_BIT 0x02
 
-#define GLR_SAMPLES 0x10
+// -----------------------------------------------------------------------------
+// BUFFER BINDING TARGETS
+// -----------------------------------------------------------------------------
+#define GLR_ARRAY_BUFFER         0
+#define GLR_ELEMENT_ARRAY_BUFFER 1
 
-#define GLR_TEXTURE_2D           0
-#define GLR_DEPTH_COMPONENT      0x1902
-#define GLR_RGBA8                 0x1908
-#define GLR_FLOAT                0x1406
-#define GLR_UNSIGNED_BYTE        0x1401
-#define GLR_TEXTURE_MIN_FILTER   0x2801
-#define GLR_TEXTURE_MAG_FILTER   0x2800
-#define GLR_TEXTURE_WRAP_S       0x2802
-#define GLR_TEXTURE_WRAP_T       0x2803
+// -----------------------------------------------------------------------------
+// TEXTURE TARGETS
+// -----------------------------------------------------------------------------
+#define GLR_TEXTURE_2D 100
 
-#define GLR_CLAMP 0
+// -----------------------------------------------------------------------------
+// INTERNAL / PIXEL FORMATS
+// -----------------------------------------------------------------------------
+#define GLR_DEPTH_COMPONENT 101
+#define GLR_RGBA8           102
+#define GLR_FLOAT           103
+#define GLR_UNSIGNED_BYTE   104
+
+// -----------------------------------------------------------------------------
+// TEXTURE PARAMETERS
+// -----------------------------------------------------------------------------
+#define GLR_TEXTURE_MIN_FILTER 110
+#define GLR_TEXTURE_MAG_FILTER 111
+#define GLR_TEXTURE_WRAP_S     112
+#define GLR_TEXTURE_WRAP_T     113
+
+// -----------------------------------------------------------------------------
+// WRAP MODES
+// -----------------------------------------------------------------------------
+#define GLR_CLAMP  0
 #define GLR_REPEAT 1
 
-#define GLR_NEAREST 0
-#define GLR_LINEAR 1
+// -----------------------------------------------------------------------------
+// FILTERING MODES
+// -----------------------------------------------------------------------------
+#define GLR_NEAREST                0
+#define GLR_LINEAR                 1
 #define GLR_NEAREST_MIPMAP_NEAREST 2
-#define GLR_LINEAR_MIPMAP_LINEAR 3
-#define GLR_LINEAR_MIPMAP_NEAREST 4
-#define GLR_NEAREST_MIPMAP_LINEAR 5
+#define GLR_LINEAR_MIPMAP_LINEAR   3
+#define GLR_LINEAR_MIPMAP_NEAREST  4
+#define GLR_NEAREST_MIPMAP_LINEAR  5
 
-#define GL_TEXTURE0 0
+// -----------------------------------------------------------------------------
+// TEXTURE UNIT
+// -----------------------------------------------------------------------------
+#define GLR_TEXTURE0 0
 
-#define GLR_FRAMEBUFFER       0x8D40
-#define GLR_COLOR_ATTACHMENT  0x8CE0
-#define GLR_DEPTH_ATTACHMENT  0x8D00
-#define GL_NONE    0
+// -----------------------------------------------------------------------------
+// FRAMEBUFFER ATTACHMENTS
+// -----------------------------------------------------------------------------
+#define GLR_FRAMEBUFFER      200
+#define GLR_COLOR_ATTACHMENT 201
+#define GLR_DEPTH_ATTACHMENT 202
+
+// -----------------------------------------------------------------------------
+// NO ATTACHMENT
+// -----------------------------------------------------------------------------
+#define GL_NONE 999
+
+// -----------------------------------------------------------------------------
+// CUSTOM DEFINES
+// -----------------------------------------------------------------------------
+#define GLR_VIEW_PORT 300
 
 struct TextureObject
 {
@@ -79,6 +129,8 @@ struct TextureObject
 	uint8_t MagFilter;
 	uint8_t WrapS;
 	uint8_t WrapT;
+
+	uint8_t** Mipmaps;
 };
 
 namespace GLRasterizer
@@ -125,11 +177,12 @@ namespace GLRasterizer
 	void TexImage2D(uint32_t p_target, uint32_t p_level, uint32_t p_internalFormat, uint32_t p_width, uint32_t p_height, uint32_t p_border, uint32_t p_format, uint32_t p_type, const void* p_data);
 	void TexParameteri(uint32_t p_target, uint32_t p_pname, uint8_t p_param);
 	void ActiveTexture(uint32_t p_unit);
-	TextureObject* GetTextureObject(uint32_t textureUnit);
+	void GenerateMipmap(uint32_t p_target);
+	TextureObject* GetTextureObject(uint32_t p_textureUnit);
 
-	void GenFramebuffers(uint32_t count, uint32_t* framebuffers);
-	void BindFramebuffer(uint32_t target, uint32_t framebuffer);
-	void FramebufferTexture2D(uint32_t target, uint32_t attachment, uint32_t textarget, uint32_t texture, int level);
-	void DrawBuffer(uint32_t mode);
-	void ReadBuffer(uint32_t mode);
+	void GenFramebuffers(uint32_t p_count, uint32_t* p_framebuffers);
+	void BindFramebuffer(uint32_t p_target, uint32_t p_framebuffer);
+	void FramebufferTexture2D(uint32_t p_target, uint32_t p_attachment, uint32_t p_textarget, uint32_t p_texture, int p_level);
+	void DrawBuffer(uint32_t p_mode);
+	void ReadBuffer(uint32_t p_mode);
 }

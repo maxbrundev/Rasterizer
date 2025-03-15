@@ -142,7 +142,6 @@ void AmberRenderer::Core::Application::Run()
 	Rendering::Rasterizer::Shaders::QuadNDC QuadNDCShader;
 	GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
 
-
 	GLRasterizer::GenFramebuffers(1, &m_shadowFBO);
 	GLRasterizer::BindFramebuffer(GLR_FRAMEBUFFER, m_shadowFBO);
 	GLRasterizer::FramebufferTexture2D(GLR_FRAMEBUFFER,
@@ -155,16 +154,6 @@ void AmberRenderer::Core::Application::Run()
 	GLRasterizer::BindFramebuffer(GLR_FRAMEBUFFER, 0);
 
 	QuadNDCShader.SetUniform("u_DepthMap", 0);
-	GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
-
-	auto woodTexture = Resources::Loaders::TextureLoader::CreateColor
-	(
-		(255 << 24) | (255 << 16) | (255 << 8) | 255,
-		Resources::Settings::ETextureFilteringMode::NEAREST,
-		Resources::Settings::ETextureFilteringMode::NEAREST
-	);
-
-	GLRasterizer::BindTexture(GLR_TEXTURE_2D, woodTexture->ID);
 	GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
 
 	Resources::Material shadowMapDepthMaterial;
@@ -257,15 +246,16 @@ void AmberRenderer::Core::Application::Run()
 		shadowMapping.SetUniform("u_Projection", projection);
 		shadowMapping.SetUniform("u_lightPos", lightPos);
 		shadowMapping.SetUniform("u_lightSpaceMatrix", lightSpaceMatrix);
+		shadowMapping.SetUniform("u_ViewPos", m_cameraPosition);
 
 		shadowMapping.SetUniform("u_Model", cubeModel);
-		GLRasterizer::ActiveTexture(GL_TEXTURE0 + 1);
+		GLRasterizer::ActiveTexture(GLR_TEXTURE0 + 1);
 		GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
 		m_context.Renderer->Draw(*m_currentModel, &shadowMapMaterial);
 		GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
 
 		shadowMapping.SetUniform("u_Model", cube2Model);
-		GLRasterizer::ActiveTexture(GL_TEXTURE0 + 1);
+		GLRasterizer::ActiveTexture(GLR_TEXTURE0 + 1);
 		GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
 		m_context.Renderer->Draw(*m_currentModel, &shadowMapMaterial);
 		GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
@@ -273,7 +263,7 @@ void AmberRenderer::Core::Application::Run()
 		shadowMapping.SetUniform("u_Model", planeModel);
 		GLRasterizer::UseProgram(&shadowMapping);
 		GLRasterizer::BindVertexArray(planeVAO);
-		GLRasterizer::ActiveTexture(GL_TEXTURE0 + 1);
+		GLRasterizer::ActiveTexture(GLR_TEXTURE0 + 1);
 		GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
 		GLRasterizer::DrawArrays(GLR_TRIANGLES, 0, FLOORMesh.GetVertexCount());
 		GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
@@ -282,7 +272,7 @@ void AmberRenderer::Core::Application::Run()
 		//Debug depth texture.
 		GLRasterizer::UseProgram(&QuadNDCShader);
 		GLRasterizer::BindVertexArray(VAO);
-		GLRasterizer::ActiveTexture(GL_TEXTURE0);
+		GLRasterizer::ActiveTexture(GLR_TEXTURE0);
 		GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
 		GLRasterizer::DrawArrays(GLR_TRIANGLE_STRIP, 0,  planeMesh.GetVertexCount());
 		GLRasterizer::BindVertexArray(0);

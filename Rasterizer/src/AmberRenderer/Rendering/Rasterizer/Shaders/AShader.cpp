@@ -37,7 +37,7 @@ void AmberRenderer::Rendering::Rasterizer::Shaders::AShader::ProcessInterpolatio
 						(d1 / p_w1) * p_barycentricCoords.y +
 						(d2 / p_w2) * p_barycentricCoords.z;
 
-			varData.Interpolated[i] = val; // / m_interpolatedReciprocal;
+			varData.Interpolated[i] = val;
 		}
 	}
 }
@@ -75,61 +75,111 @@ glm::vec4 AmberRenderer::Rendering::Rasterizer::Shaders::AShader::Texture(const 
 	uint32_t width = textureObject->Width;
 	uint32_t height = textureObject->Height;
 
+	bool hasMipmaps = textureObject->Mipmaps != nullptr;
 	uint8_t currentLOD = 0;
 
-	float uvX;
-	float uvY;
+	if (hasMipmaps)
+	{
+		//TODO: Compute LOD based on derivative of texture coordinates.
+		const auto& u_ViewPos = GetUniformAs<glm::vec3>("u_ViewPos");
+		const auto& v_FragPos = GetVaryingAs<glm::vec3>("v_FragPos");
 
-	if (textureObject->InternalFormat == GLR_DEPTH_COMPONENT)
-	{
-		uvX = abs(p_texCoords.x);
-		uvY = abs(p_texCoords.y);
+		int maxLevel = 1 + static_cast<int>(std::floor(std::log2(std::max(width, height))));
+
+		const auto viewPosToFragPos = glm::vec3(v_FragPos - u_ViewPos);
+
+		currentLOD = static_cast<uint8_t>(glm::clamp(
+			glm::length(glm::round(viewPosToFragPos)) / MIPMAPS_DISTANCE_STEP,
+			0.0f,
+			static_cast<float>(maxLevel - 1)));
 	}
-	else
+
+	if (hasMipmaps && currentLOD > 0)
 	{
-		uvX = abs(p_texCoords.x / m_interpolatedReciprocal);
-		uvY = abs(p_texCoords.y / m_interpolatedReciprocal);
+		width = std::max(1u, width >> currentLOD);
+		height = std::max(1u, height >> currentLOD);
 	}
+
+	float uvX = abs(p_texCoords.x);
+	float uvY = abs(p_texCoords.y);
 
 	if (textureObject->WrapS == Resources::Settings::ETextureWrapMode::CLAMP)
 	{
 		uvX = glm::clamp(uvX, 0.0f, 1.0f);
-		uvY = glm::clamp(uvY, 0.0f, 1.0f);
 	}
 	else if (textureObject->WrapS == Resources::Settings::ETextureWrapMode::REPEAT)
 	{
 		uvX = glm::mod(uvX, 1.0f);
+	}
+
+	if (textureObject->WrapT == Resources::Settings::ETextureWrapMode::CLAMP)
+	{
+		uvY = glm::clamp(uvY, 0.0f, 1.0f);
+	}
+	else if (textureObject->WrapT == Resources::Settings::ETextureWrapMode::REPEAT)
+	{
 		uvY = glm::mod(uvY, 1.0f);
 	}
 
 	uvX = uvX * (static_cast<float>(width) - 0.5f);
 	uvY = uvY * (static_cast<float>(height) - 0.5f);
 
-	if (textureObject->MinFilter == Resources::Settings::ETextureFilteringMode::NEAREST)
+	uint8_t filter = currentLOD == 0 ? textureObject->MagFilter : textureObject->MinFilter;
+
+	uint8_t* data = hasMipmaps && currentLOD > 0 ? textureObject->Mipmaps[currentLOD] : textureObject->Data8;
+
+	if (textureObject->InternalFormat == GLR_DEPTH_COMPONENT)
 	{
-		uvX = std::round(uvX);
-		uvY = std::round(uvY);
-	}
-	else if (textureObject->MinFilter == Resources::Settings::ETextureFilteringMode::LINEAR)
-	{
-		uvX = std::floor(uvX);
-		uvY = std::floor(uvY);
+		//TODO: Handle float data
 	}
 
-	int x = static_cast<int>(uvX);
-	int y = static_cast<int>(uvY);
+	if (filter == Resources::Settings::ETextureFilteringMode::LINEAR)
+	{
+		int x0 = static_cast<int>(std::floor(uvX));
+		int y0 = static_cast<int>(std::floor(uvY));
+		int x1 = std::min(x0 + 1, static_cast<int>(width) - 1);
+		int y1 = std::min(y0 + 1, static_cast<int>(height) - 1);
+
+		float fracX = uvX - x0;
+		float fracY = uvY - y0;
+
+		uint32_t idx00 = (y0 * width + x0) * 4;
+		uint32_t idx01 = (y1 * width + x0) * 4;
+		uint32_t idx10 = (y0 * width + x1) * 4;
+		uint32_t idx11 = (y1 * width + x1) * 4;
+
+		glm::vec4 color;
+		for (int i = 0; i < 4; i++) 
+		{
+			float c00 = data[idx00 + i] / 255.0f;
+			float c01 = data[idx01 + i] / 255.0f;
+			float c10 = data[idx10 + i] / 255.0f;
+			float c11 = data[idx11 + i] / 255.0f;
+
+			color[i] = (1.0f - fracX) * (1.0f - fracY) * c00 +
+				fracX * (1.0f - fracY) * c10 +
+				(1.0f - fracX) * fracY * c01 +
+				fracX * fracY * c11;
+		}
+
+		return color;
+	}
+	
+	int x = static_cast<int>(std::round(uvX));
+	int y = static_cast<int>(std::round(uvY));
 
 	x = glm::clamp(x, 0, static_cast<int>(width) - 1);
 	y = glm::clamp(y, 0, static_cast<int>(height) - 1);
 
 	const uint32_t index = (y * width + x) * 4;
 
-	if (textureObject->InternalFormat == GLR_DEPTH_COMPONENT)
-	{
-		//return glm::vec4(glm::vec3(texObj->Data32[index] * 255.0f, texObj->Data32[index + 1] * 255.0f, texObj->Data32[index + 2] * 255.0f), 1.0f);
-	}
-
-	return glm::vec4(glm::vec3(textureObject->Data8[index] / 255.0f, textureObject->Data8[index + 1] / 255.0f, textureObject->Data8[index + 2] / 255.0f), 1.0f);
+	return glm::vec4(
+		data[index] / 255.0f,
+		data[index + 1] / 255.0f,
+		data[index + 2] / 255.0f,
+		data[index + 3] / 255.0f
+	);
+	
 }
 
 glm::vec3 AmberRenderer::Rendering::Rasterizer::Shaders::AShader::Lambert(const glm::vec3& p_fragPos, const glm::vec3& p_normal, const glm::vec3& p_lightPos, const glm::vec3& p_lightDiffuse, const glm::vec3& p_lightAmbient) const

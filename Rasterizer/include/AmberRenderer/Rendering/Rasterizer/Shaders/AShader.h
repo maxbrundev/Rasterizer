@@ -101,7 +101,7 @@ namespace AmberRenderer::Rendering::Rasterizer::Shaders
 			if (it == m_varyings.end())
 				return T{};
 
-			return ShaderTypeTraits<T>::ReadFromBuffer(it->second.Interpolated);
+			return ShaderTypeTraits<T>::ReadFromBuffer(it->second.Interpolated) / m_interpolatedReciprocal;
 		}
 
 		template<typename T>

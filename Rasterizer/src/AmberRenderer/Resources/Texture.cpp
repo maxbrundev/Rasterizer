@@ -18,7 +18,7 @@ HasMipmaps(p_generateMipmap)
 
 void AmberRenderer::Resources::Texture::Bind(uint32_t p_slot) const
 {
-	GLRasterizer::ActiveTexture(GL_TEXTURE0 + p_slot);
+	GLRasterizer::ActiveTexture(GLR_TEXTURE0 + p_slot);
 	GLRasterizer::BindTexture(GLR_TEXTURE_2D, ID);
 }
 

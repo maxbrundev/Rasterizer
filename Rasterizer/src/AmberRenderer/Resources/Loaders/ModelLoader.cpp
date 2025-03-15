@@ -24,7 +24,7 @@ AmberRenderer::Resources::Model* AmberRenderer::Resources::Loaders::ModelLoader:
 
 			if (!materialData.DiffuseTexturePath.empty())
 			{
-				texture = TextureLoader::Create(materialData.DiffuseTexturePath, Resources::Settings::ETextureFilteringMode::NEAREST, Resources::Settings::ETextureFilteringMode::NEAREST, Resources::Settings::ETextureWrapMode::REPEAT, Resources::Settings::ETextureWrapMode::REPEAT, true, false);
+				texture = TextureLoader::Create(materialData.DiffuseTexturePath, Resources::Settings::ETextureFilteringMode::NEAREST, Resources::Settings::ETextureFilteringMode::NEAREST, Resources::Settings::ETextureWrapMode::REPEAT, Resources::Settings::ETextureWrapMode::REPEAT, true, true);
 			}
 
 			Material* material = new Material(materialData.Name);

@@ -391,45 +391,116 @@ void GLRasterizer::ActiveTexture(uint32_t p_unit)
 		std::cout << "ActiveTexture: Texture unit " << p_unit << " is out of range (max " << MAX_TEXTURE_UNITS - 1 << ").\n";
 		return;
 	}
+
 	CurrentActiveTextureUnit = p_unit;
 }
 
-TextureObject* GLRasterizer::GetTextureObject(uint32_t textureUnit)
+void GLRasterizer::GenerateMipmap(uint32_t p_target)
 {
-	if (textureUnit >= MAX_TEXTURE_UNITS)
+	if (p_target != GLR_TEXTURE_2D)
 	{
-		std::cout << "GetTextureObject: Texture unit " << textureUnit << " is out of range.\n";
-		return nullptr;
+		std::cout << "BindTexture: Only GLR_TEXTURE_2D supported.\n";
+		return;
 	}
-	return BoundTextureUnits[textureUnit];
+
+	TextureObject& textureObject = *TextureObjects[CurrentTexture];
+
+
+	int width = textureObject.Width;
+	int height = textureObject.Height;
+
+	int maxLevel = 1 + static_cast<int>(std::floor(std::log2(std::max(width, height))));
+
+	textureObject.Mipmaps = new uint8_t * [maxLevel];
+
+	textureObject.Mipmaps[0] = new uint8_t[width * height * 4];
+	std::memcpy(textureObject.Mipmaps[0], textureObject.Data8, width * height * 4);
+
+	for (int level = 1; level < maxLevel; level++)
+	{
+		int prevWidth = width;
+		int prevHeight = height;
+
+		width = std::max(1, width / 2);
+		height = std::max(1, height / 2);
+
+		textureObject.Mipmaps[level] = new uint8_t[width * height * 4];
+
+		uint8_t* previousData = textureObject.Mipmaps[level - 1];
+		uint8_t* currentData = textureObject.Mipmaps[level];
+
+		for (int y = 0; y < height; y++)
+		{
+			for (int x = 0; x < width; x++)
+			{
+				int x2 = x * 2;
+				int y2 = y * 2;
+
+				int x2End = std::min(x2 + 2, prevWidth);
+				int y2End = std::min(y2 + 2, prevHeight);
+
+				int pixelCount = (x2End - x2) * (y2End - y2);
+
+				float sum[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+				for (int sy = y2; sy < y2End; sy++)
+				{
+					for (int sx = x2; sx < x2End; sx++)
+					{
+						int idx = (sy * prevWidth + sx) * 4;
+						for (int c = 0; c < 4; c++)
+						{
+							sum[c] += previousData[idx + c];
+						}
+					}
+				}
+
+				int dstIdx = (y * width + x) * 4;
+				for (int c = 0; c < 4; c++)
+				{
+					currentData[dstIdx + c] = static_cast<uint8_t>(sum[c] / pixelCount);
+				}
+			}
+		}
+	}
 }
 
-void GLRasterizer::GenFramebuffers(uint32_t count, uint32_t* framebuffers)
+TextureObject* GLRasterizer::GetTextureObject(uint32_t p_textureUnit)
 {
-	for (uint32_t i = 0; i < count; i++)
+	if (p_textureUnit >= MAX_TEXTURE_UNITS)
+	{
+		std::cout << "GetTextureObject: Texture unit " << p_textureUnit << " is out of range.\n";
+		return nullptr;
+	}
+	return BoundTextureUnits[p_textureUnit];
+}
+
+void GLRasterizer::GenFramebuffers(uint32_t p_count, uint32_t* p_framebuffers)
+{
+	for (uint32_t i = 0; i < p_count; i++)
 	{
 		FrameBufferObject frameBufferObject;
 		frameBufferObject.ID = FrameBufferObjectID;
 		FrameBufferObjects[FrameBufferObjectID] = frameBufferObject;
-		framebuffers[i] = FrameBufferObjectID;
+		p_framebuffers[i] = FrameBufferObjectID;
 		FrameBufferObjectID++;
 	}
 }
 
-void GLRasterizer::BindFramebuffer(uint32_t target, uint32_t framebuffer)
+void GLRasterizer::BindFramebuffer(uint32_t p_target, uint32_t p_framebuffer)
 {
-	if (target != GLR_FRAMEBUFFER)
+	if (p_target != GLR_FRAMEBUFFER)
 	{
 		std::cout << "BindFramebuffer: only GLR_FRAMEBUFFER is supported.\n";
 		return;
 	}
-	if (framebuffer != 0 && FrameBufferObjects.find(framebuffer) == FrameBufferObjects.end())
+	if (p_framebuffer != 0 && FrameBufferObjects.find(p_framebuffer) == FrameBufferObjects.end())
 	{
-		std::cout << "Framebuffer " << framebuffer << " not found!\n";
+		std::cout << "Framebuffer " << p_framebuffer << " not found!\n";
 		return;
 	}
 
-	if (framebuffer == 0)
+	if (p_framebuffer == 0)
 	{
 		if (CurrentFrameBuffer != 0)
 		{
@@ -461,20 +532,19 @@ void GLRasterizer::BindFramebuffer(uint32_t target, uint32_t framebuffer)
 
 		ActiveDepthBuffer = DepthBuffer;
 		ActiveFrameBuffer = FrameBuffer;
-		CurrentFrameBuffer = framebuffer;
+		CurrentFrameBuffer = p_framebuffer;
 	}
 	else
 	{
-		CurrentFrameBuffer = framebuffer;
+		CurrentFrameBuffer = p_framebuffer;
 		FrameBufferObject& frameBufferObject = FrameBufferObjects[CurrentFrameBuffer];
 		ActiveDepthBuffer = frameBufferObject.DepthBuffer;
 	}
 }
 
-void GLRasterizer::FramebufferTexture2D(uint32_t target, uint32_t attachment, uint32_t textarget, uint32_t texture,
-	int level)
+void GLRasterizer::FramebufferTexture2D(uint32_t p_target, uint32_t p_attachment, uint32_t p_textarget, uint32_t p_texture, int p_level)
 {
-	if (target != GLR_FRAMEBUFFER)
+	if (p_target != GLR_FRAMEBUFFER)
 	{
 		std::cout << "FramebufferTexture2D: only GLR_FRAMEBUFFER is supported.\n";
 		return;
@@ -484,21 +554,21 @@ void GLRasterizer::FramebufferTexture2D(uint32_t target, uint32_t attachment, ui
 		std::cout << "No FBO currently bound.\n";
 		return;
 	}
-	if (texture != 0 && TextureObjects.find(texture) == TextureObjects.end())
+	if (p_texture != 0 && TextureObjects.find(p_texture) == TextureObjects.end())
 	{
-		std::cout << "Texture " << texture << " not found.\n";
+		std::cout << "Texture " << p_texture << " not found.\n";
 		return;
 	}
 	FrameBufferObject& frameBufferObject = FrameBufferObjects[CurrentFrameBuffer];
-	if (texture == 0)
+	if (p_texture == 0)
 	{
-		if (attachment == GLR_DEPTH_ATTACHMENT)
+		if (p_attachment == GLR_DEPTH_ATTACHMENT)
 		{
 			if (frameBufferObject.DepthBuffer) delete frameBufferObject.DepthBuffer;
 			frameBufferObject.DepthBuffer = nullptr;
 			frameBufferObject.AttachedTexture = nullptr;
 		}
-		else if (attachment == GLR_COLOR_ATTACHMENT)
+		else if (p_attachment == GLR_COLOR_ATTACHMENT)
 		{
 			if (frameBufferObject.ColorBuffer) delete frameBufferObject.ColorBuffer;
 			frameBufferObject.ColorBuffer = nullptr;
@@ -506,11 +576,11 @@ void GLRasterizer::FramebufferTexture2D(uint32_t target, uint32_t attachment, ui
 		}
 		return;
 	}
-	TextureObject* textureObject = TextureObjects[texture];
+	TextureObject* textureObject = TextureObjects[p_texture];
 	uint32_t w = textureObject->Width;
 	uint32_t h = textureObject->Height;
 
-	if (attachment == GLR_DEPTH_ATTACHMENT)
+	if (p_attachment == GLR_DEPTH_ATTACHMENT)
 	{
 		if (frameBufferObject.DepthBuffer) { delete frameBufferObject.DepthBuffer; frameBufferObject.DepthBuffer = nullptr; }
 		auto newDepthFB = new AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<Depth>(w, h);
@@ -519,12 +589,12 @@ void GLRasterizer::FramebufferTexture2D(uint32_t target, uint32_t attachment, ui
 	}
 }
 
-void GLRasterizer::DrawBuffer(uint32_t mode)
+void GLRasterizer::DrawBuffer(uint32_t p_mode)
 {
 	if (CurrentFrameBuffer == 0) return;
 	FrameBufferObject& frameBufferObject = FrameBufferObjects[CurrentFrameBuffer];
 
-	if (mode == GL_NONE)
+	if (p_mode == GL_NONE)
 	{
 		frameBufferObject.ColorWriteEnabled = false;
 	}
@@ -534,7 +604,7 @@ void GLRasterizer::DrawBuffer(uint32_t mode)
 	}
 }
 
-void GLRasterizer::ReadBuffer(uint32_t mode)
+void GLRasterizer::ReadBuffer(uint32_t p_mode)
 {
 	//TODO
 }
@@ -823,6 +893,12 @@ void GLRasterizer::GetInt(uint8_t p_name, int* p_params)
 	case GLR_LINE:
 	case GLR_POINT:
 		*p_params = RenderContext.PolygonMode;
+		break;
+	case GLR_VIEW_PORT:
+		p_params[0] = RenderContext.ViewPortX;
+		p_params[1] = RenderContext.ViewPortY;
+		p_params[2] = RenderContext.ViewPortWidth;
+		p_params[3] = RenderContext.ViewPortHeight;
 		break;
 	default:
 		*p_params = -1;

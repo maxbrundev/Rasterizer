@@ -31,8 +31,7 @@ AmberRenderer::Resources::Texture* AmberRenderer::Resources::Loaders::TextureLoa
 
 		if (p_generateMipmap)
 		{
-			//TODO:
-			//GenerateMipMap(GL_TEXTURE_2D);
+			GLRasterizer::GenerateMipmap(GLR_TEXTURE_2D);
 		}
 
 		GLRasterizer::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_WRAP_S, p_wrapS);
