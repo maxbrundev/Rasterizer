@@ -1515,8 +1515,8 @@ glm::vec2 ComputeNormalizedDeviceCoordinate(const glm::vec3& p_vertexScreenSpace
 
 glm::vec2 ComputeRasterSpaceCoordinate(glm::vec2 p_vertexNormalizedPosition) 
 {
-	p_vertexNormalizedPosition.x = std::round(RenderContext.ViewPortX + p_vertexNormalizedPosition.x * RenderContext.ViewPortWidth);
-	p_vertexNormalizedPosition.y = std::round(RenderContext.ViewPortY + p_vertexNormalizedPosition.y * RenderContext.ViewPortHeight);
+	p_vertexNormalizedPosition.x = RenderContext.ViewPortX + p_vertexNormalizedPosition.x * RenderContext.ViewPortWidth - 0.5f;
+	p_vertexNormalizedPosition.y = RenderContext.ViewPortY + p_vertexNormalizedPosition.y * RenderContext.ViewPortHeight - 0.5f;
 
 	return p_vertexNormalizedPosition;
 }
