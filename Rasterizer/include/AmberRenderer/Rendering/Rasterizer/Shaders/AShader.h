@@ -8,8 +8,6 @@
 #include "AmberRenderer/Rendering/Rasterizer/Shaders/EShaderUniformType.h"
 #include "AmberRenderer/Rendering/Rasterizer/Shaders/ShaderTypeTraits.h"
 
-#include "AmberRenderer/Resources/Texture.h"
-
 namespace AmberRenderer::Rendering::Rasterizer::Shaders
 {
 	struct ShaderData
@@ -114,10 +112,11 @@ namespace AmberRenderer::Rendering::Rasterizer::Shaders
 			return ShaderTypeTraits<T>::ReadFromBuffer(it->second.Data[p_vertexIndex]);
 		}
 
-		int GetTypeCount(EShaderDataType p_type) const;
-
 		glm::vec4 Texture(const std::string_view p_samplerName, const glm::vec2& p_texCoords) const;
 
+		std::unordered_map<std::string_view, ShaderVarying>& GetVaryings();
+		uint8_t GetTypeCount(EShaderDataType p_type) const;
+		
 	protected:
 		virtual glm::vec4 VertexPass(const Geometry::Vertex& p_vertex) = 0;
 		virtual Data::Color FragmentPass() = 0;
@@ -126,7 +125,6 @@ namespace AmberRenderer::Rendering::Rasterizer::Shaders
 
 	protected:
 		uint8_t m_vertexIndex = 0;
-
 		float m_interpolatedReciprocal = 1.0f;
 
 	private:

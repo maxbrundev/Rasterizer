@@ -87,10 +87,10 @@ namespace
 	std::unordered_map<uint32_t, VertexArrayObject> VertexArrayObjects;
 	std::unordered_map<uint32_t, BufferObject> BufferObjects;
 
-	uint32_t VertexArrayId = 1;
+	uint32_t VertexArrayID = 1;
 	uint32_t CurrentVertexArrayObject = 0;
 
-	uint32_t BufferId = 1;
+	uint32_t BufferID = 1;
 	uint32_t CurrentArrayBuffer = 0;
 	uint32_t CurrentElementBuffer = 0;
 
@@ -108,7 +108,7 @@ namespace
 	uint32_t TextureID = 1;
 	uint32_t CurrentTexture = 0;
 
-	const uint32_t MAX_TEXTURE_UNITS = 16;
+	constexpr uint32_t MAX_TEXTURE_UNITS = 16;
 	uint32_t CurrentActiveTextureUnit = 0;
 	TextureObject* BoundTextureUnits[MAX_TEXTURE_UNITS] = { nullptr };
 
@@ -125,12 +125,12 @@ void GLRasterizer::GenVertexArrays(uint32_t p_count, uint32_t* p_arrays)
 	for (uint32_t i = 0; i < p_count; i++) 
 	{
 		VertexArrayObject vertexArrayObject;
-		vertexArrayObject.ID = VertexArrayId;
+		vertexArrayObject.ID = VertexArrayID;
 		vertexArrayObject.BoundArrayBuffer = 0;
 		vertexArrayObject.BoundElementBuffer = 0;
-		VertexArrayObjects[VertexArrayId] = vertexArrayObject;
-		p_arrays[i] = VertexArrayId;
-		VertexArrayId++;
+		VertexArrayObjects[VertexArrayID] = vertexArrayObject;
+		p_arrays[i] = VertexArrayID;
+		VertexArrayID++;
 	}
 }
 
@@ -163,14 +163,14 @@ void GLRasterizer::GenBuffers(uint32_t p_count, uint32_t* p_buffers)
 	for (uint32_t i = 0; i < p_count; i++) 
 	{
 		BufferObject bufferObject;
-		bufferObject.ID = BufferId;
+		bufferObject.ID = BufferID;
 		bufferObject.Target = 0;
 		bufferObject.Size = 0;
 		bufferObject.Data.clear();
-		BufferObjects[BufferId] = bufferObject;
-		p_buffers[i] = BufferId;
+		BufferObjects[BufferID] = bufferObject;
+		p_buffers[i] = BufferID;
 
-		BufferId++;
+		BufferID++;
 	}
 }
 
@@ -1022,44 +1022,74 @@ void InitializeClippingFrustum()
 
 void RasterizeTriangle(uint8_t p_primitiveMode, const AmberRenderer::Geometry::Vertex& p_vertex0, const AmberRenderer::Geometry::Vertex& p_vertex1, const AmberRenderer::Geometry::Vertex& p_vertex2)
 {
-	std::array<glm::vec4, 3> processedVertices{ RenderContext.Shader->ProcessVertex(p_vertex0, 0), RenderContext.Shader->ProcessVertex(p_vertex1, 1) , RenderContext.Shader->ProcessVertex(p_vertex2, 2) };
+	std::array<glm::vec4, 3> processedVertices{
+		RenderContext.Shader->ProcessVertex(p_vertex0, 0),
+		RenderContext.Shader->ProcessVertex(p_vertex1, 1),
+		RenderContext.Shader->ProcessVertex(p_vertex2, 2)
+	};
 
 	if constexpr (CLIPPING)
 	{
-		//Temp hard coded varying treatment, will implement a query to iterate over every current program varying.
-
 		AmberRenderer::Geometry::Polygon currentPoly;
 		currentPoly.Vertices = { processedVertices[0], processedVertices[1], processedVertices[2] };
 		currentPoly.TexCoords = { p_vertex0.texCoords, p_vertex1.texCoords, p_vertex2.texCoords };
 		currentPoly.Normals = { p_vertex0.normal, p_vertex1.normal, p_vertex2.normal };
-		currentPoly.FragPos = { RenderContext.Shader->GetVaryingAs<glm::vec3>("v_FragPos", 0), RenderContext.Shader->GetVaryingAs<glm::vec3>("v_FragPos", 1), RenderContext.Shader->GetVaryingAs<glm::vec3>("v_FragPos", 2) };
-		currentPoly.FragPosLight = { RenderContext.Shader->GetVaryingAs<glm::vec4>("v_FragPosLightSpace", 0), RenderContext.Shader->GetVaryingAs<glm::vec4>("v_FragPosLightSpace", 1), RenderContext.Shader->GetVaryingAs<glm::vec4>("v_FragPosLightSpace", 2) };
 		currentPoly.VerticesCount = 3;
 
-		for (const auto& plane : ClippingFrustum)
+		auto& programVaryings = RenderContext.Shader->GetVaryings();
+
+		int totalSize = 0;
+
+		for (const auto& [name, varying] : programVaryings) 
+		{
+			totalSize += RenderContext.Shader->GetTypeCount(varying.Type);
+		}
+
+		currentPoly.VaryingsDataSize = totalSize;
+
+		int offset = 0;
+		for (auto& [name, varying] : programVaryings) 
+		{
+			uint8_t typeCount = RenderContext.Shader->GetTypeCount(varying.Type);
+
+			for (uint8_t vertIdx = 0; vertIdx < 3; vertIdx++)
+			{
+				for (uint8_t i = 0; i < typeCount; i++)
+				{
+					currentPoly.Varyings[vertIdx][offset + i] = varying.Data[vertIdx][i];
+				}
+			}
+
+			offset += typeCount;
+		}
+
+		for (const auto& plane : ClippingFrustum) 
 		{
 			ClipAgainstPlane(currentPoly, plane);
 		}
 
-		for (int i = 0; i < currentPoly.VerticesCount - 2; i++)
+		for (int i = 0; i < currentPoly.VerticesCount - 2; i++) 
 		{
-			std::array<glm::vec4, 3> clippedVertices{ currentPoly.Vertices[0], currentPoly.Vertices[i + 1], currentPoly.Vertices[i + 2] };
+			std::array<glm::vec4, 3> clippedVertices{
+				currentPoly.Vertices[0],
+				currentPoly.Vertices[i + 1],
+				currentPoly.Vertices[i + 2]
+			};
 
-			RenderContext.Shader->SetVarying<glm::vec2>("v_TexCoords", currentPoly.TexCoords[0], 0);
-			RenderContext.Shader->SetVarying<glm::vec2>("v_TexCoords", currentPoly.TexCoords[i + 1], 1);
-			RenderContext.Shader->SetVarying<glm::vec2>("v_TexCoords", currentPoly.TexCoords[i + 2], 2);
+			offset = 0;
+			for (auto& [name, varying] : programVaryings) 
+			{
+				uint8_t typeCount = RenderContext.Shader->GetTypeCount(varying.Type);
 
-			RenderContext.Shader->SetVarying<glm::vec3>("v_Normal", currentPoly.Normals[0], 0);
-			RenderContext.Shader->SetVarying<glm::vec3>("v_Normal", currentPoly.Normals[i + 1], 1);
-			RenderContext.Shader->SetVarying<glm::vec3>("v_Normal", currentPoly.Normals[i + 2], 2);
+				for (uint8_t j = 0; j < typeCount; j++) 
+				{
+					varying.Data[0][j] = currentPoly.Varyings[0][offset + j];
+					varying.Data[1][j] = currentPoly.Varyings[i + 1][offset + j];
+					varying.Data[2][j] = currentPoly.Varyings[i + 2][offset + j];
+				}
 
-			RenderContext.Shader->SetVarying<glm::vec3>("v_FragPos", currentPoly.FragPos[0], 0);
-			RenderContext.Shader->SetVarying<glm::vec3>("v_FragPos", currentPoly.FragPos[i + 1], 1);
-			RenderContext.Shader->SetVarying<glm::vec3>("v_FragPos", currentPoly.FragPos[i + 2], 2);
-
-			RenderContext.Shader->SetVarying<glm::vec4>("v_FragPosLightSpace", currentPoly.FragPosLight[0], 0);
-			RenderContext.Shader->SetVarying<glm::vec4>("v_FragPosLightSpace", currentPoly.FragPosLight[i + 1], 1);
-			RenderContext.Shader->SetVarying<glm::vec4>("v_FragPosLightSpace", currentPoly.FragPosLight[i + 2], 2);
+				offset += typeCount;
+			}
 
 			TransformAndRasterizeVertices(p_primitiveMode, clippedVertices);
 		}
@@ -1536,102 +1566,84 @@ void ClipAgainstPlane(AmberRenderer::Geometry::Polygon& p_polygon, const AmberRe
 	glm::vec4 insideVertices[AmberRenderer::Geometry::MAX_POLY_COUNT];
 	glm::vec2 insideTexCoords[AmberRenderer::Geometry::MAX_POLY_COUNT];
 	glm::vec3 insideNormals[AmberRenderer::Geometry::MAX_POLY_COUNT];
-	glm::vec3 insideFragPos[AmberRenderer::Geometry::MAX_POLY_COUNT];
-	glm::vec4 insideFragPosLight[AmberRenderer::Geometry::MAX_POLY_COUNT];
+	float insideVaryings[AmberRenderer::Geometry::MAX_POLY_COUNT][16];
+
 	uint8_t insideVerticesCount = 0;
 
-	glm::vec4 prevVertex = p_polygon.Vertices[p_polygon.VerticesCount - 1];
-	glm::vec2 prevTexCoords = p_polygon.TexCoords[p_polygon.VerticesCount - 1];
-	glm::vec3 prevNormal = p_polygon.Normals[p_polygon.VerticesCount - 1];
-	glm::vec3 prevFargPos = p_polygon.FragPos[p_polygon.VerticesCount - 1];
-	glm::vec4 prevFargPosLight = p_polygon.FragPosLight[p_polygon.VerticesCount - 1];
+	glm::vec4 previousVertex = p_polygon.Vertices[p_polygon.VerticesCount - 1];
+	glm::vec2 previousTexCoords = p_polygon.TexCoords[p_polygon.VerticesCount - 1];
+	glm::vec3 previousNormal = p_polygon.Normals[p_polygon.VerticesCount - 1];
+	float* previousVarying = p_polygon.Varyings[p_polygon.VerticesCount - 1];
 
-	float prevDotValue = glm::dot(prevVertex, plane4D);
+	float previousDotValue = glm::dot(previousVertex, plane4D);
 
 	for (int i = 0; i < p_polygon.VerticesCount; i++)
 	{
-		const glm::vec4& currVertex = p_polygon.Vertices[i];
-		const glm::vec2& currTexCoords = p_polygon.TexCoords[i];
-		const glm::vec3& currNormal = p_polygon.Normals[i];
-		const glm::vec3& currFragPos = p_polygon.FragPos[i];
-		const glm::vec4& currFragPosLight = p_polygon.FragPosLight[i];
+		float currentDotValue = glm::dot(p_polygon.Vertices[i], plane4D);
 
-		float currDotValue = glm::dot(currVertex, plane4D);
-
-		if (prevDotValue * currDotValue < 0.0f)
+		if (previousDotValue * currentDotValue < 0.0f)
 		{
-			float t = prevDotValue / (prevDotValue - currDotValue);
+			float t = previousDotValue / (previousDotValue - currentDotValue);
 
-			glm::vec4 intersectionPoint =
-			{
-				glm::lerp(prevVertex.x, currVertex.x, t),
-				glm::lerp(prevVertex.y, currVertex.y, t),
-				glm::lerp(prevVertex.z, currVertex.z, t),
-				glm::lerp(prevVertex.w, currVertex.w, t)
+			insideVertices[insideVerticesCount] = {
+				glm::lerp(previousVertex.x, p_polygon.Vertices[i].x, t),
+				glm::lerp(previousVertex.y, p_polygon.Vertices[i].y, t),
+				glm::lerp(previousVertex.z, p_polygon.Vertices[i].z, t),
+				glm::lerp(previousVertex.w, p_polygon.Vertices[i].w, t)
 			};
 
-			glm::vec2 interpolatedTexCoords =
-			{
-				glm::lerp(prevTexCoords.x, currTexCoords.x, t),
-				glm::lerp(prevTexCoords.y, currTexCoords.y, t)
+			insideTexCoords[insideVerticesCount] = {
+				glm::lerp(previousTexCoords.x, p_polygon.TexCoords[i].x, t),
+				glm::lerp(previousTexCoords.y, p_polygon.TexCoords[i].y, t)
 			};
 
-			glm::vec3 interpolatedNormals =
-			{
-				glm::lerp(prevNormal.x, currNormal.x, t),
-				glm::lerp(prevNormal.y, currNormal.y, t),
-				glm::lerp(prevNormal.z, currNormal.z, t)
+			insideNormals[insideVerticesCount] = {
+				glm::lerp(previousNormal.x, p_polygon.Normals[i].x, t),
+				glm::lerp(previousNormal.y, p_polygon.Normals[i].y, t),
+				glm::lerp(previousNormal.z, p_polygon.Normals[i].z, t)
 			};
 
-			glm::vec3 interpolatedFragPos =
+			for (int j = 0; j < p_polygon.VaryingsDataSize; j++)
 			{
-				glm::lerp(prevFargPos.x, currFragPos.x, t),
-				glm::lerp(prevFargPos.y, currFragPos.y, t),
-				glm::lerp(prevFargPos.z, currFragPos.z, t)
-			};
+				insideVaryings[insideVerticesCount][j] = glm::lerp(previousVarying[j], p_polygon.Varyings[i][j], t);
+			}
 
-			glm::vec4 interpolatedFragPosLight =
-			{
-				glm::lerp(prevFargPosLight.x, currFragPosLight.x, t),
-				glm::lerp(prevFargPosLight.y, currFragPosLight.y, t),
-				glm::lerp(prevFargPosLight.z, currFragPosLight.z, t),
-				glm::lerp(prevFargPosLight.w, currFragPosLight.w, t)
-			};
-
-			insideVertices[insideVerticesCount] = intersectionPoint;
-			insideTexCoords[insideVerticesCount] = interpolatedTexCoords;
-			insideNormals[insideVerticesCount] = interpolatedNormals;
-			insideFragPos[insideVerticesCount] = interpolatedFragPos;
-			insideFragPosLight[insideVerticesCount] = interpolatedFragPosLight;
 			insideVerticesCount++;
 		}
 
-		if (currDotValue >= 0.0f)
+		if (currentDotValue >= 0.0f)
 		{
-			insideVertices[insideVerticesCount] = currVertex;
-			insideTexCoords[insideVerticesCount] = currTexCoords;
-			insideNormals[insideVerticesCount] = currNormal;
-			insideFragPos[insideVerticesCount] = currFragPos;
-			insideFragPosLight[insideVerticesCount] = currFragPosLight;
+			insideVertices[insideVerticesCount] = p_polygon.Vertices[i];
+			insideTexCoords[insideVerticesCount] = p_polygon.TexCoords[i];
+			insideNormals[insideVerticesCount] = p_polygon.Normals[i];
+
+			for (int j = 0; j < p_polygon.VaryingsDataSize; j++)
+			{
+				insideVaryings[insideVerticesCount][j] = p_polygon.Varyings[i][j];
+			}
+
 			insideVerticesCount++;
 		}
 
-		prevVertex = currVertex;
-		prevTexCoords = currTexCoords;
-		prevNormal = currNormal;
-		prevFargPos = currFragPos;
-		prevFargPosLight = currFragPosLight;
-		prevDotValue = currDotValue;
+		previousVertex = p_polygon.Vertices[i];
+		previousTexCoords = p_polygon.TexCoords[i];
+		previousNormal = p_polygon.Normals[i];
+		previousVarying = p_polygon.Varyings[i];
+		previousDotValue = currentDotValue;
 	}
 
 	p_polygon.VerticesCount = insideVerticesCount;
+
 	for (int i = 0; i < insideVerticesCount; i++)
 	{
 		p_polygon.Vertices[i] = insideVertices[i];
 		p_polygon.TexCoords[i] = insideTexCoords[i];
 		p_polygon.Normals[i] = insideNormals[i];
-		p_polygon.FragPos[i] = insideFragPos[i];
-		p_polygon.FragPosLight[i] = insideFragPosLight[i];
+
+		for (int j = 0; j < p_polygon.VaryingsDataSize; j++)
+		{
+			p_polygon.Varyings[i][j] = insideVaryings[i][j];
+		}
 	}
 }
 
