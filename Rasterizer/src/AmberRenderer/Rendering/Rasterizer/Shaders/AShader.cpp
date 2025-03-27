@@ -3,6 +3,8 @@
 #include <glm/gtc/type_ptr.inl>
 
 #include "AmberRenderer/Rendering/Rasterizer/GLRasterizer.h"
+#include "AmberRenderer/Resources/Settings/ETextureFilteringMode.h"
+#include "AmberRenderer/Resources/Settings/ETextureWrapMode.h"
 
 void AmberRenderer::Rendering::Rasterizer::Shaders::AShader::Bind()
 {

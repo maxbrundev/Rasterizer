@@ -4,7 +4,6 @@
 
 #include "AmberRenderer/Core/Context.h"
 
-#include "AmberRenderer/Rendering/Rasterizer/Buffers/FrameBuffer.h"
 #include "AmberRenderer/Rendering/Rasterizer/Shaders/ShadowMappingDepth.h"
 
 namespace AmberRenderer::Core

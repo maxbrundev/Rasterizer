@@ -2,10 +2,13 @@
 
 #include <cstdint>
 
-#include "AmberRenderer/Rendering/Rasterizer/Buffers/FrameBuffer.h"
 #include "AmberRenderer/Rendering/Rasterizer/Shaders/AShader.h"
+#include "AmberRenderer/Data/Color.h"
 
 constexpr bool CLIPPING = true;
+
+typedef AmberRenderer::Data::Color RGBA8;
+typedef float Depth;
 
 // -----------------------------------------------------------------------------
 // PRIMITIVE TYPES
@@ -158,10 +161,6 @@ namespace GLRasterizer
 	void GetBool(uint8_t p_name, bool* p_params);
 	void GetInt(uint8_t p_name, int* p_params);
 
-	AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<RGBA8>* GetFrameBuffer();
-	AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<Depth>* GetDepthBuffer();
-	uint32_t* GetFrameBufferDate();
-	void SetActiveBuffers(AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<RGBA8>* p_color, AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<Depth>* p_depth);
 	void GenVertexArrays(uint32_t p_count, uint32_t* p_arrays);
 	void DeleteVertexArrays(uint32_t p_count, const uint32_t* p_arrays);
 	void BindVertexArray(uint32_t p_array);
@@ -185,4 +184,6 @@ namespace GLRasterizer
 	void FramebufferTexture2D(uint32_t p_target, uint32_t p_attachment, uint32_t p_textarget, uint32_t p_texture, int p_level);
 	void DrawBuffer(uint32_t p_mode);
 	void ReadBuffer(uint32_t p_mode);
+	uint32_t* GetFrameBufferData();
+	uint32_t GetFrameBufferRowSize();
 }

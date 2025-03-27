@@ -1,15 +1,18 @@
 #include "AmberRenderer/Rendering/Rasterizer/GLRasterizer.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
+#include <algorithm>
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/compatibility.hpp>
 
-#include "AmberRenderer/Rendering/Rasterizer/Buffers/FrameBuffer.h"
 #include "AmberRenderer/Rendering/Rasterizer/Buffers/MSAABuffer.h"
 #include "AmberRenderer/Geometry/Plane.h"
 #include "AmberRenderer/Geometry/Polygon.h"
 #include "AmberRenderer/Geometry/Triangle.h"
+
+typedef AmberRenderer::Data::Color RGBA8;
+typedef float Depth;
 
 void InitializeClippingFrustum();
 
@@ -36,6 +39,38 @@ glm::vec2 ComputeRasterSpaceCoordinate(glm::vec2 p_vertexNormalizedPosition);
 void ClipAgainstPlane(AmberRenderer::Geometry::Polygon& p_polygon, const AmberRenderer::Geometry::Plane& p_plane);
 void ApplyMSAA();
 
+//TODO: encapsulate in utils.
+inline void SSEClear(uint32_t* p_data, size_t p_size, uint32_t p_value)
+{
+	__m128i fillValue = _mm_set1_epi32(static_cast<int>(p_value));
+
+	size_t blockCount = p_size / 4;
+
+	for (size_t i = 0; i < blockCount; ++i)
+	{
+		_mm_storeu_si128(reinterpret_cast<__m128i*>(p_data + i * 4), fillValue);
+	}
+
+	for (size_t i = blockCount * 4; i < p_size; ++i)
+	{
+		p_data[i] = p_value;
+	}
+}
+
+static uint32_t floatToUint32(float p_value)
+{
+	uint32_t bits;
+	std::memcpy(&bits, &p_value, sizeof(float));
+	return bits;
+}
+
+static float uint32ToFloat(uint32_t p_bits)
+{
+	float value;
+	std::memcpy(&value, &p_bits, sizeof(float));
+	return value;
+}
+
 namespace
 {
 	struct RenderContext
@@ -44,10 +79,10 @@ namespace
 		uint16_t ViewPortY = 0;
 		uint16_t ViewPortWidth = 0;
 		uint16_t ViewPortHeight = 0;
-		uint8_t State           = 0;
-		uint8_t PolygonMode     = GLR_FILL;
-		uint8_t CullFace        = GLR_BACK;
-		uint8_t Samples         = 0;
+		uint8_t State = 0;
+		uint8_t PolygonMode = GLR_FILL;
+		uint8_t CullFace = GLR_BACK;
+		uint8_t Samples = 0;
 		AmberRenderer::Rendering::Rasterizer::Shaders::AShader* Shader = nullptr;
 	};
 
@@ -66,20 +101,170 @@ namespace
 		std::vector<uint8_t> Data;
 	};
 
-	//TODO: Rework FrameBuffer class to a wrapper, move to FrameBufferObject.
+	//TODO: Implement render buffer
+	template<typename T>
+	struct FrameBufferObjectData
+	{
+		static_assert(std::is_same_v<T, RGBA8> || std::is_same_v<T, Depth>, "FrameBuffer only supports RGBA8 (Color) or Depth (float).");
+
+		uint32_t Width;
+		uint32_t Height;
+		uint32_t Size;
+		uint32_t RowSize;
+		uint32_t SizeInByte;
+		uint32_t* Data;
+		uint32_t ClearColor;
+
+		FrameBufferObjectData(uint32_t p_width, uint32_t p_height) :
+			Width(p_width),
+			Height(p_height),
+			Size(Width* Height),
+			RowSize(Width * sizeof(uint32_t)),
+			SizeInByte(Size * sizeof(uint32_t)),
+			Data(new uint32_t[Size]), ClearColor(0)
+		{
+		}
+
+		~FrameBufferObjectData()
+		{
+			delete[] Data;
+			Data = nullptr;
+		}
+
+		void SetColor(float p_red, float p_green, float p_blue, float p_alpha)
+		{
+			uint8_t r = static_cast<uint8_t>(std::round(std::clamp(p_red, 0.0f, 1.0f) * 255.0f));
+			uint8_t g = static_cast<uint8_t>(std::round(std::clamp(p_green, 0.0f, 1.0f) * 255.0f));
+			uint8_t b = static_cast<uint8_t>(std::round(std::clamp(p_blue, 0.0f, 1.0f) * 255.0f));
+			uint8_t a = static_cast<uint8_t>(std::round(std::clamp(p_alpha, 0.0f, 1.0f) * 255.0f));
+
+			ClearColor = (r << 24) | (g << 16) | (b << 8) | a;
+		}
+
+		void Clear() const
+		{
+			if constexpr (std::is_same<T, RGBA8>::value)
+			{
+				SSEClear(Data, Size, ClearColor);
+			}
+			else if constexpr (std::is_same<T, Depth>::value)
+			{
+				uint32_t depthVal = floatToUint32(std::numeric_limits<float>::max());
+				SSEClear(Data, Size, depthVal);
+			}
+		}
+
+		void Resize(uint32_t p_width, uint32_t p_height)
+		{
+			if (Width == p_width && Height == p_height)
+				return;
+
+			delete[] Data;
+
+			Width = p_width;
+			Height = p_height;
+			Size = Width * Height;
+			RowSize = Width * sizeof(uint32_t);
+
+			Data = new uint32_t[Size];
+			Clear();
+		}
+
+		void SetPixel(int p_x, int p_y, const T& p_value) const
+		{
+			if constexpr (std::is_same<T, RGBA8>::value)
+			{
+				Data[p_y * Width + p_x] = p_value.Pack();
+			}
+			else if constexpr (std::is_same<T, Depth>::value)
+			{
+				Data[p_y * Width + p_x] = floatToUint32(p_value);
+			}
+		}
+
+		T GetPixel(uint32_t p_x, uint32_t p_y) const
+		{
+			if constexpr (std::is_same<T, RGBA8>::value)
+			{
+				return Data[p_y * Width + p_x];
+			}
+			else if constexpr (std::is_same<T, Depth>::value)
+			{
+				return uint32ToFloat(Data[p_y * Width + p_x]);
+			}
+
+			return T{};
+		}
+
+		void UpdateTexture(TextureObject* p_texture) const
+		{
+			if (!p_texture)
+				return;
+
+			uint32_t bytes = Size * 4;
+			uint8_t* textureData = new uint8_t[bytes];
+
+			if constexpr (std::is_same<T, Depth>::value)
+			{
+				for (uint32_t y = 0; y < Height; y++)
+				{
+					for (uint32_t x = 0; x < Width; x++)
+					{
+						uint32_t flippedY = Height - 1 - y;
+						uint32_t index = flippedY * Width + x;
+
+						float depth = uint32ToFloat(Data[y * Width + x]);
+						depth = std::clamp(depth, 0.0f, 1.0f);
+						uint8_t d = static_cast<uint8_t>(depth * 255.0f);
+
+						textureData[index * 4 + 0] = d;
+						textureData[index * 4 + 1] = 0;
+						textureData[index * 4 + 2] = 0;
+						textureData[index * 4 + 3] = 255;
+					}
+				}
+			}
+			if constexpr (std::is_same<T, RGBA8>::value)
+			{
+				for (uint32_t y = 0; y < Height; y++)
+				{
+					for (uint32_t x = 0; x < Width; x++)
+					{
+						uint32_t flippedY = Height - 1 - y;
+						uint32_t index = flippedY * Width + x;
+
+						AmberRenderer::Data::Color color(Data[y * Width + x]);
+
+						textureData[index * 4 + 0] = color.r;
+						textureData[index * 4 + 1] = color.g;
+						textureData[index * 4 + 2] = color.b;
+						textureData[index * 4 + 3] = color.a;
+					}
+				}
+			}
+
+			std::memcpy(p_texture->Data8, textureData, bytes);
+			delete[] textureData;
+		}
+	};
+
 	struct FrameBufferObject
 	{
 		uint32_t ID = 0;
-		AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<RGBA8>* ColorBuffer = nullptr;
-		AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<Depth>* DepthBuffer = nullptr;
+		FrameBufferObjectData<RGBA8>* ColorBuffer = nullptr;
+		FrameBufferObjectData<Depth>* DepthBuffer = nullptr;
 		bool ColorWriteEnabled = true;
 		TextureObject* AttachedTexture = nullptr;
+
+		~FrameBufferObject()
+		{
+			delete ColorBuffer;
+			delete DepthBuffer;
+		}
 	};
 
 	RenderContext RenderContext;
 
-	AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<RGBA8>* FrameBuffer = nullptr;
-	AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<Depth>* DepthBuffer   = nullptr;
 	AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer* MSAABuffer            = nullptr;
 
 	std::array<AmberRenderer::Geometry::Plane, 6> ClippingFrustum;
@@ -112,8 +297,10 @@ namespace
 	uint32_t CurrentActiveTextureUnit = 0;
 	TextureObject* BoundTextureUnits[MAX_TEXTURE_UNITS] = { nullptr };
 
-	AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<RGBA8>* ActiveFrameBuffer = nullptr;
-	AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<float>* ActiveDepthBuffer = nullptr;
+	FrameBufferObjectData<RGBA8>* FrameBuffer = nullptr;
+	FrameBufferObjectData<Depth>* DepthBuffer = nullptr;
+	FrameBufferObjectData<RGBA8>* ActiveFrameBuffer = nullptr;
+	FrameBufferObjectData<Depth>* ActiveDepthBuffer = nullptr;
 
 	std::unordered_map<uint32_t, FrameBufferObject> FrameBufferObjects;
 	uint32_t FrameBufferObjectID = 1;
@@ -494,6 +681,7 @@ void GLRasterizer::BindFramebuffer(uint32_t p_target, uint32_t p_framebuffer)
 		std::cout << "BindFramebuffer: only GLR_FRAMEBUFFER is supported.\n";
 		return;
 	}
+
 	if (p_framebuffer != 0 && FrameBufferObjects.find(p_framebuffer) == FrameBufferObjects.end())
 	{
 		std::cout << "Framebuffer " << p_framebuffer << " not found!\n";
@@ -506,39 +694,24 @@ void GLRasterizer::BindFramebuffer(uint32_t p_target, uint32_t p_framebuffer)
 		{
 			FrameBufferObject& frameBufferObject = FrameBufferObjects[CurrentFrameBuffer];
 
-			if (frameBufferObject.AttachedTexture != nullptr)
+			if (frameBufferObject.DepthBuffer && frameBufferObject.AttachedTexture)
 			{
-				uint32_t bytes = frameBufferObject.DepthBuffer->m_size * 4;
-
-				for (uint32_t y = 0; y < frameBufferObject.DepthBuffer->m_height; y++)
-				{
-					for (uint32_t x = 0; x < frameBufferObject.DepthBuffer->m_width; x++)
-					{
-						uint32_t flippedY = frameBufferObject.DepthBuffer->m_height - 1 - y;
-						uint32_t index = flippedY * frameBufferObject.DepthBuffer->m_width + x;
-
-						float depth = AmberRenderer::Rendering::Rasterizer::Buffers::uint32ToFloat(frameBufferObject.DepthBuffer->m_data[y * frameBufferObject.DepthBuffer->m_width + x]);
-						depth = std::clamp(depth, 0.0f, 1.0f);
-						uint8_t d = static_cast<uint8_t>(depth * 255.0f);
-
-						frameBufferObject.AttachedTexture->Data8[index * 4 + 0] = d;
-						frameBufferObject.AttachedTexture->Data8[index * 4 + 1] = 0;
-						frameBufferObject.AttachedTexture->Data8[index * 4 + 2] = 0;
-						frameBufferObject.AttachedTexture->Data8[index * 4 + 3] = 255;
-					}
-				}
+				//TODO: not the good place to update the attached texture
+				frameBufferObject.DepthBuffer->UpdateTexture(frameBufferObject.AttachedTexture);
 			}
 		}
 
 		ActiveDepthBuffer = DepthBuffer;
 		ActiveFrameBuffer = FrameBuffer;
-		CurrentFrameBuffer = p_framebuffer;
+		CurrentFrameBuffer = 0;
 	}
 	else
 	{
 		CurrentFrameBuffer = p_framebuffer;
 		FrameBufferObject& frameBufferObject = FrameBufferObjects[CurrentFrameBuffer];
+
 		ActiveDepthBuffer = frameBufferObject.DepthBuffer;
+		ActiveFrameBuffer = frameBufferObject.ColorWriteEnabled ? frameBufferObject.ColorBuffer : nullptr;
 	}
 }
 
@@ -549,49 +722,61 @@ void GLRasterizer::FramebufferTexture2D(uint32_t p_target, uint32_t p_attachment
 		std::cout << "FramebufferTexture2D: only GLR_FRAMEBUFFER is supported.\n";
 		return;
 	}
+
 	if (CurrentFrameBuffer == 0)
 	{
 		std::cout << "No FBO currently bound.\n";
 		return;
 	}
+
 	if (p_texture != 0 && TextureObjects.find(p_texture) == TextureObjects.end())
 	{
 		std::cout << "Texture " << p_texture << " not found.\n";
 		return;
 	}
+
 	FrameBufferObject& frameBufferObject = FrameBufferObjects[CurrentFrameBuffer];
+
 	if (p_texture == 0)
 	{
 		if (p_attachment == GLR_DEPTH_ATTACHMENT)
 		{
-			if (frameBufferObject.DepthBuffer) delete frameBufferObject.DepthBuffer;
+			delete frameBufferObject.DepthBuffer;
 			frameBufferObject.DepthBuffer = nullptr;
-			frameBufferObject.AttachedTexture = nullptr;
+			
+			if (frameBufferObject.AttachedTexture && p_attachment == GLR_DEPTH_ATTACHMENT)
+				frameBufferObject.AttachedTexture = nullptr;
 		}
 		else if (p_attachment == GLR_COLOR_ATTACHMENT)
 		{
-			if (frameBufferObject.ColorBuffer) delete frameBufferObject.ColorBuffer;
+			delete frameBufferObject.ColorBuffer;
 			frameBufferObject.ColorBuffer = nullptr;
-			frameBufferObject.AttachedTexture = nullptr;
 		}
 		return;
 	}
-	TextureObject* textureObject = TextureObjects[p_texture];
-	uint32_t w = textureObject->Width;
-	uint32_t h = textureObject->Height;
 
+	TextureObject* textureObject = TextureObjects[p_texture];
+	
 	if (p_attachment == GLR_DEPTH_ATTACHMENT)
 	{
-		if (frameBufferObject.DepthBuffer) { delete frameBufferObject.DepthBuffer; frameBufferObject.DepthBuffer = nullptr; }
-		auto newDepthFB = new AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<Depth>(w, h);
-		frameBufferObject.DepthBuffer = newDepthFB;
+		delete frameBufferObject.DepthBuffer;
+
+		frameBufferObject.DepthBuffer = new FrameBufferObjectData<Depth>(textureObject->Width, textureObject->Height);
 		frameBufferObject.AttachedTexture = textureObject;
+	}
+	else if (p_attachment == GLR_COLOR_ATTACHMENT)
+	{
+		delete frameBufferObject.ColorBuffer;
+
+		frameBufferObject.ColorBuffer = new FrameBufferObjectData<RGBA8>(textureObject->Width, textureObject->Height);
 	}
 }
 
 void GLRasterizer::DrawBuffer(uint32_t p_mode)
 {
-	if (CurrentFrameBuffer == 0) return;
+	if (CurrentFrameBuffer == 0)
+		return;
+
 	FrameBufferObject& frameBufferObject = FrameBufferObjects[CurrentFrameBuffer];
 
 	if (p_mode == GL_NONE)
@@ -609,32 +794,42 @@ void GLRasterizer::ReadBuffer(uint32_t p_mode)
 	//TODO
 }
 
+uint32_t* GLRasterizer::GetFrameBufferData()
+{
+	return ActiveFrameBuffer->Data;
+}
+
+uint32_t GLRasterizer::GetFrameBufferRowSize()
+{
+	return ActiveFrameBuffer->RowSize;
+}
+
 void GLRasterizer::Initialize(uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight)
 {
 	RenderContext.ViewPortWidth = p_rasterizationBufferWidth;
 	RenderContext.ViewPortHeight = p_rasterizationBufferHeight;
 
-	FrameBuffer = new AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<RGBA8>(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
-	DepthBuffer = new AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<Depth>(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
-	MSAABuffer  = new AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
+	FrameBuffer = new FrameBufferObjectData<RGBA8>(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
+	DepthBuffer = new FrameBufferObjectData<Depth>(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
 
-	ActiveDepthBuffer = DepthBuffer;
 	ActiveFrameBuffer = FrameBuffer;
+	ActiveDepthBuffer = DepthBuffer;
+
+	MSAABuffer = new AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
+
 	InitializeClippingFrustum();
 }
 
 void GLRasterizer::DrawElements(uint8_t p_primitiveMode, uint32_t p_indexCount)
 {
-	//TODO: Clean, dirty test
-	AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<RGBA8>* oldColor = ActiveFrameBuffer;
-	AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<float>* oldDepth = ActiveDepthBuffer;
-	bool restore = false;
+	FrameBufferObjectData<RGBA8>* originalColorBuffer = ActiveFrameBuffer;
+	FrameBufferObjectData<Depth>* originalDepthBuffer = ActiveDepthBuffer;
+
 	if (CurrentFrameBuffer != 0)
 	{
-		FrameBufferObject& frameBufferObject = FrameBufferObjects[CurrentFrameBuffer];
-		if (frameBufferObject.ColorBuffer && frameBufferObject.ColorWriteEnabled) ActiveFrameBuffer = frameBufferObject.ColorBuffer; else ActiveFrameBuffer = nullptr;
-		if (frameBufferObject.DepthBuffer) ActiveDepthBuffer = frameBufferObject.DepthBuffer;
-		restore = true;
+		FrameBufferObject& fbo = FrameBufferObjects[CurrentFrameBuffer];
+		ActiveDepthBuffer = fbo.DepthBuffer;
+		ActiveFrameBuffer = fbo.ColorWriteEnabled ? fbo.ColorBuffer : nullptr;
 	}
 	else
 	{
@@ -643,90 +838,58 @@ void GLRasterizer::DrawElements(uint8_t p_primitiveMode, uint32_t p_indexCount)
 	}
 
 	VertexArrayObject* vao = GetBoundVertexArrayObject();
-	if (!vao)
+	if (!vao || vao->BoundElementBuffer == 0 || vao->BoundArrayBuffer == 0)
 	{
-		std::cout << "No VAO bound!\n";
-		if (restore)
-		{
-			ActiveFrameBuffer = oldColor;
-			ActiveDepthBuffer = oldDepth;
-		}
-		return;
-	}
-	if (vao->BoundElementBuffer == 0)
-	{
-		std::cout << "No index buffer bound in VAO!\n";
-		if (restore)
-		{
-			ActiveFrameBuffer = oldColor;
-			ActiveDepthBuffer = oldDepth;
-		}
-		return;
-	}
-	if (vao->BoundArrayBuffer == 0)
-	{
-		std::cout << "No vertex buffer bound in VAO!\n";
-		if (restore)
-		{
-			ActiveFrameBuffer = oldColor;
-			ActiveDepthBuffer = oldDepth;
-		}
+		std::cout << "Invalid VAO or buffers for drawing!\n";
+
+		ActiveFrameBuffer = originalColorBuffer;
+		ActiveDepthBuffer = originalDepthBuffer;
 		return;
 	}
 
 	auto itIndex = BufferObjects.find(vao->BoundElementBuffer);
-	if (itIndex == BufferObjects.end())
-	{
-		std::cout << "Index buffer not found!\n";
-		if (restore)
-		{
-			ActiveFrameBuffer = oldColor;
-			ActiveDepthBuffer = oldDepth;
-		}
-		return;
-	}
 	auto itVertex = BufferObjects.find(vao->BoundArrayBuffer);
-	if (itVertex == BufferObjects.end())
+	if (itIndex == BufferObjects.end() || itVertex == BufferObjects.end())
 	{
-		std::cout << "Vertex buffer not found!\n";
-		if (restore)
-		{
-			ActiveFrameBuffer = oldColor;
-			ActiveDepthBuffer = oldDepth;
-		}
+		std::cout << "Buffers not found!\n";
+		
+		ActiveFrameBuffer = originalColorBuffer;
+		ActiveDepthBuffer = originalDepthBuffer;
 		return;
 	}
 
+	
 	BufferObject& indexBufferObject = itIndex->second;
 	BufferObject& vertexBuffer = itVertex->second;
 	AmberRenderer::Geometry::Vertex* vertices = reinterpret_cast<AmberRenderer::Geometry::Vertex*>(vertexBuffer.Data.data());
 	uint32_t* indices = reinterpret_cast<uint32_t*>(indexBufferObject.Data.data());
+
+	
 	size_t availableIndices = indexBufferObject.Size / sizeof(uint32_t);
 	uint32_t actualCount = std::min(p_indexCount, static_cast<uint32_t>(availableIndices));
 	for (size_t i = 0; i + 2 < actualCount; i += 3)
 	{
 		RasterizeTriangle(p_primitiveMode, vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
 	}
-	if (RenderContext.State & GLR_MULTISAMPLE && ActiveFrameBuffer != nullptr) ApplyMSAA();
 
-	if (restore)
-	{
-		ActiveFrameBuffer = oldColor;
-		ActiveDepthBuffer = oldDepth;
-	}
+	
+	if (RenderContext.State & GLR_MULTISAMPLE && ActiveFrameBuffer != nullptr)
+		ApplyMSAA();
+
+	ActiveFrameBuffer = originalColorBuffer;
+	ActiveDepthBuffer = originalDepthBuffer;
 }
 
 void GLRasterizer::DrawArrays(uint8_t p_primitiveMode, uint32_t p_first, uint32_t p_count)
 {
-	AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<RGBA8>* oldColor = ActiveFrameBuffer;
-	AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<float>* oldDepth = ActiveDepthBuffer;
-	bool restore = false;
+	FrameBufferObjectData<RGBA8>* originalColorBuffer = ActiveFrameBuffer;
+	FrameBufferObjectData<Depth>* originalDepthBuffer = ActiveDepthBuffer;
+
 	if (CurrentFrameBuffer != 0)
 	{
-		FrameBufferObject& frameBufferObject = FrameBufferObjects[CurrentFrameBuffer];
-		if (frameBufferObject.ColorBuffer && frameBufferObject.ColorWriteEnabled) ActiveFrameBuffer = frameBufferObject.ColorBuffer; else ActiveFrameBuffer = nullptr;
-		if (frameBufferObject.DepthBuffer) ActiveDepthBuffer = frameBufferObject.DepthBuffer;
-		restore = true;
+		FrameBufferObject& fbo = FrameBufferObjects[CurrentFrameBuffer];
+		ActiveDepthBuffer = fbo.DepthBuffer;
+		ActiveFrameBuffer = fbo.ColorWriteEnabled ? fbo.ColorBuffer : nullptr;
 	}
 	else
 	{
@@ -735,36 +898,23 @@ void GLRasterizer::DrawArrays(uint8_t p_primitiveMode, uint32_t p_first, uint32_
 	}
 
 	VertexArrayObject* vao = GetBoundVertexArrayObject();
-	if (!vao)
+	if (!vao || vao->BoundArrayBuffer == 0)
 	{
-		std::cout << "No VAO bound!\n";
-		if (restore)
-		{
-			ActiveFrameBuffer = oldColor;
-			ActiveDepthBuffer = oldDepth;
-		}
-		return;
-	}
-	if (vao->BoundArrayBuffer == 0)
-	{
-		std::cout << "No vertex buffer bound in VAO!\n";
-		if (restore)
-		{
-			ActiveFrameBuffer = oldColor;
-			ActiveDepthBuffer = oldDepth;
-		}
+		std::cout << "Invalid VAO or buffers for drawing!\n";
+
+		ActiveFrameBuffer = originalColorBuffer;
+		ActiveDepthBuffer = originalDepthBuffer;
 		return;
 	}
 
+	
 	auto itVertex = BufferObjects.find(vao->BoundArrayBuffer);
 	if (itVertex == BufferObjects.end())
 	{
 		std::cout << "Vertex buffer not found!\n";
-		if (restore)
-		{
-			ActiveFrameBuffer = oldColor;
-			ActiveDepthBuffer = oldDepth;
-		}
+
+		ActiveFrameBuffer = originalColorBuffer;
+		ActiveDepthBuffer = originalDepthBuffer;
 		return;
 	}
 
@@ -792,12 +942,12 @@ void GLRasterizer::DrawArrays(uint8_t p_primitiveMode, uint32_t p_first, uint32_
 			RasterizeTriangle(p_primitiveMode, vertices[i], vertices[i + 1], vertices[i + 2]);
 		}
 	}
-	if (RenderContext.State & GLR_MULTISAMPLE && ActiveFrameBuffer != nullptr) ApplyMSAA();
-	if (restore)
-	{
-		ActiveFrameBuffer = oldColor;
-		ActiveDepthBuffer = oldDepth;
-	}
+
+	if (RenderContext.State & GLR_MULTISAMPLE && ActiveFrameBuffer != nullptr)
+		ApplyMSAA();
+
+	ActiveFrameBuffer = originalColorBuffer;
+	ActiveDepthBuffer = originalDepthBuffer;
 }
 
 void GLRasterizer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const AmberRenderer::Data::Color& p_color)
@@ -908,14 +1058,66 @@ void GLRasterizer::GetInt(uint8_t p_name, int* p_params)
 
 void GLRasterizer::Terminate()
 {
+	for (auto& [id, texture] : TextureObjects)
+	{
+		if (texture)
+		{
+			if (texture->Mipmaps)
+			{
+				int maxLevel = 1 + static_cast<int>(std::floor(std::log2(std::max(texture->Width, texture->Height))));
+
+				for (int i = 0; i < maxLevel; i++)
+				{
+					delete[] texture->Mipmaps[i];
+					texture->Mipmaps[i] = nullptr;
+				}
+
+				delete[] texture->Mipmaps;
+				texture->Mipmaps = nullptr;
+			}
+
+			delete[] texture->Data8;
+			texture->Data8 = nullptr;
+
+			delete texture;
+			texture = nullptr;
+		}
+	}
+
+	TextureObjects.clear();
+
+	FrameBufferObjects.clear();
+
+	BufferObjects.clear();
+
+	VertexArrayObjects.clear();
+
+	CurrentVertexArrayObject = 0;
+	CurrentArrayBuffer = 0;
+	CurrentElementBuffer = 0;
+	CurrentTexture = 0;
+	CurrentFrameBuffer = 0;
+
+	VertexArrayID = 1;
+	BufferID = 1;
+	TextureID = 1;
+	FrameBufferObjectID = 1;
+
 	delete FrameBuffer;
 	FrameBuffer = nullptr;
+	ActiveFrameBuffer = nullptr;
+
+	delete DepthBuffer;
+	DepthBuffer = nullptr;
+	ActiveDepthBuffer = nullptr;
 
 	delete MSAABuffer;
 	MSAABuffer = nullptr;
 
-	delete ActiveDepthBuffer;
-	ActiveDepthBuffer = nullptr;
+	for (uint32_t i = 0; i < MAX_TEXTURE_UNITS; i++)
+	{
+		BoundTextureUnits[i] = nullptr;
+	}
 }
 
 void GLRasterizer::WindowHint(uint8_t p_name, uint8_t p_value)
@@ -961,27 +1163,6 @@ void GLRasterizer::Viewport(uint16_t p_x, uint16_t p_y, uint16_t p_width, uint16
 	RenderContext.ViewPortY = p_y;
 	RenderContext.ViewPortWidth = p_width;
 	RenderContext.ViewPortHeight = p_height;
-}
-
-AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<RGBA8>* GLRasterizer::GetFrameBuffer()
-{
-	return FrameBuffer;
-}
-
-AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<Depth>* GLRasterizer::GetDepthBuffer()
-{
-	return DepthBuffer;
-}
-
-uint32_t* GLRasterizer::GetFrameBufferDate()
-{
-	return ActiveFrameBuffer->GetData();
-}
-
-void GLRasterizer::SetActiveBuffers(AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<RGBA8>* p_color, AmberRenderer::Rendering::Rasterizer::Buffers::FrameBuffer<Depth>* p_depth)
-{
-	ActiveFrameBuffer = p_color;
-	ActiveDepthBuffer = p_depth;
 }
 
 void InitializeClippingFrustum()
@@ -1167,8 +1348,8 @@ void ComputeFragments(const AmberRenderer::Geometry::Triangle& p_triangle, const
 {
 	int xMin = std::max(p_triangle.BoundingBox2D.Min.x, 0);
 	int yMin = std::max(p_triangle.BoundingBox2D.Min.y, 0);
-	int xMax = std::min(p_triangle.BoundingBox2D.Max.x, static_cast<int32_t>(ActiveFrameBuffer ? ActiveFrameBuffer->GetWidth() : ActiveDepthBuffer->GetWidth()));
-	int yMax = std::min(p_triangle.BoundingBox2D.Max.y, static_cast<int32_t>(ActiveFrameBuffer ? ActiveFrameBuffer->GetHeight() : ActiveDepthBuffer->GetHeight()));
+	int xMax = std::min(p_triangle.BoundingBox2D.Max.x, static_cast<int32_t>(ActiveFrameBuffer ? ActiveFrameBuffer->Width : ActiveDepthBuffer->Width));
+	int yMax = std::min(p_triangle.BoundingBox2D.Max.y, static_cast<int32_t>(ActiveFrameBuffer ? ActiveFrameBuffer->Height : ActiveDepthBuffer->Height));
 
 	if (xMax <= xMin || yMax <= yMin)
 		return;
@@ -1286,8 +1467,8 @@ void RasterizeLine(const AmberRenderer::Geometry::Triangle& p_triangle, const st
 	int sy = y0 < y1 ? 1 : -1;
 	int err = dx - dy;
 
-	int width = static_cast<int>(ActiveFrameBuffer ? ActiveFrameBuffer->GetWidth() : ActiveDepthBuffer->GetWidth());
-	int height = static_cast<int>(ActiveFrameBuffer ? ActiveFrameBuffer->GetHeight() : ActiveDepthBuffer->GetHeight());
+	int width = static_cast<int>(ActiveFrameBuffer ? ActiveFrameBuffer->Width : ActiveDepthBuffer->Width);
+	int height = static_cast<int>(ActiveFrameBuffer ? ActiveFrameBuffer->Height : ActiveDepthBuffer->Height);
 
 
 	float totalDistance = sqrt(dx * dx + dy * dy);
@@ -1352,8 +1533,8 @@ void RasterizeLine(const glm::vec4& p_start, const glm::vec4& p_end, const Amber
 	int sy = y0 < y1 ? 1 : -1;
 	int err = dx - dy;
 
-	int width = static_cast<int>(ActiveFrameBuffer ? ActiveFrameBuffer->GetWidth() : ActiveDepthBuffer->GetWidth());
-	int height = static_cast<int>(ActiveFrameBuffer ? ActiveFrameBuffer->GetHeight() : ActiveDepthBuffer->GetHeight());
+	int width = static_cast<int>(ActiveFrameBuffer ? ActiveFrameBuffer->Width : ActiveDepthBuffer->Width);
+	int height = static_cast<int>(ActiveFrameBuffer ? ActiveFrameBuffer->Height : ActiveDepthBuffer->Height);
 
 
 	float totalDistance = sqrt(dx * dx + dy * dy);
@@ -1407,8 +1588,8 @@ void RasterizeTrianglePoints(const AmberRenderer::Geometry::Triangle& p_triangle
 
 void DrawPoint(const AmberRenderer::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, const glm::vec4& p_point)
 {
-	int width = static_cast<int>(ActiveFrameBuffer ? ActiveFrameBuffer->GetWidth() : ActiveDepthBuffer->GetWidth());
-	int height = static_cast<int>(ActiveFrameBuffer ? ActiveFrameBuffer->GetHeight() : ActiveDepthBuffer->GetHeight());
+	int width = static_cast<int>(ActiveFrameBuffer ? ActiveFrameBuffer->Width : ActiveDepthBuffer->Width);
+	int height = static_cast<int>(ActiveFrameBuffer ? ActiveFrameBuffer->Height : ActiveDepthBuffer->Height);
 
 
 	if (p_point.x >= 0 && p_point.x < width && p_point.y >= 0 && p_point.y < height)
@@ -1447,8 +1628,8 @@ void DrawPoint(const glm::vec2& p_point, const AmberRenderer::Data::Color& p_col
 	if (!ActiveFrameBuffer)
 		return;
 
-	int width = static_cast<int>(ActiveFrameBuffer->GetWidth());
-	int height = static_cast<int>(ActiveFrameBuffer->GetHeight());
+	int width = static_cast<int>(ActiveFrameBuffer->Width);
+	int height = static_cast<int>(ActiveFrameBuffer->Height);
 
 	if (p_point.x >= 0 && p_point.x < width && p_point.y >= 0 && p_point.y < height)
 	{
@@ -1482,8 +1663,8 @@ void RasterizeLine(const AmberRenderer::Geometry::Vertex& p_vertex0, const Amber
 	int sy = y0 < y1 ? 1 : -1;
 	int err = dx - dy;
 
-	int width = static_cast<int>(ActiveFrameBuffer ? ActiveFrameBuffer->GetWidth() : ActiveDepthBuffer->GetWidth());
-	int height = static_cast<int>(ActiveFrameBuffer ? ActiveFrameBuffer->GetHeight() : ActiveDepthBuffer->GetHeight());
+	int width = static_cast<int>(ActiveFrameBuffer ? ActiveFrameBuffer->Width : ActiveDepthBuffer->Width);
+	int height = static_cast<int>(ActiveFrameBuffer ? ActiveFrameBuffer->Height : ActiveDepthBuffer->Height);
 
 
 	float totalDistance = sqrt(dx * dx + dy * dy);
@@ -1652,8 +1833,8 @@ void ApplyMSAA()
 	if (!ActiveFrameBuffer)
 		return;
 
-	const uint32_t width = ActiveFrameBuffer->GetWidth();
-	const uint32_t height = ActiveFrameBuffer->GetHeight();
+	const uint32_t width = ActiveFrameBuffer->Width;
+	const uint32_t height = ActiveFrameBuffer->Height;
 
 	float depth = 0.0f;
 

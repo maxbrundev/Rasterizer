@@ -122,7 +122,7 @@ void AmberRenderer::Rendering::Renderer::SetSamples(uint8_t p_samples) const
 
 void AmberRenderer::Rendering::Renderer::SendDataToGPU() const
 {
-	SDL_UpdateTexture(m_sdlTexture, nullptr, GLRasterizer::GetFrameBuffer()->GetData(), GLRasterizer::GetFrameBuffer()->GetRawSize());
+	SDL_UpdateTexture(m_sdlTexture, nullptr, GLRasterizer::GetFrameBufferData(), GLRasterizer::GetFrameBufferRowSize());
 }
 
 uint8_t AmberRenderer::Rendering::Renderer::FetchState() const
