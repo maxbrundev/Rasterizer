@@ -11,6 +11,7 @@
 #include "AmberRenderer/Geometry/Triangle.h"
 
 #include "AmberRenderer/Rendering/SoftwareRenderer/Buffers/MSAABuffer.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/RenderObject/ProgramObject.h"
 #include "AmberRenderer/Rendering/SoftwareRenderer/RenderObject/RenderContext.h"
 #include "AmberRenderer/Rendering/SoftwareRenderer/RenderObject/VertexArrayObject.h"
 #include "AmberRenderer/Rendering/SoftwareRenderer/RenderObject/VertexBufferObject.h"
@@ -58,7 +59,9 @@ namespace
 	uint32_t FrameBufferObjectID = 1;
 	uint32_t CurrentFrameBuffer = 0;
 
-	
+	std::unordered_map<uint32_t, AmberRenderer::Rendering::SoftwareRenderer::RenderObject::ProgramObject> ProgramObjects;
+	uint32_t ProgramID = 1;
+	uint32_t CurrentProgramObject = 0;
 }
 
 void InitializeClippingFrustum();
@@ -1447,9 +1450,89 @@ void AmberGL::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, con
 	RasterizeLine(AmberRenderer::Geometry::Vertex(p_point0 ), AmberRenderer::Geometry::Vertex(p_point1), p_color);
 }
 
-void AmberGL::UseProgram(AmberRenderer::Rendering::SoftwareRenderer::Programs::AProgram* p_shader)
+uint32_t AmberGL::CreateProgram()
 {
-	RenderContext.Program = p_shader;
+	AmberRenderer::Rendering::SoftwareRenderer::RenderObject::ProgramObject programObject;
+	programObject.ID = ProgramID;
+	programObject.Program = nullptr;
+	ProgramObjects[ProgramID] = programObject;
+
+	return ProgramID++;
+}
+
+void AmberGL::DeleteProgram(uint32_t p_program)
+{
+	auto it = ProgramObjects.find(p_program);
+	if (it == ProgramObjects.end())
+	{
+		std::cout << "DeleteProgram: Program " << p_program << " not found.\n";
+		return;
+	}
+
+	ProgramObjects.erase(it);
+
+	if (CurrentProgramObject == p_program)
+	{
+		CurrentProgramObject = 0;
+		RenderContext.Program = nullptr;
+	}
+}
+
+void AmberGL::UseProgram(uint32_t p_program)
+{
+	if (p_program == 0)
+	{
+		CurrentProgramObject = 0;
+		RenderContext.Program = nullptr;
+		return;
+	}
+
+	auto it = ProgramObjects.find(p_program);
+	if (it == ProgramObjects.end())
+	{
+		std::cout << "UseProgram: Program " << p_program << " not found.\n";
+		return;
+	}
+
+	const AmberRenderer::Rendering::SoftwareRenderer::RenderObject::ProgramObject& programObject = it->second;
+
+	if (programObject.Program == nullptr)
+	{
+		std::cout << "UseProgram: Program " << p_program << " has no shader attached.\n";
+		return;
+	}
+
+	CurrentProgramObject = p_program;
+	RenderContext.Program = programObject.Program;
+}
+
+void AmberGL::AttachShader(uint32_t p_program, AmberRenderer::Rendering::SoftwareRenderer::Programs::AProgram* p_programInstance)
+{
+	auto it = ProgramObjects.find(p_program);
+	if (it == ProgramObjects.end())
+	{
+		std::cout << "AttachShader: Program " << p_program << " not found.\n";
+		return;
+	}
+
+	AmberRenderer::Rendering::SoftwareRenderer::RenderObject::ProgramObject& programObject = it->second;
+	programObject.Program = p_programInstance;
+}
+
+void AmberGL::UseProgram(AmberRenderer::Rendering::SoftwareRenderer::Programs::AProgram* p_programInstance)
+{
+	for (const auto& [id, programObject] : ProgramObjects)
+	{
+		if (programObject.Program == p_programInstance)
+		{
+			UseProgram(id);
+			return;
+		}
+	}
+
+	uint32_t programId = CreateProgram();
+	AttachShader(programId, p_programInstance);
+	UseProgram(programId);
 }
 
 void AmberGL::SetSamples(uint8_t p_samples)
@@ -1550,49 +1633,55 @@ void AmberGL::GetInt(uint8_t p_name, int* p_params)
 
 void AmberGL::Terminate()
 {
-	for (auto& [id, texture] : TextureObjects)
+	for (auto& [id, textureObject] : TextureObjects)
 	{
-		if (texture)
+		if (textureObject)
 		{
-			if (texture->Mipmaps)
+			if (textureObject->Mipmaps)
 			{
-				int maxLevel = 1 + static_cast<int>(std::floor(std::log2(std::max(texture->Width, texture->Height))));
+				int maxLevel = 1 + static_cast<int>(std::floor(std::log2(std::max(textureObject->Width, textureObject->Height))));
 
 				for (int i = 0; i < maxLevel; i++)
 				{
-					delete[] texture->Mipmaps[i];
-					texture->Mipmaps[i] = nullptr;
+					delete[] textureObject->Mipmaps[i];
+					textureObject->Mipmaps[i] = nullptr;
 				}
 
-				delete[] texture->Mipmaps;
-				texture->Mipmaps = nullptr;
+				delete[] textureObject->Mipmaps;
+				textureObject->Mipmaps = nullptr;
 			}
 
-			delete[] texture->Data8;
-			texture->Data8 = nullptr;
+			delete[] textureObject->Data8;
+			textureObject->Data8 = nullptr;
 
-			delete texture;
-			texture = nullptr;
+			delete textureObject;
+			textureObject = nullptr;
 		}
 	}
 
+	for (auto& [id, programObject] : ProgramObjects)
+	{
+		delete programObject.Program;
+		programObject.Program = nullptr;
+	}
+
 	TextureObjects.clear();
-
+	ProgramObjects.clear();
 	FrameBufferObjects.clear();
-
 	BufferObjects.clear();
-
 	VertexArrayObjects.clear();
 
 	CurrentVertexArrayObject = 0;
 	CurrentArrayBuffer = 0;
 	CurrentElementBuffer = 0;
 	CurrentTexture = 0;
+	CurrentProgramObject = 0;
 	CurrentFrameBuffer = 0;
 
 	VertexArrayID = 1;
 	BufferID = 1;
 	TextureID = 1;
+	ProgramID = 1;
 	FrameBufferObjectID = 1;
 
 	ActiveDepthBuffer = nullptr;

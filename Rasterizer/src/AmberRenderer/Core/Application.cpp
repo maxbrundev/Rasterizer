@@ -4,7 +4,6 @@
 #include <glm/ext/matrix_transform.hpp>
 
 #include "AmberRenderer/Rendering/SoftwareRenderer/AmberGL.h"
-#include "AmberRenderer/Rendering/SoftwareRenderer/Programs/AProgram.h"
 #include "AmberRenderer/Rendering/SoftwareRenderer/Programs/QuadNDC.h"
 #include "AmberRenderer/Rendering/SoftwareRenderer/Programs/ShadowMapping.h"
 #include "AmberRenderer/Rendering/SoftwareRenderer/Programs/ShadowMappingDepth.h"
@@ -12,12 +11,13 @@
 #include "AmberRenderer/Resources/Mesh.h"
 #include "AmberRenderer/Resources/Model.h"
 #include "AmberRenderer/Resources/Loaders/ModelLoader.h"
-
+#include "AmberRenderer/Resources/Loaders/ShaderLoader.h"
 #include "AmberRenderer/Tools/Time/Clock.h"
 
+//TODO: Scene system.
 AmberRenderer::Core::Application::Application() :
-m_cameraPosition({ 0.0f, 0.0f, 10.0f }),
-m_cameraRotation (glm::quat({ 0.0f, 135.0f, 0.0f })),
+m_cameraPosition({0.0f, 0.0f, 10.0f}),
+m_cameraRotation(glm::quat({0.0f, 135.0f, 0.0f})),
 m_cameraController(m_camera, m_cameraPosition, m_cameraRotation),
 m_isRunning(true)
 {
@@ -26,11 +26,13 @@ m_isRunning(true)
 	AmberGL::Enable(GLR_CULL_FACE);
 
 	AmberGL::CullFace(GLR_BACK);
+	m_shadowDepthShaderResource = Resources::Loaders::ShaderLoader::Create<Rendering::SoftwareRenderer::Programs::ShadowMappingDepth>("ShadowMapDepth");
 }
 
 AmberRenderer::Core::Application::~Application()
 {
 	Resources::Loaders::ModelLoader::Destroy(m_currentModel);
+	Resources::Loaders::ShaderLoader::Destroy(m_shadowDepthShaderResource);
 
 	AmberGL::Terminate();
 }
@@ -38,7 +40,7 @@ AmberRenderer::Core::Application::~Application()
 void AmberRenderer::Core::Application::Initialize()
 {
 #ifndef RENDER_TEST
-	m_context.Device->DropFileEvent.AddListener([this](const std::string& p_filePath) 
+	m_context.Device->DropFileEvent.AddListener([this](const std::string& p_filePath)
 	{
 		if (m_currentModel != nullptr)
 		{
@@ -49,7 +51,7 @@ void AmberRenderer::Core::Application::Initialize()
 
 		for (Resources::Material* material : m_currentModel->GetMaterials())
 		{
-			material->SetShader(&m_shadowMapDepthShader);
+			material->SetShader(m_shadowDepthShaderResource);
 		}
 	});
 #endif
@@ -59,7 +61,7 @@ void AmberRenderer::Core::Application::Initialize()
 
 	for (Resources::Material* material : m_currentModel->GetMaterials())
 	{
-		material->SetShader(&m_shadowMapDepthShader);
+		material->SetShader(m_shadowDepthShaderResource);
 	}
 }
 
@@ -73,13 +75,13 @@ void AmberRenderer::Core::Application::Run()
 	uint32_t planeVBO;
 
 	std::vector<Geometry::Vertex> planeVertices = {
-		{{-5.0f, -0.5f,  5.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-	{{ 5.0f, -0.5f,  5.0f}, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-	{{-5.0f, -0.5f, -5.0f}, {0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}},
+		{{-5.0f, -0.5f, 5.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+		{{5.0f, -0.5f, 5.0f}, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+		{{-5.0f, -0.5f, -5.0f}, {0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}},
 
-	{{ 5.0f, -0.5f,  5.0f}, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-	{{ 5.0f, -0.5f, -5.0f}, {1.0f, 1.0f}, {0.0f, 1.0f, 0.0f}},
-	{{-5.0f, -0.5f, -5.0f}, {0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}}
+		{{5.0f, -0.5f, 5.0f}, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+		{{5.0f, -0.5f, -5.0f}, {1.0f, 1.0f}, {0.0f, 1.0f, 0.0f}},
+		{{-5.0f, -0.5f, -5.0f}, {0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}}
 	};
 
 	AmberGL::GenBuffers(1, &planeVBO);
@@ -96,9 +98,8 @@ void AmberRenderer::Core::Application::Run()
 	std::vector<uint32_t> indices = {};
 
 	Resources::Mesh FLOORMesh(planeVertices, indices, 0);
-	
-	std::vector<Geometry::Vertex> vertices = {
 
+	std::vector<Geometry::Vertex> vertices = {
 		Geometry::Vertex(glm::vec3(-1.0f, -0.5f, 0.0f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f)),
 		Geometry::Vertex(glm::vec3(-1.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f)),
 		Geometry::Vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f)),
@@ -119,6 +120,9 @@ void AmberRenderer::Core::Application::Run()
 	AmberGL::BindBuffer(GLR_ARRAY_BUFFER, VBO);
 	AmberGL::BindVertexArray(0);
 
+	Resources::Shader* quadShaderResource = Resources::Loaders::ShaderLoader::Create<Rendering::SoftwareRenderer::Programs::QuadNDC>("QuadNDC");
+	Resources::Shader* shadowMappingResource = Resources::Loaders::ShaderLoader::Create<Rendering::SoftwareRenderer::Programs::ShadowMapping>("ShadowMapping");
+
 	//TODO: Clean Texture generation.
 	uint32_t m_shadowFBO;
 	unsigned int depthMap;
@@ -135,30 +139,29 @@ void AmberRenderer::Core::Application::Run()
 
 	m_camera.SetProjectionMode(Rendering::Settings::EProjectionMode::PERSPECTIVE);
 
-	Rendering::SoftwareRenderer::Programs::QuadNDC QuadNDCShader;
 	AmberGL::BindTexture(GLR_TEXTURE_2D, depthMap);
 
 	AmberGL::GenFramebuffers(1, &m_shadowFBO);
 	AmberGL::BindFramebuffer(GLR_FRAMEBUFFER, m_shadowFBO);
 	AmberGL::FramebufferTexture2D(GLR_FRAMEBUFFER,
-	                                              GLR_DEPTH_ATTACHMENT,
-	                                              GLR_TEXTURE_2D,
-	                                              depthMap,
-	                                              0);
+	                              GLR_DEPTH_ATTACHMENT,
+	                              GLR_TEXTURE_2D,
+	                              depthMap,
+	                              0);
 	AmberGL::DrawBuffer(GL_NONE);
 	AmberGL::ReadBuffer(GL_NONE);
 	AmberGL::BindFramebuffer(GLR_FRAMEBUFFER, 0);
 
-	QuadNDCShader.SetUniform("u_DepthMap", 0);
+	quadShaderResource->SetUniform("u_DepthMap", 0);
 	AmberGL::BindTexture(GLR_TEXTURE_2D, 0);
 
 	Resources::Material shadowMapDepthMaterial;
-	shadowMapDepthMaterial.SetShader(&m_shadowMapDepthShader);
+	shadowMapDepthMaterial.SetShader(m_shadowDepthShaderResource);
 
-	Rendering::SoftwareRenderer::Programs::ShadowMapping shadowMapping;
 	Resources::Material shadowMapMaterial;
-	shadowMapMaterial.SetShader(&shadowMapping);
-	shadowMapping.SetUniform("u_DepthMap", 1);
+	shadowMapMaterial.SetShader(shadowMappingResource);
+
+	shadowMappingResource->SetUniform("u_DepthMap", 1);
 	float accumulatedTime = 0.0f;
 
 	float radius = 2.0f;
@@ -185,7 +188,7 @@ void AmberRenderer::Core::Application::Run()
 
 		for (Resources::Material* material : m_currentModel->GetMaterials())
 		{
-			material->SetShader(&m_shadowMapDepthShader);
+			material->SetShader(m_shadowDepthShaderResource);
 		}
 
 		accumulatedTime += clock.GetDeltaTime();
@@ -196,7 +199,7 @@ void AmberRenderer::Core::Application::Run()
 		lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		lightSpaceMatrix = lightProjection * lightView;
 
-		m_shadowMapDepthShader.SetUniform("u_lightSpaceMatrix", lightSpaceMatrix);
+		m_shadowDepthShaderResource->SetUniform("u_lightSpaceMatrix", lightSpaceMatrix);
 
 		AmberGL::BindFramebuffer(GLR_FRAMEBUFFER, m_shadowFBO);
 		m_context.Renderer->SetViewport(0, 0, 1024, 1024);
@@ -204,21 +207,21 @@ void AmberRenderer::Core::Application::Run()
 
 		glm::mat4 cubeModel(1.0f);
 		cubeModel = glm::translate(cubeModel, glm::vec3(0.0f, 3.0f, 2.0f));
-		m_shadowMapDepthShader.SetUniform("u_Model", cubeModel);
+		m_shadowDepthShaderResource->SetUniform("u_Model", cubeModel);
 		m_context.Renderer->Draw(*m_currentModel, &shadowMapDepthMaterial);
 
 		glm::mat4 cube2Model(1.0f);
 		cube2Model = glm::translate(cube2Model, glm::vec3(0.0f, 1.0f, 2.0f));
 		cube2Model = glm::scale(cube2Model, glm::vec3(2.0f, 0.2f, 2.0f));
 
-		m_shadowMapDepthShader.SetUniform("u_Model", cube2Model);
+		m_shadowDepthShaderResource->SetUniform("u_Model", cube2Model);
 		m_context.Renderer->Draw(*m_currentModel, &shadowMapDepthMaterial);
 
 		glm::mat4 planeModel(1.0f);
 		planeModel = glm::translate(planeModel, glm::vec3(0.0f, 0.0f, 0.0f));
 		planeModel = glm::scale(planeModel, glm::vec3(1.0f, 1.0f, 1.0f));
-		m_shadowMapDepthShader.SetUniform("u_Model", planeModel);
-		AmberGL::UseProgram(&m_shadowMapDepthShader);
+		m_shadowDepthShaderResource->SetUniform("u_Model", planeModel);
+		m_shadowDepthShaderResource->Bind();
 		AmberGL::BindVertexArray(planeVAO);
 		AmberGL::DrawArrays(GLR_TRIANGLES, 0, FLOORMesh.GetVertexCount());
 		AmberGL::BindVertexArray(0);
@@ -229,35 +232,36 @@ void AmberRenderer::Core::Application::Run()
 		m_context.Renderer->Clear(true, true);
 
 		m_cameraController.Update(clock.GetDeltaTime());
-		m_camera.ComputeMatrices(m_context.Window->GetSize().first, m_context.Window->GetSize().second, m_cameraPosition, m_cameraRotation);
+		m_camera.ComputeMatrices(m_context.Window->GetSize().first, m_context.Window->GetSize().second,
+		                         m_cameraPosition, m_cameraRotation);
 		const auto& view = m_camera.GetViewMatrix();
 		const auto& projection = m_camera.GetProjectionMatrix();
 
 		for (Resources::Material* material : m_currentModel->GetMaterials())
 		{
-			material->SetShader(&shadowMapping);
+			material->SetShader(shadowMappingResource);
 		}
 
-		shadowMapping.SetUniform("u_View", view);
-		shadowMapping.SetUniform("u_Projection", projection);
-		shadowMapping.SetUniform("u_lightPos", lightPos);
-		shadowMapping.SetUniform("u_lightSpaceMatrix", lightSpaceMatrix);
-		shadowMapping.SetUniform("u_ViewPos", m_cameraPosition);
+		shadowMappingResource->SetUniform("u_View", view);
+		shadowMappingResource->SetUniform("u_Projection", projection);
+		shadowMappingResource->SetUniform("u_lightPos", lightPos);
+		shadowMappingResource->SetUniform("u_lightSpaceMatrix", lightSpaceMatrix);
+		shadowMappingResource->SetUniform("u_ViewPos", m_cameraPosition);
 
-		shadowMapping.SetUniform("u_Model", cubeModel);
+		shadowMappingResource->SetUniform("u_Model", cubeModel);
 		AmberGL::ActiveTexture(GLR_TEXTURE0 + 1);
 		AmberGL::BindTexture(GLR_TEXTURE_2D, depthMap);
 		m_context.Renderer->Draw(*m_currentModel, &shadowMapMaterial);
 		AmberGL::BindTexture(GLR_TEXTURE_2D, 0);
 
-		shadowMapping.SetUniform("u_Model", cube2Model);
+		shadowMappingResource->SetUniform("u_Model", cube2Model);
 		AmberGL::ActiveTexture(GLR_TEXTURE0 + 1);
 		AmberGL::BindTexture(GLR_TEXTURE_2D, depthMap);
 		m_context.Renderer->Draw(*m_currentModel, &shadowMapMaterial);
 		AmberGL::BindTexture(GLR_TEXTURE_2D, 0);
 
-		shadowMapping.SetUniform("u_Model", planeModel);
-		AmberGL::UseProgram(&shadowMapping);
+		shadowMappingResource->SetUniform("u_Model", planeModel);
+		shadowMappingResource->Bind();
 		AmberGL::BindVertexArray(planeVAO);
 		AmberGL::ActiveTexture(GLR_TEXTURE0 + 1);
 		AmberGL::BindTexture(GLR_TEXTURE_2D, depthMap);
@@ -266,18 +270,22 @@ void AmberRenderer::Core::Application::Run()
 		AmberGL::BindVertexArray(0);
 
 		//Debug depth texture.
-		AmberGL::UseProgram(&QuadNDCShader);
+		quadShaderResource->Bind();
 		AmberGL::BindVertexArray(VAO);
 		AmberGL::ActiveTexture(GLR_TEXTURE0);
 		AmberGL::BindTexture(GLR_TEXTURE_2D, depthMap);
-		AmberGL::DrawArrays(GLR_TRIANGLE_STRIP, 0,  planeMesh.GetVertexCount());
+		AmberGL::DrawArrays(GLR_TRIANGLE_STRIP, 0, planeMesh.GetVertexCount());
 		AmberGL::BindVertexArray(0);
+		quadShaderResource->Unbind();
 
 		m_context.Renderer->Render();
 		m_context.InputManager->ClearEvents();
 
 		clock.Update();
 	}
+
+	Resources::Loaders::ShaderLoader::Destroy(quadShaderResource);
+	Resources::Loaders::ShaderLoader::Destroy(shadowMappingResource);
 }
 
 bool AmberRenderer::Core::Application::IsRunning() const

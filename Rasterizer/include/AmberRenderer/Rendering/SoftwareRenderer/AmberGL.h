@@ -21,7 +21,12 @@ namespace AmberGL
 	void DrawArrays(uint8_t primitiveMode, uint32_t first, uint32_t count);
 	void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const AmberRenderer::Data::Color& p_color);
 
-	void UseProgram(AmberRenderer::Rendering::SoftwareRenderer::Programs::AProgram* p_shader);
+	uint32_t CreateProgram();
+	void DeleteProgram(uint32_t p_program);
+	void UseProgram(uint32_t p_program);
+	void AttachShader(uint32_t p_program, AmberRenderer::Rendering::SoftwareRenderer::Programs::AProgram* p_programInstance);
+	void UseProgram(AmberRenderer::Rendering::SoftwareRenderer::Programs::AProgram* p_programInstance);
+
 	void SetSamples(uint8_t p_samples);
 	void PolygonMode(uint8_t p_mode);
 	void Enable(uint8_t p_state);

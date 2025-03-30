@@ -2,8 +2,7 @@
 
 #include <string>
 
-#include "AmberRenderer/Rendering/SoftwareRenderer/Programs//AProgram.h"
-
+#include "AmberRenderer/Resources/Shader.h"
 #include "AmberRenderer/Resources/Texture.h"
 
 namespace AmberRenderer::Resources
@@ -19,17 +18,17 @@ namespace AmberRenderer::Resources
 
 		bool HasShader() const;
 
-		Rendering::SoftwareRenderer::Programs::AProgram* GetShader() const;
+		Shader* GetShader() const;
 		const Texture* GetTexture() const;
 
-		void SetShader(Rendering::SoftwareRenderer::Programs::AProgram* p_shader);
+		void SetShader(Shader* p_shader);
 		void SetTexture(Texture* p_texture);
 
 	public:
 		const std::string Name;
 
 	private:
-		Rendering::SoftwareRenderer::Programs::AProgram* m_shader;
+		Shader* m_shader;
 		Texture* m_texture;
 	};
 }

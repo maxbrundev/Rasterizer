@@ -29,7 +29,8 @@ namespace AmberRenderer::Core
 		glm::quat m_cameraRotation;
 
 		Resources::Model* m_currentModel = nullptr;
-		Rendering::SoftwareRenderer::Programs::ShadowMappingDepth m_shadowMapDepthShader;
+	
+		Resources::Shader* m_shadowDepthShaderResource;
 
 		bool m_isRunning;
 	};

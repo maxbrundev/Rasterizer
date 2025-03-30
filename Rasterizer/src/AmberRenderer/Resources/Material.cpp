@@ -42,6 +42,11 @@ void AmberRenderer::Resources::Material::Unbind() const
 	{
 		m_texture->Unbind();
 	}
+
+	if (m_shader != nullptr)
+	{
+		m_shader->Unbind();
+	}
 }
 
 bool AmberRenderer::Resources::Material::HasShader() const
@@ -49,7 +54,7 @@ bool AmberRenderer::Resources::Material::HasShader() const
 	return m_shader != nullptr;
 }
 
-AmberRenderer::Rendering::SoftwareRenderer::Programs::AProgram* AmberRenderer::Resources::Material::GetShader() const
+AmberRenderer::Resources::Shader* AmberRenderer::Resources::Material::GetShader() const
 {
 	return m_shader;
 }
@@ -59,7 +64,7 @@ const AmberRenderer::Resources::Texture* AmberRenderer::Resources::Material::Get
 	return m_texture;
 }
 
-void AmberRenderer::Resources::Material::SetShader(Rendering::SoftwareRenderer::Programs::AProgram* p_shader)
+void AmberRenderer::Resources::Material::SetShader(Shader* p_shader)
 {
 	m_shader = p_shader;
 }
