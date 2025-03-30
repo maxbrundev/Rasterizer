@@ -1,6 +1,6 @@
-#include "AmberRenderer/Rendering/Rasterizer/Shaders/ShadowMapping.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/Programs/ShadowMapping.h"
 
-glm::vec4 AmberRenderer::Rendering::Rasterizer::Shaders::ShadowMapping::VertexPass(const Geometry::Vertex& p_vertex)
+glm::vec4 AmberRenderer::Rendering::SoftwareRenderer::Programs::ShadowMapping::VertexPass(const Geometry::Vertex& p_vertex)
 {
 	const glm::mat4 u_Model            = GetUniformAs<glm::mat4>("u_Model");
 	const glm::mat4 u_View             = GetUniformAs<glm::mat4>("u_View");
@@ -25,7 +25,7 @@ glm::vec4 AmberRenderer::Rendering::Rasterizer::Shaders::ShadowMapping::VertexPa
 constexpr glm::vec3 LightDiffuse = glm::vec3(1.0f);
 constexpr glm::vec3 LightAmbient = glm::vec3(0.3f);
 
-AmberRenderer::Data::Color AmberRenderer::Rendering::Rasterizer::Shaders::ShadowMapping::FragmentPass()
+AmberRenderer::Data::Color AmberRenderer::Rendering::SoftwareRenderer::Programs::ShadowMapping::FragmentPass()
 {
 	const glm::vec3 normal = glm::normalize(GetVaryingAs<glm::vec3>("v_Normal"));
 	const glm::vec2 texCoords = GetVaryingAs<glm::vec2>("v_TexCoords");

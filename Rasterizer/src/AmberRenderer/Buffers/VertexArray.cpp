@@ -1,26 +1,26 @@
 #include "AmberRenderer/Buffers/VertexArray.h"
 
-#include "AmberRenderer/Rendering/Rasterizer/GLRasterizer.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/AmberGL.h"
 
 AmberRenderer::Buffers::VertexArray::VertexArray()
 {
-	GLRasterizer::GenVertexArrays(1, &m_bufferID);
+	AmberGL::GenVertexArrays(1, &m_bufferID);
 	Bind();
 }
 
 AmberRenderer::Buffers::VertexArray::~VertexArray()
 {
-	GLRasterizer::DeleteVertexArrays(1, &m_bufferID);
+	AmberGL::DeleteVertexArrays(1, &m_bufferID);
 }
 
 void AmberRenderer::Buffers::VertexArray::Bind() const
 {
-	GLRasterizer::BindVertexArray(m_bufferID);
+	AmberGL::BindVertexArray(m_bufferID);
 }
 
 void AmberRenderer::Buffers::VertexArray::Unbind() const
 {
-	GLRasterizer::BindVertexArray(0);
+	AmberGL::BindVertexArray(0);
 }
 
 uint32_t AmberRenderer::Buffers::VertexArray::GetID() const

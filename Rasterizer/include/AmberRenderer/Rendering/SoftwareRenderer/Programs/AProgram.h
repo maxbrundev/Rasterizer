@@ -5,10 +5,10 @@
 
 #include "AmberRenderer/Geometry/Vertex.h"
 
-#include "AmberRenderer/Rendering/Rasterizer/Shaders/EShaderUniformType.h"
-#include "AmberRenderer/Rendering/Rasterizer/Shaders/ShaderTypeTraits.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/Programs/EShaderUniformType.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/Programs/ShaderTypeTraits.h"
 
-namespace AmberRenderer::Rendering::Rasterizer::Shaders
+namespace AmberRenderer::Rendering::SoftwareRenderer::Programs
 {
 	struct ShaderData
 	{
@@ -26,12 +26,11 @@ namespace AmberRenderer::Rendering::Rasterizer::Shaders
 
 	constexpr float MIPMAPS_DISTANCE_STEP = 5.0f;
 
-	//TODO: Rename to Program.
-	class AShader
+	class AProgram
 	{
 	public:
-		AShader() = default;
-		virtual ~AShader() = default;
+		AProgram() = default;
+		virtual ~AProgram() = default;
 
 		void Bind();
 

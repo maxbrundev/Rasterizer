@@ -25,6 +25,7 @@ namespace AmberRenderer::Core
 		float GetSpeed() const;
 		const glm::vec3& GetPosition() const;
 		bool IsRightMousePressed() const;
+
 	private:
 		void HandleInputs(float p_deltaTime);
 		void HandleMouse();

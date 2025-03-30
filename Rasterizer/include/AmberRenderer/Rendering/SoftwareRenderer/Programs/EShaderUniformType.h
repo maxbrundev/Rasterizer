@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-namespace AmberRenderer::Rendering
+namespace AmberRenderer::Rendering::SoftwareRenderer::Programs
 {
 	enum class EShaderDataType : uint8_t
 	{

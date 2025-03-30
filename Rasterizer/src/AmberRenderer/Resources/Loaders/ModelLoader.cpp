@@ -1,6 +1,5 @@
 #include "AmberRenderer/Resources/Loaders/ModelLoader.h"
 
-#include "AmberRenderer/Rendering/Rasterizer/GLRasterizer.h"
 #include "AmberRenderer/Resources/Loaders/TextureLoader.h"
 #include "AmberRenderer/Resources/Parsers/MaterialData.h"
 

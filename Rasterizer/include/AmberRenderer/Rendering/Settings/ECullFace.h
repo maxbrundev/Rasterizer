@@ -1,10 +1,8 @@
 #pragma once
 
-#include <cstdint>
-
 namespace AmberRenderer::Rendering::Settings
 {
-	enum ECullFace : uint8_t
+	enum class ECullFace : uint8_t
 	{
 		BACK  = 0,
 		FRONT = 1,

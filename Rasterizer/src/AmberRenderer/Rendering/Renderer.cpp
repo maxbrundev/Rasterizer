@@ -1,6 +1,6 @@
 #include "AmberRenderer/Rendering/Renderer.h"
 
-#include "AmberRenderer/Rendering/Rasterizer/GLRasterizer.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/AmberGL.h"
 #include "AmberRenderer/Rendering/Settings/EPrimitiveMode.h"
 #include "AmberRenderer/Resources/Loaders/TextureLoader.h"
 
@@ -78,11 +78,11 @@ void AmberRenderer::Rendering::Renderer::DrawMesh(Settings::EPrimitiveMode p_dra
 
 		if (p_mesh.GetIndexCount() > 0)
 		{
-			GLRasterizer::DrawElements(static_cast<uint8_t>(p_drawMode), p_mesh.GetIndexCount());
+			AmberGL::DrawElements(static_cast<uint8_t>(p_drawMode), p_mesh.GetIndexCount());
 		}
 		else
 		{
-			GLRasterizer::DrawArrays(static_cast<uint8_t>(p_drawMode), 0, p_mesh.GetVertexCount());
+			AmberGL::DrawArrays(static_cast<uint8_t>(p_drawMode), 0, p_mesh.GetVertexCount());
 		}
 		p_mesh.Unbind();
 
@@ -90,7 +90,7 @@ void AmberRenderer::Rendering::Renderer::DrawMesh(Settings::EPrimitiveMode p_dra
 	}
 }
 
-void AmberRenderer::Rendering::Renderer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, Rasterizer::Shaders::AShader& p_shader, const Data::Color& p_color)
+void AmberRenderer::Rendering::Renderer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, SoftwareRenderer::Programs::AProgram& p_shader, const Data::Color& p_color)
 {
 	uint8_t state = FetchState();
 
@@ -98,7 +98,7 @@ void AmberRenderer::Rendering::Renderer::DrawLine(const glm::vec3& p_point0, con
 
 	p_shader.Bind();
 
-	GLRasterizer::DrawLine({ p_point0 }, { p_point1 }, p_color);
+	AmberGL::DrawLine({ p_point0 }, { p_point1 }, p_color);
 }
 
 void AmberRenderer::Rendering::Renderer::Render() const
@@ -117,21 +117,21 @@ void AmberRenderer::Rendering::Renderer::RenderClear() const
 
 void AmberRenderer::Rendering::Renderer::SetSamples(uint8_t p_samples) const
 {
-	GLRasterizer::SetSamples(p_samples);
+	AmberGL::SetSamples(p_samples);
 }
 
 void AmberRenderer::Rendering::Renderer::SendDataToGPU() const
 {
-	SDL_UpdateTexture(m_sdlTexture, nullptr, GLRasterizer::GetFrameBufferData(), GLRasterizer::GetFrameBufferRowSize());
+	SDL_UpdateTexture(m_sdlTexture, nullptr, AmberGL::GetFrameBufferData(), AmberGL::GetFrameBufferRowSize());
 }
 
 uint8_t AmberRenderer::Rendering::Renderer::FetchState() const
 {
 	uint8_t result = 0;
 
-	if (m_driver.GetBool(GLR_DEPTH_WRITE))             result |= 0b0000'0001;
-	if (m_driver.GetCapability(Settings::DEPTH_TEST))  result |= 0b0000'0010;
-	if (m_driver.GetCapability(Settings::CULL_FACE))   result |= 0b0000'0100;
+	if (m_driver.GetBool(GLR_DEPTH_WRITE))                                  result |= 0b0000'0001;
+	if (m_driver.GetCapability(Settings::ERenderingCapability::DEPTH_TEST)) result |= 0b0000'0010;
+	if (m_driver.GetCapability(Settings::ERenderingCapability::CULL_FACE))  result |= 0b0000'0100;
 
 	switch (static_cast<Settings::ECullFace>(m_driver.GetInt(GLR_CULL_FACE)))
 	{
@@ -149,14 +149,14 @@ void AmberRenderer::Rendering::Renderer::ApplyStateMask(uint8_t p_mask)
 	{
 
 		if ((p_mask & 0x01) != (m_state & 0x01)) m_driver.SetDepthWriting(p_mask & 0x01);
-		if ((p_mask & 0x02) != (m_state & 0x02)) m_driver.SetCapability(Settings::DEPTH_TEST, p_mask & 0x02);
-		if ((p_mask & 0x04) != (m_state & 0x04)) m_driver.SetCapability(Settings::CULL_FACE, p_mask & 0x04);
+		if ((p_mask & 0x02) != (m_state & 0x02)) m_driver.SetCapability(Settings::ERenderingCapability::DEPTH_TEST, p_mask & 0x02);
+		if ((p_mask & 0x04) != (m_state & 0x04)) m_driver.SetCapability(Settings::ERenderingCapability::CULL_FACE, p_mask & 0x04);
 
 		if ((p_mask & 0x04) && ((p_mask & 0x08) != (m_state & 0x08) || (p_mask & 0x10) != (m_state & 0x10)))
 		{
 			const int backBit = p_mask & 0x08;
 			const int frontBit = p_mask & 0x10;
-			m_driver.SetCullFace(backBit && frontBit ? Settings::FRONT_AND_BACK : (backBit ? Settings::BACK : Settings::FRONT));
+			m_driver.SetCullFace(backBit && frontBit ? Settings::ECullFace::FRONT_AND_BACK : (backBit ? Settings::ECullFace::BACK : Settings::ECullFace::FRONT));
 		}
 
 		m_state = p_mask;

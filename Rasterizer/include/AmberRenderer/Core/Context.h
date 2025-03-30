@@ -3,7 +3,6 @@
 #include <memory>
 
 #include "AmberRenderer/Context/SDLDriver.h"
-#include "AmberRenderer/Context/Settings/WindowSettings.h"
 
 #include "AmberRenderer/Core/CameraController.h"
 

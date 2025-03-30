@@ -2,9 +2,9 @@
 
 #include <glm/glm.hpp>
 
-#include "AmberRenderer/Rendering/Rasterizer/Shaders/EShaderUniformType.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/Programs/EShaderUniformType.h"
 
-namespace AmberRenderer::Rendering
+namespace AmberRenderer::Rendering::SoftwareRenderer::Programs
 {
 	template <typename T>
 	struct ShaderTypeTraits
@@ -27,7 +27,7 @@ namespace AmberRenderer::Rendering
 	template <>
 	struct ShaderTypeTraits<int>
 	{
-		static constexpr EShaderDataType Type = EShaderDataType::INT;
+		static constexpr Programs::EShaderDataType Type = Programs::EShaderDataType::INT;
 		static constexpr uint8_t TypeCount = 1;
 
 		static void WriteToBuffer(const int& p_value, float* p_buffer)
@@ -44,7 +44,7 @@ namespace AmberRenderer::Rendering
 	template <>
 	struct ShaderTypeTraits<float>
 	{
-		static constexpr EShaderDataType Type = EShaderDataType::FLOAT;
+		static constexpr Programs::EShaderDataType Type = Programs::EShaderDataType::FLOAT;
 		static constexpr uint8_t TypeCount = 1;
 
 		static void WriteToBuffer(const float& p_value, float* p_buffer)
@@ -61,7 +61,7 @@ namespace AmberRenderer::Rendering
 	template <>
 	struct ShaderTypeTraits<glm::vec2>
 	{
-		static constexpr EShaderDataType Type = EShaderDataType::VEC2;
+		static constexpr Programs::EShaderDataType Type = Programs::EShaderDataType::VEC2;
 		static constexpr uint8_t TypeCount = 2;
 
 		static void WriteToBuffer(const glm::vec2& p_value, float* p_buffer)
@@ -79,7 +79,7 @@ namespace AmberRenderer::Rendering
 	template <>
 	struct ShaderTypeTraits<glm::vec3>
 	{
-		static constexpr EShaderDataType Type = EShaderDataType::VEC3;
+		static constexpr Programs::EShaderDataType Type = Programs::EShaderDataType::VEC3;
 		static constexpr uint8_t TypeCount = 3;
 
 		static void WriteToBuffer(const glm::vec3& p_value, float* p_buffer)
@@ -98,7 +98,7 @@ namespace AmberRenderer::Rendering
 	template <>
 	struct ShaderTypeTraits<glm::vec4>
 	{
-		static constexpr EShaderDataType Type = EShaderDataType::VEC4;
+		static constexpr Programs::EShaderDataType Type = Programs::EShaderDataType::VEC4;
 		static constexpr uint8_t TypeCount = 4;
 
 		static void WriteToBuffer(const glm::vec4& p_value, float* p_buffer)
@@ -118,7 +118,7 @@ namespace AmberRenderer::Rendering
 	template <>
 	struct ShaderTypeTraits<glm::mat2>
 	{
-		static constexpr EShaderDataType Type = EShaderDataType::MAT2;
+		static constexpr Programs::EShaderDataType Type = Programs::EShaderDataType::MAT2;
 		static constexpr uint8_t TypeCount = 4;
 
 		static void WriteToBuffer(const glm::mat2& p_value, float* p_buffer)
@@ -141,7 +141,7 @@ namespace AmberRenderer::Rendering
 	template <>
 	struct ShaderTypeTraits<glm::mat3>
 	{
-		static constexpr EShaderDataType Type = EShaderDataType::MAT3;
+		static constexpr Programs::EShaderDataType Type = Programs::EShaderDataType::MAT3;
 		static constexpr uint8_t TypeCount = 9;
 
 		static void WriteToBuffer(const glm::mat3& p_value, float* p_buffer)
@@ -170,7 +170,7 @@ namespace AmberRenderer::Rendering
 	template <>
 	struct ShaderTypeTraits<glm::mat4>
 	{
-		static constexpr EShaderDataType Type = EShaderDataType::MAT4;
+		static constexpr Programs::EShaderDataType Type = Programs::EShaderDataType::MAT4;
 		static constexpr uint8_t TypeCount = 16;
 
 		static void WriteToBuffer(const glm::mat4& p_value, float* p_buffer)

@@ -1,6 +1,6 @@
-#include "AmberRenderer/Rendering/Rasterizer/Shaders/ShadowMappingDepth.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/Programs/ShadowMappingDepth.h"
 
-glm::vec4 AmberRenderer::Rendering::Rasterizer::Shaders::ShadowMappingDepth::VertexPass(const Geometry::Vertex& p_vertex)
+glm::vec4 AmberRenderer::Rendering::SoftwareRenderer::Programs::ShadowMappingDepth::VertexPass(const Geometry::Vertex& p_vertex)
 {
 	const glm::mat4 u_Model            = GetUniformAs<glm::mat4>("u_Model");
 	const glm::mat4 u_lightSpaceMatrix = GetUniformAs<glm::mat4>("u_lightSpaceMatrix");
@@ -14,7 +14,7 @@ glm::vec4 AmberRenderer::Rendering::Rasterizer::Shaders::ShadowMappingDepth::Ver
 	return u_lightSpaceMatrix * u_Model * glm::vec4(p_vertex.position, 1.0);
 }
 
-AmberRenderer::Data::Color AmberRenderer::Rendering::Rasterizer::Shaders::ShadowMappingDepth::FragmentPass()
+AmberRenderer::Data::Color AmberRenderer::Rendering::SoftwareRenderer::Programs::ShadowMappingDepth::FragmentPass()
 {
 	const glm::vec4 FragPosLightSpace = GetVaryingAs<glm::vec4>("v_FragPosLightSpace");
 

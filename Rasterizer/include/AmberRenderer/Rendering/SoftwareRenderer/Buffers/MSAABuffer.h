@@ -2,7 +2,7 @@
 
 #include "AmberRenderer/Data/Color.h"
 
-namespace AmberRenderer::Rendering::Rasterizer::Buffers
+namespace AmberRenderer::Rendering::SoftwareRenderer::Buffers
 {
 	class MSAABuffer
 	{

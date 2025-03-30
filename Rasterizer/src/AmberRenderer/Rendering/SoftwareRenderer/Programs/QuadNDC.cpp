@@ -1,6 +1,6 @@
-#include "AmberRenderer/Rendering/Rasterizer/Shaders/QuadNDC.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/Programs/QuadNDC.h"
 
-glm::vec4 AmberRenderer::Rendering::Rasterizer::Shaders::QuadNDC::VertexPass(const Geometry::Vertex& p_vertex)
+glm::vec4 AmberRenderer::Rendering::SoftwareRenderer::Programs::QuadNDC::VertexPass(const Geometry::Vertex& p_vertex)
 {
 	SetVarying<glm::vec2>("v_TexCoords", p_vertex.texCoords);
 
@@ -13,7 +13,7 @@ float LinearizeDepth(float p_depth, float p_nearPlane, float p_farPlane)
 	return (2.0 * p_nearPlane * p_farPlane) / (p_farPlane + p_nearPlane - z * (p_farPlane - p_nearPlane));
 }
 
-AmberRenderer::Data::Color AmberRenderer::Rendering::Rasterizer::Shaders::QuadNDC::FragmentPass()
+AmberRenderer::Data::Color AmberRenderer::Rendering::SoftwareRenderer::Programs::QuadNDC::FragmentPass()
 {
 	const glm::vec2 texCoords = GetVaryingAs<glm::vec2>("v_TexCoords");
 

@@ -3,10 +3,11 @@
 #include <chrono>
 #include <glm/ext/matrix_transform.hpp>
 
-#include "AmberRenderer/Rendering/Rasterizer/GLRasterizer.h"
-#include "AmberRenderer/Rendering/Rasterizer/Shaders/QuadNDC.h"
-#include "AmberRenderer/Rendering/Rasterizer/Shaders/ShadowMapping.h"
-#include "AmberRenderer/Rendering/Rasterizer/Shaders/ShadowMappingDepth.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/AmberGL.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/Programs/AProgram.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/Programs/QuadNDC.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/Programs/ShadowMapping.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/Programs/ShadowMappingDepth.h"
 
 #include "AmberRenderer/Resources/Mesh.h"
 #include "AmberRenderer/Resources/Model.h"
@@ -20,18 +21,18 @@ m_cameraRotation (glm::quat({ 0.0f, 135.0f, 0.0f })),
 m_cameraController(m_camera, m_cameraPosition, m_cameraRotation),
 m_isRunning(true)
 {
-	GLRasterizer::Enable(GLR_DEPTH_TEST);
-	GLRasterizer::Enable(GLR_DEPTH_WRITE);
-	GLRasterizer::Enable(GLR_CULL_FACE);
+	AmberGL::Enable(GLR_DEPTH_TEST);
+	AmberGL::Enable(GLR_DEPTH_WRITE);
+	AmberGL::Enable(GLR_CULL_FACE);
 
-	GLRasterizer::CullFace(GLR_BACK);
+	AmberGL::CullFace(GLR_BACK);
 }
 
 AmberRenderer::Core::Application::~Application()
 {
 	Resources::Loaders::ModelLoader::Destroy(m_currentModel);
 
-	GLRasterizer::Terminate();
+	AmberGL::Terminate();
 }
 
 void AmberRenderer::Core::Application::Initialize()
@@ -81,18 +82,16 @@ void AmberRenderer::Core::Application::Run()
 	{{-5.0f, -0.5f, -5.0f}, {0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}}
 	};
 
-	GLRasterizer::GenBuffers(1, &planeVBO);
-	GLRasterizer::BindBuffer(GLR_ARRAY_BUFFER, planeVBO);
-	GLRasterizer::BufferData(GLR_ARRAY_BUFFER,
-		planeVertices.size() * sizeof(Geometry::Vertex),
-		planeVertices.data());
+	AmberGL::GenBuffers(1, &planeVBO);
+	AmberGL::BindBuffer(GLR_ARRAY_BUFFER, planeVBO);
+	AmberGL::BufferData(GLR_ARRAY_BUFFER, planeVertices.size() * sizeof(Geometry::Vertex), planeVertices.data());
 
-	GLRasterizer::GenVertexArrays(1, &planeVAO);
-	GLRasterizer::BindVertexArray(planeVAO);
+	AmberGL::GenVertexArrays(1, &planeVAO);
+	AmberGL::BindVertexArray(planeVAO);
 
-	GLRasterizer::BindBuffer(GLR_ARRAY_BUFFER, planeVBO);
+	AmberGL::BindBuffer(GLR_ARRAY_BUFFER, planeVBO);
 
-	GLRasterizer::BindVertexArray(0);
+	AmberGL::BindVertexArray(0);
 
 	std::vector<uint32_t> indices = {};
 
@@ -111,54 +110,52 @@ void AmberRenderer::Core::Application::Run()
 	uint32_t VAO;
 	uint32_t VBO;
 
-	GLRasterizer::GenBuffers(1, &VBO);
-	GLRasterizer::BindBuffer(GLR_ARRAY_BUFFER, VBO);
-	GLRasterizer::BufferData(GLR_ARRAY_BUFFER,
-		vertices.size() * sizeof(Geometry::Vertex),
-		vertices.data());
+	AmberGL::GenBuffers(1, &VBO);
+	AmberGL::BindBuffer(GLR_ARRAY_BUFFER, VBO);
+	AmberGL::BufferData(GLR_ARRAY_BUFFER, vertices.size() * sizeof(Geometry::Vertex), vertices.data());
 
-	GLRasterizer::GenVertexArrays(1, &VAO);
-	GLRasterizer::BindVertexArray(VAO);
-	GLRasterizer::BindBuffer(GLR_ARRAY_BUFFER, VBO);
-	GLRasterizer::BindVertexArray(0);
+	AmberGL::GenVertexArrays(1, &VAO);
+	AmberGL::BindVertexArray(VAO);
+	AmberGL::BindBuffer(GLR_ARRAY_BUFFER, VBO);
+	AmberGL::BindVertexArray(0);
 
 	//TODO: Clean Texture generation.
 	uint32_t m_shadowFBO;
 	unsigned int depthMap;
-	GLRasterizer::GenTextures(1, &depthMap);
-	GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
-	GLRasterizer::TexImage2D(GLR_TEXTURE_2D, 0, GLR_DEPTH_COMPONENT, 1024, 1024, 0, GLR_DEPTH_COMPONENT, GLR_FLOAT, nullptr);
-	GLRasterizer::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_MIN_FILTER, GLR_NEAREST);
-	GLRasterizer::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_MAG_FILTER, GLR_NEAREST);
-	GLRasterizer::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_WRAP_S, GLR_REPEAT);
-	GLRasterizer::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_WRAP_T, GLR_REPEAT);
-	GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
-	GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
-	GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
+	AmberGL::GenTextures(1, &depthMap);
+	AmberGL::BindTexture(GLR_TEXTURE_2D, depthMap);
+	AmberGL::TexImage2D(GLR_TEXTURE_2D, 0, GLR_DEPTH_COMPONENT, 1024, 1024, 0, GLR_DEPTH_COMPONENT, GLR_FLOAT, nullptr);
+	AmberGL::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_MIN_FILTER, GLR_NEAREST);
+	AmberGL::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_MAG_FILTER, GLR_NEAREST);
+	AmberGL::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_WRAP_S, GLR_REPEAT);
+	AmberGL::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_WRAP_T, GLR_REPEAT);
+	AmberGL::BindTexture(GLR_TEXTURE_2D, 0);
+	AmberGL::BindTexture(GLR_TEXTURE_2D, depthMap);
+	AmberGL::BindTexture(GLR_TEXTURE_2D, 0);
 
 	m_camera.SetProjectionMode(Rendering::Settings::EProjectionMode::PERSPECTIVE);
 
-	Rendering::Rasterizer::Shaders::QuadNDC QuadNDCShader;
-	GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
+	Rendering::SoftwareRenderer::Programs::QuadNDC QuadNDCShader;
+	AmberGL::BindTexture(GLR_TEXTURE_2D, depthMap);
 
-	GLRasterizer::GenFramebuffers(1, &m_shadowFBO);
-	GLRasterizer::BindFramebuffer(GLR_FRAMEBUFFER, m_shadowFBO);
-	GLRasterizer::FramebufferTexture2D(GLR_FRAMEBUFFER,
-		GLR_DEPTH_ATTACHMENT,
-		GLR_TEXTURE_2D,
-		depthMap,
-		0);
-	GLRasterizer::DrawBuffer(GL_NONE);
-	GLRasterizer::ReadBuffer(GL_NONE);
-	GLRasterizer::BindFramebuffer(GLR_FRAMEBUFFER, 0);
+	AmberGL::GenFramebuffers(1, &m_shadowFBO);
+	AmberGL::BindFramebuffer(GLR_FRAMEBUFFER, m_shadowFBO);
+	AmberGL::FramebufferTexture2D(GLR_FRAMEBUFFER,
+	                                              GLR_DEPTH_ATTACHMENT,
+	                                              GLR_TEXTURE_2D,
+	                                              depthMap,
+	                                              0);
+	AmberGL::DrawBuffer(GL_NONE);
+	AmberGL::ReadBuffer(GL_NONE);
+	AmberGL::BindFramebuffer(GLR_FRAMEBUFFER, 0);
 
 	QuadNDCShader.SetUniform("u_DepthMap", 0);
-	GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
+	AmberGL::BindTexture(GLR_TEXTURE_2D, 0);
 
 	Resources::Material shadowMapDepthMaterial;
 	shadowMapDepthMaterial.SetShader(&m_shadowMapDepthShader);
 
-	Rendering::Rasterizer::Shaders::ShadowMapping shadowMapping;
+	Rendering::SoftwareRenderer::Programs::ShadowMapping shadowMapping;
 	Resources::Material shadowMapMaterial;
 	shadowMapMaterial.SetShader(&shadowMapping);
 	shadowMapping.SetUniform("u_DepthMap", 1);
@@ -201,7 +198,7 @@ void AmberRenderer::Core::Application::Run()
 
 		m_shadowMapDepthShader.SetUniform("u_lightSpaceMatrix", lightSpaceMatrix);
 
-		GLRasterizer::BindFramebuffer(GLR_FRAMEBUFFER, m_shadowFBO);
+		AmberGL::BindFramebuffer(GLR_FRAMEBUFFER, m_shadowFBO);
 		m_context.Renderer->SetViewport(0, 0, 1024, 1024);
 		m_context.Renderer->Clear(false, true);
 
@@ -221,14 +218,14 @@ void AmberRenderer::Core::Application::Run()
 		planeModel = glm::translate(planeModel, glm::vec3(0.0f, 0.0f, 0.0f));
 		planeModel = glm::scale(planeModel, glm::vec3(1.0f, 1.0f, 1.0f));
 		m_shadowMapDepthShader.SetUniform("u_Model", planeModel);
-		GLRasterizer::UseProgram(&m_shadowMapDepthShader);
-		GLRasterizer::BindVertexArray(planeVAO);
-		GLRasterizer::DrawArrays(GLR_TRIANGLES, 0, FLOORMesh.GetVertexCount());
-		GLRasterizer::BindVertexArray(0);
+		AmberGL::UseProgram(&m_shadowMapDepthShader);
+		AmberGL::BindVertexArray(planeVAO);
+		AmberGL::DrawArrays(GLR_TRIANGLES, 0, FLOORMesh.GetVertexCount());
+		AmberGL::BindVertexArray(0);
 
-		GLRasterizer::BindFramebuffer(GLR_FRAMEBUFFER, 0);
-		
-		GLRasterizer::Viewport(0, 0, 800, 600);
+		AmberGL::BindFramebuffer(GLR_FRAMEBUFFER, 0);
+
+		AmberGL::Viewport(0, 0, 800, 600);
 		m_context.Renderer->Clear(true, true);
 
 		m_cameraController.Update(clock.GetDeltaTime());
@@ -248,33 +245,33 @@ void AmberRenderer::Core::Application::Run()
 		shadowMapping.SetUniform("u_ViewPos", m_cameraPosition);
 
 		shadowMapping.SetUniform("u_Model", cubeModel);
-		GLRasterizer::ActiveTexture(GLR_TEXTURE0 + 1);
-		GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
+		AmberGL::ActiveTexture(GLR_TEXTURE0 + 1);
+		AmberGL::BindTexture(GLR_TEXTURE_2D, depthMap);
 		m_context.Renderer->Draw(*m_currentModel, &shadowMapMaterial);
-		GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
+		AmberGL::BindTexture(GLR_TEXTURE_2D, 0);
 
 		shadowMapping.SetUniform("u_Model", cube2Model);
-		GLRasterizer::ActiveTexture(GLR_TEXTURE0 + 1);
-		GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
+		AmberGL::ActiveTexture(GLR_TEXTURE0 + 1);
+		AmberGL::BindTexture(GLR_TEXTURE_2D, depthMap);
 		m_context.Renderer->Draw(*m_currentModel, &shadowMapMaterial);
-		GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
+		AmberGL::BindTexture(GLR_TEXTURE_2D, 0);
 
 		shadowMapping.SetUniform("u_Model", planeModel);
-		GLRasterizer::UseProgram(&shadowMapping);
-		GLRasterizer::BindVertexArray(planeVAO);
-		GLRasterizer::ActiveTexture(GLR_TEXTURE0 + 1);
-		GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
-		GLRasterizer::DrawArrays(GLR_TRIANGLES, 0, FLOORMesh.GetVertexCount());
-		GLRasterizer::BindTexture(GLR_TEXTURE_2D, 0);
-		GLRasterizer::BindVertexArray(0);
+		AmberGL::UseProgram(&shadowMapping);
+		AmberGL::BindVertexArray(planeVAO);
+		AmberGL::ActiveTexture(GLR_TEXTURE0 + 1);
+		AmberGL::BindTexture(GLR_TEXTURE_2D, depthMap);
+		AmberGL::DrawArrays(GLR_TRIANGLES, 0, FLOORMesh.GetVertexCount());
+		AmberGL::BindTexture(GLR_TEXTURE_2D, 0);
+		AmberGL::BindVertexArray(0);
 
 		//Debug depth texture.
-		GLRasterizer::UseProgram(&QuadNDCShader);
-		GLRasterizer::BindVertexArray(VAO);
-		GLRasterizer::ActiveTexture(GLR_TEXTURE0);
-		GLRasterizer::BindTexture(GLR_TEXTURE_2D, depthMap);
-		GLRasterizer::DrawArrays(GLR_TRIANGLE_STRIP, 0,  planeMesh.GetVertexCount());
-		GLRasterizer::BindVertexArray(0);
+		AmberGL::UseProgram(&QuadNDCShader);
+		AmberGL::BindVertexArray(VAO);
+		AmberGL::ActiveTexture(GLR_TEXTURE0);
+		AmberGL::BindTexture(GLR_TEXTURE_2D, depthMap);
+		AmberGL::DrawArrays(GLR_TRIANGLE_STRIP, 0,  planeMesh.GetVertexCount());
+		AmberGL::BindVertexArray(0);
 
 		m_context.Renderer->Render();
 		m_context.InputManager->ClearEvents();

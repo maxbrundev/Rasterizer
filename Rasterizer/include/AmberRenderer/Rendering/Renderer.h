@@ -5,7 +5,7 @@
 #include "AmberRenderer/Rendering/Driver.h"
 #include "AmberRenderer/Context/SDLDriver.h"
 
-#include "AmberRenderer/Rendering/Rasterizer/Shaders/AShader.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/Programs/AProgram.h"
 #include "AmberRenderer/Resources/Model.h"
 #include "AmberRenderer/Resources/Texture.h"
 #include "AmberRenderer/Rendering/Settings/EPrimitiveMode.h"
@@ -23,7 +23,7 @@ namespace AmberRenderer::Rendering
 		void SetViewport(uint16_t p_x, uint16_t p_y, uint16_t p_width, uint16_t p_height) const;
 		void Draw(Resources::Model& p_model, Resources::Material* p_defaultMaterial);
 		void DrawMesh(Settings::EPrimitiveMode p_drawMode, Resources::Mesh& p_mesh, const Resources::Material& p_material);
-		void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, Rasterizer::Shaders::AShader& p_shader, const Data::Color& p_color);
+		void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, SoftwareRenderer::Programs::AProgram& p_shader, const Data::Color& p_color);
 		void Render() const;
 		void RenderClear() const;
 		void SetSamples(uint8_t p_samples) const;

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "AmberRenderer/Rendering/Rasterizer/Shaders/AShader.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/Programs/AProgram.h"
 
-namespace AmberRenderer::Rendering::Rasterizer::Shaders
+namespace AmberRenderer::Rendering::SoftwareRenderer::Programs
 {
-	class StandardShader : public AShader
+	class StandardShader : public AProgram
 	{
 	public:
 		StandardShader() = default;

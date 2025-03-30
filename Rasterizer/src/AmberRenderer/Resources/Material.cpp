@@ -1,7 +1,5 @@
 #include "AmberRenderer/Resources/Material.h"
 
-#include "AmberRenderer/Rendering/Rasterizer/GLRasterizer.h"
-
 #include "AmberRenderer/Resources/Loaders/TextureLoader.h"
 
 AmberRenderer::Resources::Material::Material(const std::string& p_name) :
@@ -51,7 +49,7 @@ bool AmberRenderer::Resources::Material::HasShader() const
 	return m_shader != nullptr;
 }
 
-AmberRenderer::Rendering::Rasterizer::Shaders::AShader* AmberRenderer::Resources::Material::GetShader() const
+AmberRenderer::Rendering::SoftwareRenderer::Programs::AProgram* AmberRenderer::Resources::Material::GetShader() const
 {
 	return m_shader;
 }
@@ -61,7 +59,7 @@ const AmberRenderer::Resources::Texture* AmberRenderer::Resources::Material::Get
 	return m_texture;
 }
 
-void AmberRenderer::Resources::Material::SetShader(Rendering::Rasterizer::Shaders::AShader* p_shader)
+void AmberRenderer::Resources::Material::SetShader(Rendering::SoftwareRenderer::Programs::AProgram* p_shader)
 {
 	m_shader = p_shader;
 }

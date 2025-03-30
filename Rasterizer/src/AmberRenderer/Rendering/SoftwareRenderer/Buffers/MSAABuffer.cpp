@@ -1,9 +1,9 @@
-#include "AmberRenderer/Rendering/Rasterizer/Buffers/MSAABuffer.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/Buffers/MSAABuffer.h"
 
 #include <algorithm>
 #include <cmath>
 
-AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::MSAABuffer(uint32_t p_width, uint32_t p_height) :
+AmberRenderer::Rendering::SoftwareRenderer::Buffers::MSAABuffer::MSAABuffer(uint32_t p_width, uint32_t p_height) :
 m_width(p_width),
 m_height(p_height),
 m_samplesAmount(0),
@@ -11,7 +11,7 @@ m_data(nullptr)
 {
 }
 
-AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::~MSAABuffer()
+AmberRenderer::Rendering::SoftwareRenderer::Buffers::MSAABuffer::~MSAABuffer()
 {
 	if(m_data != nullptr)
 	{
@@ -20,7 +20,7 @@ AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::~MSAABuffer()
 	}
 }
 
-void AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::SetSamplesAmount(uint8_t p_amount)
+void AmberRenderer::Rendering::SoftwareRenderer::Buffers::MSAABuffer::SetSamplesAmount(uint8_t p_amount)
 {
 	m_samplesAmount = p_amount;
 
@@ -33,7 +33,7 @@ void AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::SetSamplesAmount
 	m_data = new Sample[m_width * m_height * m_samplesAmount];
 }
 
-void AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::Clear() const
+void AmberRenderer::Rendering::SoftwareRenderer::Buffers::MSAABuffer::Clear() const
 {
 	if(m_samplesAmount == 0)
 		return;
@@ -47,7 +47,7 @@ void AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::Clear() const
 	}
 }
 
-void AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::SetColor(float p_red, float p_green, float p_blue, float p_alpha)
+void AmberRenderer::Rendering::SoftwareRenderer::Buffers::MSAABuffer::SetColor(float p_red, float p_green, float p_blue, float p_alpha)
 {
 	uint8_t r = static_cast<uint8_t>(std::round(std::clamp(p_red, 0.0f, 1.0f) * 255.0f));
 	uint8_t g = static_cast<uint8_t>(std::round(std::clamp(p_green, 0.0f, 1.0f) * 255.0f));
@@ -57,22 +57,22 @@ void AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::SetColor(float p
 	m_clearColor = (r << 24) | (g << 16) | (b << 8) | a;
 }
 
-uint32_t AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::GetWidth() const
+uint32_t AmberRenderer::Rendering::SoftwareRenderer::Buffers::MSAABuffer::GetWidth() const
 {
 	return m_width;
 }
 
-uint32_t AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::GetHeight() const
+uint32_t AmberRenderer::Rendering::SoftwareRenderer::Buffers::MSAABuffer::GetHeight() const
 {
 	return m_height;
 }
 
-AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::Sample& AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::GetSample(uint32_t p_x, uint32_t p_y, uint8_t p_sampleIndex) const
+AmberRenderer::Rendering::SoftwareRenderer::Buffers::MSAABuffer::Sample& AmberRenderer::Rendering::SoftwareRenderer::Buffers::MSAABuffer::GetSample(uint32_t p_x, uint32_t p_y, uint8_t p_sampleIndex) const
 {
 	return m_data[(p_y * m_width + p_x) * m_samplesAmount + p_sampleIndex];
 }
 
-void AmberRenderer::Rendering::Rasterizer::Buffers::MSAABuffer::SetPixelSample(uint32_t p_x, uint32_t p_y, uint8_t p_sampleIndex, const Data::Color& p_color, float p_depth) const
+void AmberRenderer::Rendering::SoftwareRenderer::Buffers::MSAABuffer::SetPixelSample(uint32_t p_x, uint32_t p_y, uint8_t p_sampleIndex, const Data::Color& p_color, float p_depth) const
 {
 	auto& sample = m_data[(p_y * m_width + p_x) * m_samplesAmount + p_sampleIndex];
 

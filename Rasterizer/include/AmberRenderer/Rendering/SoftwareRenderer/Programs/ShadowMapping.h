@@ -1,10 +1,10 @@
 #pragma once
 
-#include "AmberRenderer/Rendering/Rasterizer/Shaders/AShader.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/Programs/AProgram.h"
 
-namespace AmberRenderer::Rendering::Rasterizer::Shaders
+namespace AmberRenderer::Rendering::SoftwareRenderer::Programs
 {
-	class ShadowMapping : public AShader
+	class ShadowMapping : public AProgram
 	{
 	public:
 		ShadowMapping() = default;

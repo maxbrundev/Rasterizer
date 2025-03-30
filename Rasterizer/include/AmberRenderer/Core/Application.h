@@ -4,7 +4,7 @@
 
 #include "AmberRenderer/Core/Context.h"
 
-#include "AmberRenderer/Rendering/Rasterizer/Shaders/ShadowMappingDepth.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/Programs/ShadowMappingDepth.h"
 
 namespace AmberRenderer::Core
 {
@@ -29,7 +29,7 @@ namespace AmberRenderer::Core
 		glm::quat m_cameraRotation;
 
 		Resources::Model* m_currentModel = nullptr;
-		Rendering::Rasterizer::Shaders::ShadowMappingDepth m_shadowMapDepthShader;
+		Rendering::SoftwareRenderer::Programs::ShadowMappingDepth m_shadowMapDepthShader;
 
 		bool m_isRunning;
 	};

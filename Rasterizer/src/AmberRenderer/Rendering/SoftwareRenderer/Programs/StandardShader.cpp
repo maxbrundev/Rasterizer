@@ -1,6 +1,6 @@
-#include "AmberRenderer/Rendering/Rasterizer/Shaders/StandardShader.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/Programs/StandardShader.h"
 
-glm::vec4 AmberRenderer::Rendering::Rasterizer::Shaders::StandardShader::VertexPass(const Geometry::Vertex& p_vertex)
+glm::vec4 AmberRenderer::Rendering::SoftwareRenderer::Programs::StandardShader::VertexPass(const Geometry::Vertex& p_vertex)
 {
 	const glm::mat4 u_Model      = GetUniformAs<glm::mat4>("u_Model");
 	const glm::mat4 u_View       = GetUniformAs<glm::mat4>("u_View");
@@ -21,7 +21,7 @@ const glm::vec3 LightPosition = glm::vec3(-9000.0f, 10000.0f, 11000.0f);
 const glm::vec3 LightDiffuse = glm::vec3(1.0f);
 const glm::vec3 LightAmbient = glm::vec3(0.3f);
 
-AmberRenderer::Data::Color AmberRenderer::Rendering::Rasterizer::Shaders::StandardShader::FragmentPass()
+AmberRenderer::Data::Color AmberRenderer::Rendering::SoftwareRenderer::Programs::StandardShader::FragmentPass()
 {
 	const glm::vec3 normal = glm::normalize(GetVaryingAs<glm::vec3>("v_Normal"));
 	//return glm::vec4(((normal * 0.5f) + 0.5f), 1.0f);

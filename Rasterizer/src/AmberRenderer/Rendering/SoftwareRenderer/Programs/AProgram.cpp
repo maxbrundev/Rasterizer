@@ -1,23 +1,23 @@
-﻿#include "AmberRenderer/Rendering/Rasterizer/Shaders/AShader.h"
+﻿#include "AmberRenderer/Rendering/SoftwareRenderer/Programs/AProgram.h"
 
 #include <glm/gtc/type_ptr.inl>
-
-#include "AmberRenderer/Rendering/Rasterizer/GLRasterizer.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/RenderObject/TextureObject.h"
+#include "AmberRenderer/Rendering/SoftwareRenderer/AmberGL.h"
 #include "AmberRenderer/Resources/Settings/ETextureFilteringMode.h"
 #include "AmberRenderer/Resources/Settings/ETextureWrapMode.h"
 
-void AmberRenderer::Rendering::Rasterizer::Shaders::AShader::Bind()
+void AmberRenderer::Rendering::SoftwareRenderer::Programs::AProgram::Bind()
 {
-	GLRasterizer::UseProgram(this);
+	AmberGL::UseProgram(this);
 }
 
-glm::vec4 AmberRenderer::Rendering::Rasterizer::Shaders::AShader::ProcessVertex(const Geometry::Vertex& p_vertex, uint8_t p_vertexID)
+glm::vec4 AmberRenderer::Rendering::SoftwareRenderer::Programs::AProgram::ProcessVertex(const Geometry::Vertex& p_vertex, uint8_t p_vertexID)
 {
 	m_vertexIndex = p_vertexID;
 	return VertexPass(p_vertex);
 }
 
-void AmberRenderer::Rendering::Rasterizer::Shaders::AShader::ProcessInterpolation(const glm::vec3& p_barycentricCoords, float p_w0, float p_w1, float p_w2)
+void AmberRenderer::Rendering::SoftwareRenderer::Programs::AProgram::ProcessInterpolation(const glm::vec3& p_barycentricCoords, float p_w0, float p_w1, float p_w2)
 {
 	m_interpolatedReciprocal = (1.0f / p_w0) * p_barycentricCoords.x + (1.0f / p_w1) * p_barycentricCoords.y + (1.0f / p_w2) * p_barycentricCoords.z;
 
@@ -39,16 +39,16 @@ void AmberRenderer::Rendering::Rasterizer::Shaders::AShader::ProcessInterpolatio
 	}
 }
 
-AmberRenderer::Data::Color AmberRenderer::Rendering::Rasterizer::Shaders::AShader::ProcessFragment()
+AmberRenderer::Data::Color AmberRenderer::Rendering::SoftwareRenderer::Programs::AProgram::ProcessFragment()
 {
 	return FragmentPass();
 }
 
-glm::vec4 AmberRenderer::Rendering::Rasterizer::Shaders::AShader::Texture(const std::string_view p_samplerName, const glm::vec2& p_texCoords) const
+glm::vec4 AmberRenderer::Rendering::SoftwareRenderer::Programs::AProgram::Texture(const std::string_view p_samplerName, const glm::vec2& p_texCoords) const
 {
 	int textureUnit = GetUniformAs<int>(p_samplerName);
 
-	TextureObject* textureObject = GLRasterizer::GetTextureObject(static_cast<uint32_t>(textureUnit));
+	RenderObject::TextureObject* textureObject = AmberGL::GetTextureObject(static_cast<uint32_t>(textureUnit));
 
 	if (textureObject == nullptr)
 		return glm::vec4(1.0f);
@@ -114,6 +114,8 @@ glm::vec4 AmberRenderer::Rendering::Rasterizer::Shaders::AShader::Texture(const 
 		//TODO: Handle float data
 	}
 
+	//TODO: Nearest Mipmap Nearest, Linear Mipmap Linear, Linear Mipmap Nearest, Nearest Mipmap Linear
+
 	if (filter == Resources::Settings::ETextureFilteringMode::LINEAR)
 	{
 		int x0 = static_cast<int>(std::floor(uvX));
@@ -162,18 +164,18 @@ glm::vec4 AmberRenderer::Rendering::Rasterizer::Shaders::AShader::Texture(const 
 	);
 }
 
-glm::vec3 AmberRenderer::Rendering::Rasterizer::Shaders::AShader::Lambert(const glm::vec3& p_fragPos, const glm::vec3& p_normal, const glm::vec3& p_lightPos, const glm::vec3& p_lightDiffuse, const glm::vec3& p_lightAmbient) const
+glm::vec3 AmberRenderer::Rendering::SoftwareRenderer::Programs::AProgram::Lambert(const glm::vec3& p_fragPos, const glm::vec3& p_normal, const glm::vec3& p_lightPos, const glm::vec3& p_lightDiffuse, const glm::vec3& p_lightAmbient) const
 {
 	const float diffuse = glm::max(glm::dot(p_normal, glm::normalize(p_lightPos - p_fragPos)), 0.0f);
 	return glm::clamp(p_lightDiffuse * diffuse + p_lightAmbient, 0.0f, 1.0f);
 }
 
-std::unordered_map<std::string_view, AmberRenderer::Rendering::Rasterizer::Shaders::ShaderVarying>& AmberRenderer::Rendering::Rasterizer::Shaders::AShader::GetVaryings()
+std::unordered_map<std::string_view, AmberRenderer::Rendering::SoftwareRenderer::Programs::ShaderVarying>& AmberRenderer::Rendering::SoftwareRenderer::Programs::AProgram::GetVaryings()
 {
 	return m_varyings;
 }
 
-uint8_t AmberRenderer::Rendering::Rasterizer::Shaders::AShader::GetTypeCount(EShaderDataType p_type) const
+uint8_t AmberRenderer::Rendering::SoftwareRenderer::Programs::AProgram::GetTypeCount(EShaderDataType p_type) const
 {
 	switch (p_type)
 	{

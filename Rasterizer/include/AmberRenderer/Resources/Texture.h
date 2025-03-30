@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <vector>
 
 #include "AmberRenderer/Resources/Settings/ETextureFilteringMode.h"
 #include "AmberRenderer/Resources/Settings/ETextureWrapMode.h"
