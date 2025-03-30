@@ -18,11 +18,11 @@ HasMipmaps(p_generateMipmap)
 
 void AmberRenderer::Resources::Texture::Bind(uint32_t p_slot) const
 {
-	AmberGL::ActiveTexture(GLR_TEXTURE0 + p_slot);
-	AmberGL::BindTexture(GLR_TEXTURE_2D, ID);
+	AmberGL::ActiveTexture(AGL_TEXTURE0 + p_slot);
+	AmberGL::BindTexture(AGL_TEXTURE_2D, ID);
 }
 
 void AmberRenderer::Resources::Texture::Unbind() const
 {
-	AmberGL::BindTexture(GLR_TEXTURE_2D, 0);
+	AmberGL::BindTexture(AGL_TEXTURE_2D, 0);
 }

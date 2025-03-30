@@ -16,8 +16,8 @@ namespace AmberRenderer::Rendering::SoftwareRenderer::RenderObject
 		uint16_t ViewPortWidth = 0;
 		uint16_t ViewPortHeight = 0;
 		uint8_t State = 0;
-		uint8_t PolygonMode = GLR_FILL;
-		uint8_t CullFace = GLR_BACK;
+		uint8_t PolygonMode = AGL_FILL;
+		uint8_t CullFace = AGL_BACK;
 		uint8_t Samples = 0;
 		FrameBufferObject* FrameBufferObject;
 		Programs::AProgram* Program = nullptr;

@@ -6,7 +6,7 @@ AmberRenderer::Buffers::VertexBuffer::VertexBuffer(const void* p_data, size_t p_
 {
 	AmberGL::GenBuffers(1, &m_bufferID);
 	Bind();
-	AmberGL::BufferData(GLR_ARRAY_BUFFER, p_elements * sizeof(Geometry::Vertex), p_data);
+	AmberGL::BufferData(AGL_ARRAY_BUFFER, p_elements * sizeof(Geometry::Vertex), p_data);
 }
 
 AmberRenderer::Buffers::VertexBuffer::~VertexBuffer()
@@ -16,12 +16,12 @@ AmberRenderer::Buffers::VertexBuffer::~VertexBuffer()
 
 void AmberRenderer::Buffers::VertexBuffer::Bind() const
 {
-	AmberGL::BindBuffer(GLR_ARRAY_BUFFER, m_bufferID);
+	AmberGL::BindBuffer(AGL_ARRAY_BUFFER, m_bufferID);
 }
 
 void AmberRenderer::Buffers::VertexBuffer::Unbind() const
 {
-	AmberGL::BindBuffer(GLR_ARRAY_BUFFER, 0);
+	AmberGL::BindBuffer(AGL_ARRAY_BUFFER, 0);
 }
 
 uint32_t AmberRenderer::Buffers::VertexBuffer::GetID()

@@ -25,22 +25,22 @@ AmberRenderer::Resources::Texture* AmberRenderer::Resources::Loaders::TextureLoa
 
 	if (unsigned char* dataBuffer = stbi_load(p_filePath.c_str(), &textureWidth, &textureHeight, &bitsPerPixel, 4); dataBuffer)
 	{
-		AmberGL::BindTexture(GLR_TEXTURE_2D, textureID);
+		AmberGL::BindTexture(AGL_TEXTURE_2D, textureID);
 
-		AmberGL::TexImage2D(GLR_TEXTURE_2D, 0, GLR_RGBA8, textureWidth, textureHeight, 0, GLR_RGBA8 /*GLR_RGBA*/, GLR_UNSIGNED_BYTE, dataBuffer);
+		AmberGL::TexImage2D(AGL_TEXTURE_2D, 0, AGL_RGBA8, textureWidth, textureHeight, 0, AGL_RGBA8 /*AGL_RGBA*/, AGL_UNSIGNED_BYTE, dataBuffer);
 
 		if (p_generateMipmap)
 		{
-			AmberGL::GenerateMipmap(GLR_TEXTURE_2D);
+			AmberGL::GenerateMipmap(AGL_TEXTURE_2D);
 		}
 
-		AmberGL::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_WRAP_S, p_wrapS);
-		AmberGL::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_WRAP_T, p_wrapT);
-		AmberGL::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_MIN_FILTER, p_minFilter);
-		AmberGL::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_MAG_FILTER, p_magFilter);
+		AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_WRAP_S, p_wrapS);
+		AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_WRAP_T, p_wrapT);
+		AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MIN_FILTER, p_minFilter);
+		AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MAG_FILTER, p_magFilter);
 
 		stbi_image_free(dataBuffer);
-		AmberGL::BindTexture(GLR_TEXTURE_2D, 0);
+		AmberGL::BindTexture(AGL_TEXTURE_2D, 0);
 
 		std::string name = Tools::Utils::String::ExtractFileNameFromPath(p_filePath);
 
@@ -51,7 +51,7 @@ AmberRenderer::Resources::Texture* AmberRenderer::Resources::Loaders::TextureLoa
 		std::cout << "Texture failed to load at path: " << FILE_TRACE << std::endl;
 
 		stbi_image_free(dataBuffer);
-		AmberGL::BindTexture(GLR_TEXTURE_2D, 0);
+		AmberGL::BindTexture(AGL_TEXTURE_2D, 0);
 	}
 
 	return nullptr;
@@ -61,16 +61,16 @@ AmberRenderer::Resources::Texture* AmberRenderer::Resources::Loaders::TextureLoa
 {
 	uint32_t textureID;
 	AmberGL::GenTextures(1, &textureID);
-	AmberGL::BindTexture(GLR_TEXTURE_2D, textureID);
+	AmberGL::BindTexture(AGL_TEXTURE_2D, textureID);
 
-	AmberGL::TexImage2D(GLR_TEXTURE_2D, 0, GLR_RGBA8, 1, 1, 0, GLR_RGBA8 /*GLR_RGBA*/, GLR_UNSIGNED_BYTE, &p_data);
+	AmberGL::TexImage2D(AGL_TEXTURE_2D, 0, AGL_RGBA8, 1, 1, 0, AGL_RGBA8 /*AGL_RGBA*/, AGL_UNSIGNED_BYTE, &p_data);
 
-	AmberGL::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_WRAP_S, GLR_REPEAT);
-	AmberGL::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_WRAP_T, GLR_REPEAT);
-	AmberGL::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_MIN_FILTER, p_minFilter);
-	AmberGL::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_MAG_FILTER, p_magFilter);
+	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_WRAP_S, AGL_REPEAT);
+	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_WRAP_T, AGL_REPEAT);
+	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MIN_FILTER, p_minFilter);
+	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MAG_FILTER, p_magFilter);
 
-	AmberGL::BindTexture(GLR_TEXTURE_2D, 0);
+	AmberGL::BindTexture(AGL_TEXTURE_2D, 0);
 
 	return new Texture("", textureID, 1, 1, 32, p_minFilter, p_magFilter, Settings::REPEAT, Settings::REPEAT, false);
 }

@@ -237,31 +237,31 @@ void TransformAndRasterizeVertices(const uint8_t p_primitiveMode, const std::arr
 	float area = triangle.ComputeArea();
 
 
-	if ((RenderContext.CullFace == GLR_BACK && area > 0.0f) ||
-		(RenderContext.CullFace == GLR_FRONT && area < 0.0f) ||
-		RenderContext.CullFace == GLR_FRONT_AND_BACK)
+	if ((RenderContext.CullFace == AGL_BACK && area > 0.0f) ||
+		(RenderContext.CullFace == AGL_FRONT && area < 0.0f) ||
+		RenderContext.CullFace == AGL_FRONT_AND_BACK)
 		return;
 
-	if (p_primitiveMode == GLR_TRIANGLES || p_primitiveMode == GLR_TRIANGLE_STRIP)
+	if (p_primitiveMode == AGL_TRIANGLES || p_primitiveMode == AGL_TRIANGLE_STRIP)
 	{
 		switch (RenderContext.PolygonMode)
 		{
-		case GLR_FILL:
+		case AGL_FILL:
 			ComputeFragments(triangle, transformedVertices);
 			break;
-		case GLR_LINE:
+		case AGL_LINE:
 			RasterizeTriangleWireframe(triangle, transformedVertices);
 			break;
-		case GLR_POINT:
+		case AGL_POINT:
 			RasterizeTrianglePoints(triangle, transformedVertices);
 			break;
 		}
 	}
-	else if (p_primitiveMode == GLR_LINES)
+	else if (p_primitiveMode == AGL_LINES)
 	{
 		RasterizeTriangleWireframe(triangle, transformedVertices);
 	}
-	else if (p_primitiveMode == GLR_POINTS)
+	else if (p_primitiveMode == AGL_POINTS)
 	{
 		RasterizeTrianglePoints(triangle, transformedVertices);
 	}
@@ -281,7 +281,7 @@ void ComputeFragments(const AmberRenderer::Geometry::Triangle& p_triangle, const
 	{
 		for (uint32_t y = yMin; y < yMax; y++)
 		{
-			if (RenderContext.State & GLR_MULTISAMPLE && RenderContext.FrameBufferObject->ColorBuffer != nullptr)
+			if (RenderContext.State & AGL_MULTISAMPLE && RenderContext.FrameBufferObject->ColorBuffer != nullptr)
 			{
 				uint8_t gridSize = static_cast<uint8_t>(std::ceil(std::sqrt(RenderContext.Samples)));
 
@@ -324,7 +324,7 @@ void SetFragment(const AmberRenderer::Geometry::Triangle& p_triangle, uint32_t p
 		if (depth < 0.0f || depth > 1.0f)
 			return;
 
-		if (!(RenderContext.State & GLR_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(p_x, p_y))
+		if (!(RenderContext.State & AGL_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(p_x, p_y))
 		{
 			RenderContext.Program->ProcessInterpolation(barycentricCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, p_transformedVertices[2].w);
 
@@ -335,7 +335,7 @@ void SetFragment(const AmberRenderer::Geometry::Triangle& p_triangle, uint32_t p
 			if (RenderContext.FrameBufferObject->ColorBuffer != nullptr)
 				RenderContext.FrameBufferObject->ColorBuffer->SetPixel(p_x, p_y, AmberRenderer::Data::Color::Mix(AmberRenderer::Data::Color(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(p_x, p_y)), color, alpha));
 
-			if (RenderContext.State & GLR_DEPTH_WRITE)
+			if (RenderContext.State & AGL_DEPTH_WRITE)
 			{
 				RenderContext.FrameBufferObject->DepthBuffer->SetPixel(p_x, p_y, depth);
 			}
@@ -357,13 +357,13 @@ void SetSampleFragment(const AmberRenderer::Geometry::Triangle& p_triangle, uint
 		if (depth < 0.0f || depth > 1.0f)
 			return;
 
-		if (!(RenderContext.State & GLR_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(p_x, p_y))
+		if (!(RenderContext.State & AGL_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(p_x, p_y))
 		{
 			RenderContext.Program->ProcessInterpolation(barycentricCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, p_transformedVertices[2].w);
 
 			AmberRenderer::Data::Color color = RenderContext.Program->ProcessFragment();
 
-			if (RenderContext.State & GLR_MULTISAMPLE)
+			if (RenderContext.State & AGL_MULTISAMPLE)
 				MSAABuffer->SetPixelSample(p_x, p_y, p_sampleIndex, color, depth);
 		}
 	}
@@ -407,7 +407,7 @@ void RasterizeLine(const AmberRenderer::Geometry::Triangle& p_triangle, const st
 			if (depth < 0.0f || depth > 1.0f)
 				return;
 
-			if (!(RenderContext.State & GLR_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(x0, y0))
+			if (!(RenderContext.State & AGL_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(x0, y0))
 			{
 				RenderContext.Program->ProcessInterpolation(barycentricCoords, transformedVertices[0].w, transformedVertices[1].w, transformedVertices[2].w);
 
@@ -418,7 +418,7 @@ void RasterizeLine(const AmberRenderer::Geometry::Triangle& p_triangle, const st
 				if (RenderContext.FrameBufferObject->ColorBuffer != nullptr)
 					RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x0, y0, AmberRenderer::Data::Color::Mix(AmberRenderer::Data::Color(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(x0, y0)), color, alpha));
 
-				if (RenderContext.State & GLR_DEPTH_WRITE)
+				if (RenderContext.State & AGL_DEPTH_WRITE)
 				{
 					RenderContext.FrameBufferObject->DepthBuffer->SetPixel(x0, y0, depth);
 				}
@@ -472,12 +472,12 @@ void RasterizeLine(const glm::vec4& p_start, const glm::vec4& p_end, const Amber
 
 		if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
 		{
-			if (!(RenderContext.State & GLR_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(x0, y0))
+			if (!(RenderContext.State & AGL_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(x0, y0))
 			{
 				if (RenderContext.FrameBufferObject->ColorBuffer != nullptr)
 					RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x0, y0, p_color);
 
-				if (RenderContext.State & GLR_DEPTH_WRITE)
+				if (RenderContext.State & AGL_DEPTH_WRITE)
 				{
 					RenderContext.FrameBufferObject->DepthBuffer->SetPixel(x0, y0, depth);
 				}
@@ -524,7 +524,7 @@ void DrawPoint(const AmberRenderer::Geometry::Triangle& p_triangle, const std::a
 		if (depth < 0.0f || depth > 1.0f)
 			return;
 
-		if (!(RenderContext.State & GLR_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(p_point.x, p_point.y))
+		if (!(RenderContext.State & AGL_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(p_point.x, p_point.y))
 		{
 			RenderContext.Program->ProcessInterpolation(barycentricCoords, transformedVertices[0].w, transformedVertices[1].w, transformedVertices[2].w);
 
@@ -535,7 +535,7 @@ void DrawPoint(const AmberRenderer::Geometry::Triangle& p_triangle, const std::a
 			if (RenderContext.FrameBufferObject->ColorBuffer != nullptr)
 				RenderContext.FrameBufferObject->ColorBuffer->SetPixel(p_point.x, p_point.y, AmberRenderer::Data::Color::Mix(AmberRenderer::Data::Color(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(p_point.x, p_point.y)), color, alpha));
 
-			if (RenderContext.State & GLR_DEPTH_WRITE)
+			if (RenderContext.State & AGL_DEPTH_WRITE)
 			{
 				RenderContext.FrameBufferObject->DepthBuffer->SetPixel(p_point.x, p_point.y, depth);
 			}
@@ -601,12 +601,12 @@ void RasterizeLine(const AmberRenderer::Geometry::Vertex& p_vertex0, const Amber
 
 		if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
 		{
-			if (!(RenderContext.State & GLR_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(x0, y0))
+			if (!(RenderContext.State & AGL_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(x0, y0))
 			{
 				if (RenderContext.FrameBufferObject->ColorBuffer != nullptr)
 					RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x0, y0, p_color);
 
-				if (RenderContext.State & GLR_DEPTH_WRITE)
+				if (RenderContext.State & AGL_DEPTH_WRITE)
 				{
 					RenderContext.FrameBufferObject->DepthBuffer->SetPixel(x0, y0, depth);
 				}
@@ -790,7 +790,7 @@ void ApplyMSAA()
 
 			RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x, y, AmberRenderer::Data::Color::Mix(AmberRenderer::Data::Color(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(x, y)), sampledColorTotal, alpha));
 
-			if (RenderContext.State & GLR_DEPTH_WRITE)
+			if (RenderContext.State & AGL_DEPTH_WRITE)
 			{
 				RenderContext.FrameBufferObject->DepthBuffer->SetPixel(x, y, depth);
 			}
@@ -870,14 +870,14 @@ void AmberGL::DeleteBuffers(uint32_t p_count, const uint32_t* p_buffers)
 
 void AmberGL::BindBuffer(uint32_t p_target, uint32_t p_buffer)
 {
-	if (p_target == GLR_ARRAY_BUFFER) 
+	if (p_target == AGL_ARRAY_BUFFER) 
 	{
 		CurrentArrayBuffer = p_buffer;
 
 		if (CurrentVertexArrayObject != 0)
 			VertexArrayObjects[CurrentVertexArrayObject].BoundArrayBuffer = p_buffer;
 	}
-	else if (p_target == GLR_ELEMENT_ARRAY_BUFFER)
+	else if (p_target == AGL_ELEMENT_ARRAY_BUFFER)
 	{
 		CurrentElementBuffer = p_buffer;
 
@@ -888,7 +888,7 @@ void AmberGL::BindBuffer(uint32_t p_target, uint32_t p_buffer)
 
 void AmberGL::BufferData(uint32_t p_target, size_t p_size, const void* p_data)
 {
-	uint32_t currentBuffer = (p_target == GLR_ARRAY_BUFFER) ? CurrentArrayBuffer : (p_target == GLR_ELEMENT_ARRAY_BUFFER) ? CurrentElementBuffer : 0;
+	uint32_t currentBuffer = (p_target == AGL_ARRAY_BUFFER) ? CurrentArrayBuffer : (p_target == AGL_ELEMENT_ARRAY_BUFFER) ? CurrentElementBuffer : 0;
 
 	if (currentBuffer == 0) 
 	{
@@ -935,9 +935,9 @@ void AmberGL::DeleteTextures(uint32_t p_count, const uint32_t* p_textures)
 
 void AmberGL::BindTexture(uint32_t p_target, uint32_t p_texture)
 {
-	if (p_target != GLR_TEXTURE_2D) 
+	if (p_target != AGL_TEXTURE_2D) 
 	{
-		std::cout << "BindTexture: Only GLR_TEXTURE_2D supported.\n";
+		std::cout << "BindTexture: Only AGL_TEXTURE_2D supported.\n";
 		return;
 	}
 	if (p_texture != 0 && TextureObjects.find(p_texture) == TextureObjects.end()) 
@@ -955,9 +955,9 @@ void AmberGL::BindTexture(uint32_t p_target, uint32_t p_texture)
 
 void AmberGL::TexImage2D(uint32_t p_target, uint32_t p_level, uint32_t p_internalFormat, uint32_t p_width, uint32_t p_height, uint32_t p_border, uint32_t p_format, uint32_t p_type, const void* p_data)
 {
-	if (p_target != GLR_TEXTURE_2D) 
+	if (p_target != AGL_TEXTURE_2D) 
 	{
-		std::cout << "TexImage2D: Only GLR_TEXTURE_2D supported.\n";
+		std::cout << "TexImage2D: Only AGL_TEXTURE_2D supported.\n";
 		return;
 	}
 
@@ -973,7 +973,7 @@ void AmberGL::TexImage2D(uint32_t p_target, uint32_t p_level, uint32_t p_interna
 	texture.Height = p_height;
 	texture.Target = p_target;
 
-	if (p_internalFormat == GLR_RGBA8 && p_type == GLR_UNSIGNED_BYTE)
+	if (p_internalFormat == AGL_RGBA8 && p_type == AGL_UNSIGNED_BYTE)
 	{
 		if (texture.Data8)
 		{
@@ -992,7 +992,7 @@ void AmberGL::TexImage2D(uint32_t p_target, uint32_t p_level, uint32_t p_interna
 			std::fill(texture.Data8, texture.Data8 + p_width * p_height * 4, 0);
 		}
 	}
-	else if (p_internalFormat == GLR_DEPTH_COMPONENT && p_type == GLR_FLOAT) 
+	else if (p_internalFormat == AGL_DEPTH_COMPONENT && p_type == AGL_FLOAT) 
 	{
 		//TODO: Maybe use 32 bit buffer and 8 bit. splitting depth value.
 		if (texture.Data8)
@@ -1028,9 +1028,9 @@ void AmberGL::TexImage2D(uint32_t p_target, uint32_t p_level, uint32_t p_interna
 
 void AmberGL::TexParameteri(uint32_t p_target, uint32_t p_pname, uint8_t p_param)
 {
-	if (p_target != GLR_TEXTURE_2D) 
+	if (p_target != AGL_TEXTURE_2D) 
 	{
-		std::cout << "TexParameteri: Only GLR_TEXTURE_2D supported.\n";
+		std::cout << "TexParameteri: Only AGL_TEXTURE_2D supported.\n";
 		return;
 	}
 
@@ -1044,16 +1044,16 @@ void AmberGL::TexParameteri(uint32_t p_target, uint32_t p_pname, uint8_t p_param
 
 	switch (p_pname)
 	{
-	case GLR_TEXTURE_MIN_FILTER:
+	case AGL_TEXTURE_MIN_FILTER:
 		texture.MinFilter = p_param;
 		break;
-	case GLR_TEXTURE_MAG_FILTER:
+	case AGL_TEXTURE_MAG_FILTER:
 		texture.MagFilter = p_param;
 		break;
-	case GLR_TEXTURE_WRAP_S:
+	case AGL_TEXTURE_WRAP_S:
 		texture.WrapS = p_param;
 		break;
-	case GLR_TEXTURE_WRAP_T:
+	case AGL_TEXTURE_WRAP_T:
 		texture.WrapT = p_param;
 		break;
 	default:
@@ -1075,9 +1075,9 @@ void AmberGL::ActiveTexture(uint32_t p_unit)
 
 void AmberGL::GenerateMipmap(uint32_t p_target)
 {
-	if (p_target != GLR_TEXTURE_2D)
+	if (p_target != AGL_TEXTURE_2D)
 	{
-		std::cout << "BindTexture: Only GLR_TEXTURE_2D supported.\n";
+		std::cout << "BindTexture: Only AGL_TEXTURE_2D supported.\n";
 		return;
 	}
 
@@ -1166,9 +1166,9 @@ void AmberGL::GenFramebuffers(uint32_t p_count, uint32_t* p_framebuffers)
 
 void AmberGL::BindFramebuffer(uint32_t p_target, uint32_t p_framebuffer)
 {
-	if (p_target != GLR_FRAMEBUFFER)
+	if (p_target != AGL_FRAMEBUFFER)
 	{
-		std::cout << "BindFramebuffer: only GLR_FRAMEBUFFER is supported.\n";
+		std::cout << "BindFramebuffer: only AGL_FRAMEBUFFER is supported.\n";
 		return;
 	}
 
@@ -1211,9 +1211,9 @@ void AmberGL::BindFramebuffer(uint32_t p_target, uint32_t p_framebuffer)
 
 void AmberGL::FramebufferTexture2D(uint32_t p_target, uint32_t p_attachment, uint32_t p_textarget, uint32_t p_texture, int p_level)
 {
-	if (p_target != GLR_FRAMEBUFFER)
+	if (p_target != AGL_FRAMEBUFFER)
 	{
-		std::cout << "FramebufferTexture2D: only GLR_FRAMEBUFFER is supported.\n";
+		std::cout << "FramebufferTexture2D: only AGL_FRAMEBUFFER is supported.\n";
 		return;
 	}
 
@@ -1233,15 +1233,15 @@ void AmberGL::FramebufferTexture2D(uint32_t p_target, uint32_t p_attachment, uin
 
 	if (p_texture == 0)
 	{
-		if (p_attachment == GLR_DEPTH_ATTACHMENT)
+		if (p_attachment == AGL_DEPTH_ATTACHMENT)
 		{
 			delete frameBufferObject.DepthBuffer;
 			frameBufferObject.DepthBuffer = nullptr;
 			
-			if (frameBufferObject.AttachedTexture && p_attachment == GLR_DEPTH_ATTACHMENT)
+			if (frameBufferObject.AttachedTexture && p_attachment == AGL_DEPTH_ATTACHMENT)
 				frameBufferObject.AttachedTexture = nullptr;
 		}
-		else if (p_attachment == GLR_COLOR_ATTACHMENT)
+		else if (p_attachment == AGL_COLOR_ATTACHMENT)
 		{
 			delete frameBufferObject.ColorBuffer;
 			frameBufferObject.ColorBuffer = nullptr;
@@ -1251,14 +1251,14 @@ void AmberGL::FramebufferTexture2D(uint32_t p_target, uint32_t p_attachment, uin
 
 	AmberRenderer::Rendering::SoftwareRenderer::RenderObject::TextureObject* textureObject = TextureObjects[p_texture];
 	
-	if (p_attachment == GLR_DEPTH_ATTACHMENT)
+	if (p_attachment == AGL_DEPTH_ATTACHMENT)
 	{
 		delete frameBufferObject.DepthBuffer;
 
 		frameBufferObject.DepthBuffer = new AmberRenderer::Rendering::SoftwareRenderer::RenderObject::FrameBufferObjectData<Depth>(textureObject->Width, textureObject->Height);
 		frameBufferObject.AttachedTexture = textureObject;
 	}
-	else if (p_attachment == GLR_COLOR_ATTACHMENT)
+	else if (p_attachment == AGL_COLOR_ATTACHMENT)
 	{
 		delete frameBufferObject.ColorBuffer;
 
@@ -1368,7 +1368,7 @@ void AmberGL::DrawElements(uint8_t p_primitiveMode, uint32_t p_indexCount)
 		RasterizeTriangle(p_primitiveMode, vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
 	}
 	
-	if (RenderContext.State & GLR_MULTISAMPLE && ActiveColorBuffer != nullptr)
+	if (RenderContext.State & AGL_MULTISAMPLE && ActiveColorBuffer != nullptr)
 		ApplyMSAA();
 
 	ActiveColorBuffer = originalColorBuffer;
@@ -1416,7 +1416,7 @@ void AmberGL::DrawArrays(uint8_t p_primitiveMode, uint32_t p_first, uint32_t p_c
 	AmberRenderer::Rendering::SoftwareRenderer::RenderObject::BufferObject& vertexBuffer = itVertex->second;
 	AmberRenderer::Geometry::Vertex* vertices = reinterpret_cast<AmberRenderer::Geometry::Vertex*>(vertexBuffer.Data.data());
 
-	if (p_primitiveMode == GLR_TRIANGLE_STRIP)
+	if (p_primitiveMode == AGL_TRIANGLE_STRIP)
 	{
 		for (uint32_t i = p_first; i < p_first + p_count - 2; i++)
 		{
@@ -1430,7 +1430,7 @@ void AmberGL::DrawArrays(uint8_t p_primitiveMode, uint32_t p_first, uint32_t p_c
 			}
 		}
 	}
-	else if (p_primitiveMode == GLR_TRIANGLES)
+	else if (p_primitiveMode == AGL_TRIANGLES)
 	{
 		for (uint32_t i = p_first; i + 2 < p_first + p_count; i += 3)
 		{
@@ -1438,7 +1438,7 @@ void AmberGL::DrawArrays(uint8_t p_primitiveMode, uint32_t p_first, uint32_t p_c
 		}
 	}
 
-	if (RenderContext.State & GLR_MULTISAMPLE && ActiveColorBuffer != nullptr)
+	if (RenderContext.State & AGL_MULTISAMPLE && ActiveColorBuffer != nullptr)
 		ApplyMSAA();
 
 	ActiveColorBuffer = originalColorBuffer;
@@ -1543,10 +1543,10 @@ void AmberGL::SetSamples(uint8_t p_samples)
 
 void AmberGL::PolygonMode(uint8_t p_mode)
 {
-	if (p_mode <= GLR_POINT)
+	if (p_mode <= AGL_POINT)
 		RenderContext.PolygonMode = p_mode;
 	else
-		RenderContext.PolygonMode = GLR_FILL;
+		RenderContext.PolygonMode = AGL_FILL;
 }
 
 void AmberGL::Enable(uint8_t p_state)
@@ -1566,21 +1566,21 @@ bool AmberGL::IsEnabled(uint8_t p_capability)
 
 void AmberGL::CullFace(uint8_t p_face)
 {
-	if (p_face <= GLR_FRONT_AND_BACK)
+	if (p_face <= AGL_FRONT_AND_BACK)
 		RenderContext.CullFace = p_face;
 	else
-		RenderContext.CullFace = GLR_BACK;
+		RenderContext.CullFace = AGL_BACK;
 }
 
 void AmberGL::DepthMask(bool p_flag)
 {
 	if (p_flag) 
 	{
-		Enable(GLR_DEPTH_WRITE);
+		Enable(AGL_DEPTH_WRITE);
 	}
 	else 
 	{
-		Disable(GLR_DEPTH_WRITE);
+		Disable(AGL_DEPTH_WRITE);
 	}
 }
 
@@ -1590,14 +1590,14 @@ void AmberGL::GetBool(uint8_t p_name, bool* p_params)
 
 	switch (p_name)
 	{
-	case GLR_DEPTH_WRITE:
-		*p_params = (RenderContext.State & GLR_DEPTH_WRITE) != 0;
+	case AGL_DEPTH_WRITE:
+		*p_params = (RenderContext.State & AGL_DEPTH_WRITE) != 0;
 		break;
-	case GLR_DEPTH_TEST:
-		*p_params = (RenderContext.State & GLR_DEPTH_TEST) != 0;
+	case AGL_DEPTH_TEST:
+		*p_params = (RenderContext.State & AGL_DEPTH_TEST) != 0;
 		break;
-	case GLR_CULL_FACE:
-		*p_params = (RenderContext.State & GLR_CULL_FACE) != 0;
+	case AGL_CULL_FACE:
+		*p_params = (RenderContext.State & AGL_CULL_FACE) != 0;
 		break;
 	default:
 		*p_params = false;
@@ -1611,15 +1611,15 @@ void AmberGL::GetInt(uint8_t p_name, int* p_params)
 
 	switch (p_name)
 	{
-	case GLR_CULL_FACE:
+	case AGL_CULL_FACE:
 		*p_params = RenderContext.CullFace;
 		break;
-	case GLR_FILL:
-	case GLR_LINE:
-	case GLR_POINT:
+	case AGL_FILL:
+	case AGL_LINE:
+	case AGL_POINT:
 		*p_params = RenderContext.PolygonMode;
 		break;
-	case GLR_VIEW_PORT:
+	case AGL_VIEW_PORT:
 		p_params[0] = RenderContext.ViewPortX;
 		p_params[1] = RenderContext.ViewPortY;
 		p_params[2] = RenderContext.ViewPortWidth;
@@ -1697,7 +1697,7 @@ void AmberGL::Terminate()
 
 void AmberGL::WindowHint(uint8_t p_name, uint8_t p_value)
 {
-	if (p_name == GLR_SAMPLES)
+	if (p_name == AGL_SAMPLES)
 	{
 		SetSamples(p_value);
 	}
@@ -1708,24 +1708,24 @@ void AmberGL::ClearColor(float p_red, float p_green, float p_blue, float p_alpha
 	if (ActiveColorBuffer)
 		ActiveColorBuffer->SetColor(p_red, p_green, p_blue, p_alpha);
 
-	if (RenderContext.State & GLR_MULTISAMPLE)
+	if (RenderContext.State & AGL_MULTISAMPLE)
 		MSAABuffer->SetColor(p_red, p_green, p_blue, p_alpha);
 }
 
 void AmberGL::Clear(uint8_t p_flags)
 {
-	if (p_flags & GLR_COLOR_BUFFER_BIT)
+	if (p_flags & AGL_COLOR_BUFFER_BIT)
 	{
 		if (ActiveColorBuffer)
 			ActiveColorBuffer->Clear();
 	}
 
-	if (p_flags & GLR_DEPTH_BUFFER_BIT)
+	if (p_flags & AGL_DEPTH_BUFFER_BIT)
 	{
 		ActiveDepthBuffer->Clear();
 	}
 
-	if (RenderContext.State & GLR_MULTISAMPLE)
+	if (RenderContext.State & AGL_MULTISAMPLE)
 		MSAABuffer->Clear();
 }
 

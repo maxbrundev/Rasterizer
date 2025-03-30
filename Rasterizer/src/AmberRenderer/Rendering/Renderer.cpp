@@ -129,11 +129,11 @@ uint8_t AmberRenderer::Rendering::Renderer::FetchState() const
 {
 	uint8_t result = 0;
 
-	if (m_driver.GetBool(GLR_DEPTH_WRITE))                                  result |= 0b0000'0001;
+	if (m_driver.GetBool(AGL_DEPTH_WRITE))                                  result |= 0b0000'0001;
 	if (m_driver.GetCapability(Settings::ERenderingCapability::DEPTH_TEST)) result |= 0b0000'0010;
 	if (m_driver.GetCapability(Settings::ERenderingCapability::CULL_FACE))  result |= 0b0000'0100;
 
-	switch (static_cast<Settings::ECullFace>(m_driver.GetInt(GLR_CULL_FACE)))
+	switch (static_cast<Settings::ECullFace>(m_driver.GetInt(AGL_CULL_FACE)))
 	{
 	case Settings::ECullFace::BACK:           result |= 0b0000'1000; break;
 	case Settings::ECullFace::FRONT:          result |= 0b0001'0000; break;

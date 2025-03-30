@@ -3,95 +3,95 @@
 // -----------------------------------------------------------------------------
 // PRIMITIVE TYPES
 // -----------------------------------------------------------------------------
-#define GLR_TRIANGLES      0
-#define GLR_LINES          1
-#define GLR_POINTS         2
-#define GLR_TRIANGLE_STRIP 3
+#define AGL_TRIANGLES      0
+#define AGL_LINES          1
+#define AGL_POINTS         2
+#define AGL_TRIANGLE_STRIP 3
 
 // -----------------------------------------------------------------------------
 // POLYGON MODES
 // -----------------------------------------------------------------------------
-#define GLR_FILL  0
-#define GLR_LINE  1
-#define GLR_POINT 2
+#define AGL_FILL  0
+#define AGL_LINE  1
+#define AGL_POINT 2
 
 // -----------------------------------------------------------------------------
 // FACE-CULLING MODES
 // -----------------------------------------------------------------------------
-#define GLR_BACK           0
-#define GLR_FRONT          1
-#define GLR_FRONT_AND_BACK 2
+#define AGL_BACK           0
+#define AGL_FRONT          1
+#define AGL_FRONT_AND_BACK 2
 
 // -----------------------------------------------------------------------------
 // STATE ENABLE/DISABLE
 // -----------------------------------------------------------------------------
-#define GLR_DEPTH_WRITE 0x01
-#define GLR_DEPTH_TEST  0x02
-#define GLR_CULL_FACE   0x04
-#define GLR_MULTISAMPLE 0x08
+#define AGL_DEPTH_WRITE 0x01
+#define AGL_DEPTH_TEST  0x02
+#define AGL_CULL_FACE   0x04
+#define AGL_MULTISAMPLE 0x08
 
-#define GLR_SAMPLES 0
+#define AGL_SAMPLES 0
 
 // -----------------------------------------------------------------------------
 // CLEAR FLAGS
 // -----------------------------------------------------------------------------
-#define GLR_COLOR_BUFFER_BIT 0x01
-#define GLR_DEPTH_BUFFER_BIT 0x02
+#define AGL_COLOR_BUFFER_BIT 0x01
+#define AGL_DEPTH_BUFFER_BIT 0x02
 
 // -----------------------------------------------------------------------------
 // BUFFER BINDING TARGETS
 // -----------------------------------------------------------------------------
-#define GLR_ARRAY_BUFFER         0
-#define GLR_ELEMENT_ARRAY_BUFFER 1
+#define AGL_ARRAY_BUFFER         0
+#define AGL_ELEMENT_ARRAY_BUFFER 1
 
 // -----------------------------------------------------------------------------
 // TEXTURE TARGETS
 // -----------------------------------------------------------------------------
-#define GLR_TEXTURE_2D 100
+#define AGL_TEXTURE_2D 100
 
 // -----------------------------------------------------------------------------
 // INTERNAL / PIXEL FORMATS
 // -----------------------------------------------------------------------------
-#define GLR_DEPTH_COMPONENT 101
-#define GLR_RGBA8           102
-#define GLR_FLOAT           103
-#define GLR_UNSIGNED_BYTE   104
+#define AGL_DEPTH_COMPONENT 101
+#define AGL_RGBA8           102
+#define AGL_FLOAT           103
+#define AGL_UNSIGNED_BYTE   104
 
 // -----------------------------------------------------------------------------
 // TEXTURE PARAMETERS
 // -----------------------------------------------------------------------------
-#define GLR_TEXTURE_MIN_FILTER 110
-#define GLR_TEXTURE_MAG_FILTER 111
-#define GLR_TEXTURE_WRAP_S     112
-#define GLR_TEXTURE_WRAP_T     113
+#define AGL_TEXTURE_MIN_FILTER 110
+#define AGL_TEXTURE_MAG_FILTER 111
+#define AGL_TEXTURE_WRAP_S     112
+#define AGL_TEXTURE_WRAP_T     113
 
 // -----------------------------------------------------------------------------
 // WRAP MODES
 // -----------------------------------------------------------------------------
-#define GLR_CLAMP  0
-#define GLR_REPEAT 1
+#define AGL_CLAMP  0
+#define AGL_REPEAT 1
 
 // -----------------------------------------------------------------------------
 // FILTERING MODES
 // -----------------------------------------------------------------------------
-#define GLR_NEAREST                0
-#define GLR_LINEAR                 1
-#define GLR_NEAREST_MIPMAP_NEAREST 2
-#define GLR_LINEAR_MIPMAP_LINEAR   3
-#define GLR_LINEAR_MIPMAP_NEAREST  4
-#define GLR_NEAREST_MIPMAP_LINEAR  5
+#define AGL_NEAREST                0
+#define AGL_LINEAR                 1
+#define AGL_NEAREST_MIPMAP_NEAREST 2
+#define AGL_LINEAR_MIPMAP_LINEAR   3
+#define AGL_LINEAR_MIPMAP_NEAREST  4
+#define AGL_NEAREST_MIPMAP_LINEAR  5
 
 // -----------------------------------------------------------------------------
 // TEXTURE UNIT
 // -----------------------------------------------------------------------------
-#define GLR_TEXTURE0 0
+#define AGL_TEXTURE0 0
 
 // -----------------------------------------------------------------------------
 // FRAMEBUFFER ATTACHMENTS
 // -----------------------------------------------------------------------------
-#define GLR_FRAMEBUFFER      200
-#define GLR_COLOR_ATTACHMENT 201
-#define GLR_DEPTH_ATTACHMENT 202
+#define AGL_FRAMEBUFFER      200
+#define AGL_COLOR_ATTACHMENT 201
+#define AGL_DEPTH_ATTACHMENT 202
 
 // -----------------------------------------------------------------------------
 // NO ATTACHMENT
@@ -101,4 +101,4 @@
 // -----------------------------------------------------------------------------
 // CUSTOM DEFINES
 // -----------------------------------------------------------------------------
-#define GLR_VIEW_PORT 300
+#define AGL_VIEW_PORT 300

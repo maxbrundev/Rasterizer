@@ -7,13 +7,13 @@ AmberRenderer::Buffers::FrameBuffer::FrameBuffer(uint32_t p_width, uint32_t p_he
 	AmberGL::GenFramebuffers(1, &m_bufferID);
 	AmberGL::GenTextures(1, &m_renderTexture);
 
-	AmberGL::BindTexture(GLR_TEXTURE_2D, m_renderTexture);
-	AmberGL::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_MAG_FILTER, GLR_NEAREST);
-	AmberGL::TexParameteri(GLR_TEXTURE_2D, GLR_TEXTURE_MIN_FILTER, GLR_NEAREST);
-	AmberGL::BindTexture(GLR_TEXTURE_2D, 0);
+	AmberGL::BindTexture(AGL_TEXTURE_2D, m_renderTexture);
+	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MAG_FILTER, AGL_NEAREST);
+	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MIN_FILTER, AGL_NEAREST);
+	AmberGL::BindTexture(AGL_TEXTURE_2D, 0);
 
 	Bind();
-	AmberGL::FramebufferTexture2D(GLR_FRAMEBUFFER, GLR_COLOR_ATTACHMENT, GLR_TEXTURE_2D, m_renderTexture, 0);
+	AmberGL::FramebufferTexture2D(AGL_FRAMEBUFFER, AGL_COLOR_ATTACHMENT, AGL_TEXTURE_2D, m_renderTexture, 0);
 	Unbind();
 
 	//Resize(p_width, p_height);
@@ -26,12 +26,12 @@ AmberRenderer::Buffers::FrameBuffer::~FrameBuffer()
 
 void AmberRenderer::Buffers::FrameBuffer::Bind() const
 {
-	AmberGL::BindFramebuffer(GLR_FRAMEBUFFER, m_bufferID);
+	AmberGL::BindFramebuffer(AGL_FRAMEBUFFER, m_bufferID);
 }
 
 void AmberRenderer::Buffers::FrameBuffer::Unbind() const
 {
-	AmberGL::BindFramebuffer(GLR_FRAMEBUFFER, 0);
+	AmberGL::BindFramebuffer(AGL_FRAMEBUFFER, 0);
 }
 
 void AmberRenderer::Buffers::FrameBuffer::Resize(uint16_t p_width, uint16_t p_height)

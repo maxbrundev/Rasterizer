@@ -16,8 +16,8 @@ void AmberRenderer::Rendering::Driver::Clear(bool p_colorBuffer, bool p_depthBuf
 {
 	uint8_t clearMask = 0;
 
-	if (p_colorBuffer) clearMask |= GLR_COLOR_BUFFER_BIT;
-	if (p_depthBuffer) clearMask |= GLR_DEPTH_BUFFER_BIT;
+	if (p_colorBuffer) clearMask |= AGL_COLOR_BUFFER_BIT;
+	if (p_depthBuffer) clearMask |= AGL_DEPTH_BUFFER_BIT;
 
 	if (clearMask != 0)
 	{

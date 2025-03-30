@@ -109,7 +109,7 @@ glm::vec4 AmberRenderer::Rendering::SoftwareRenderer::Programs::AProgram::Textur
 
 	uint8_t* data = hasMipmaps && currentLOD > 0 ? textureObject->Mipmaps[currentLOD] : textureObject->Data8;
 
-	if (textureObject->InternalFormat == GLR_DEPTH_COMPONENT)
+	if (textureObject->InternalFormat == AGL_DEPTH_COMPONENT)
 	{
 		//TODO: Handle float data
 	}

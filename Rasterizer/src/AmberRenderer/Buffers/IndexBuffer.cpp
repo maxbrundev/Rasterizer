@@ -7,7 +7,7 @@ AmberRenderer::Buffers::IndexBuffer::IndexBuffer(const unsigned int* p_data, siz
 {
 	AmberGL::GenBuffers(1, &m_bufferID);
 	Bind();
-	AmberGL::BufferData(GLR_ELEMENT_ARRAY_BUFFER, p_elements * sizeof(uint32_t), p_data);
+	AmberGL::BufferData(AGL_ELEMENT_ARRAY_BUFFER, p_elements * sizeof(uint32_t), p_data);
 }
 
 AmberRenderer::Buffers::IndexBuffer::~IndexBuffer()
@@ -17,12 +17,12 @@ AmberRenderer::Buffers::IndexBuffer::~IndexBuffer()
 
 void AmberRenderer::Buffers::IndexBuffer::Bind() const
 {
-	AmberGL::BindBuffer(GLR_ELEMENT_ARRAY_BUFFER, m_bufferID);
+	AmberGL::BindBuffer(AGL_ELEMENT_ARRAY_BUFFER, m_bufferID);
 }
 
 void AmberRenderer::Buffers::IndexBuffer::Unbind() const
 {
-	AmberGL::BindBuffer(GLR_ELEMENT_ARRAY_BUFFER, m_bufferID);
+	AmberGL::BindBuffer(AGL_ELEMENT_ARRAY_BUFFER, m_bufferID);
 }
 
 uint32_t AmberRenderer::Buffers::IndexBuffer::GetID() const

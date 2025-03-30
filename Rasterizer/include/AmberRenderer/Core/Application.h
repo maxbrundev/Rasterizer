@@ -4,8 +4,6 @@
 
 #include "AmberRenderer/Core/Context.h"
 
-#include "AmberRenderer/Rendering/SoftwareRenderer/Programs/ShadowMappingDepth.h"
-
 namespace AmberRenderer::Core
 {
 	class Application
