@@ -336,6 +336,7 @@ To generate the project, execute `GenerateProject.bat`. By default, `GeneratePro
 *Left mipmaps off, Right mipmaps on.*
 
 **Clipping**
+
 ![clipping](https://github.com/user-attachments/assets/b2ac8825-3ba7-47fa-930d-39986438a02c)  
 *Frustum plane distances have been reduced to highlight clipping*
 
