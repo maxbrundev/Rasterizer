@@ -53,7 +53,3 @@ project "AmberEditor"
         optimize "On"
         kind "WindowedApp"
         runtime "Release"
-        
-    filter { "system:windows" }
-        -- forces post-build commands to trigger even if nothing changed
-        fastuptodate "Off"

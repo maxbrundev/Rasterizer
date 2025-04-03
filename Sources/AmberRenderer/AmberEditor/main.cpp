@@ -1,8 +1,8 @@
-#define SDL_MAIN_HANDLED
+#include <SDL2/SDL.h>
 
 #include "AmberEditor/Core/Application.h"
 
-int main()
+int SDL_main(int argc, char* argv[])
 {
 	AmberEditor::Core::Application application;
 	application.Initialize();
