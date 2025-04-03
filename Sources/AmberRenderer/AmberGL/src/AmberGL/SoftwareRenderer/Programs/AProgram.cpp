@@ -38,7 +38,7 @@ void AmberGL::SoftwareRenderer::Programs::AProgram::ProcessInterpolation(const g
 	}
 }
 
-AmberGL::Data::Color AmberGL::SoftwareRenderer::Programs::AProgram::ProcessFragment()
+glm::vec4 AmberGL::SoftwareRenderer::Programs::AProgram::ProcessFragment()
 {
 	return FragmentPass();
 }

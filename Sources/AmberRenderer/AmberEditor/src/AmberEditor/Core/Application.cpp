@@ -4,14 +4,17 @@
 #include <glm/ext/matrix_transform.hpp>
 
 #include <AmberGL/SoftwareRenderer/AmberGL.h>
-#include "AmberGL/SoftwareRenderer/Programs/QuadNDC.h"
-#include "AmberGL/SoftwareRenderer/Programs/ShadowMapping.h"
-#include "AmberGL/SoftwareRenderer/Programs/ShadowMappingDepth.h"
+#include <AmberGL/SoftwareRenderer/Programs/QuadNDC.h>
+#include <AmberGL/SoftwareRenderer/Programs/ShadowMapping.h>
+#include <AmberGL/SoftwareRenderer/Programs/ShadowMappingDepth.h>
+
+#include "AmberEditor/Data/Color.h"
 
 #include "AmberEditor/Resources/Mesh.h"
 #include "AmberEditor/Resources/Model.h"
 #include "AmberEditor/Resources/Loaders/ModelLoader.h"
 #include "AmberEditor/Resources/Loaders/ShaderLoader.h"
+
 #include "AmberEditor/Tools/Time/Clock.h"
 
 //TODO: Scene system.
@@ -69,7 +72,7 @@ void AmberEditor::Core::Application::Run()
 {
 	Tools::Time::Clock clock;
 
-	AmberGL::Data::Color backGround(70, 70, 70);
+	AmberEditor::Data::Color backGround(70, 70, 70);
 
 	uint32_t planeVAO;
 	uint32_t planeVBO;

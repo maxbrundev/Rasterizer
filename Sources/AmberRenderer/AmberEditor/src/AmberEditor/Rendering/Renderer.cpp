@@ -1,6 +1,7 @@
 #include "AmberEditor/Rendering/Renderer.h"
 
 #include <AmberGL/SoftwareRenderer/AmberGL.h>
+
 #include "AmberEditor/Rendering/Settings/EPrimitiveMode.h"
 #include "AmberEditor/Resources/Loaders/TextureLoader.h"
 
@@ -90,7 +91,7 @@ void AmberEditor::Rendering::Renderer::DrawMesh(Settings::EPrimitiveMode p_drawM
 	}
 }
 
-void AmberEditor::Rendering::Renderer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, AmberGL::SoftwareRenderer::Programs::AProgram& p_shader, const AmberGL::Data::Color& p_color)
+void AmberEditor::Rendering::Renderer::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, AmberGL::SoftwareRenderer::Programs::AProgram& p_shader, const AmberEditor::Data::Color& p_color)
 {
 	uint8_t state = FetchState();
 
@@ -98,7 +99,7 @@ void AmberEditor::Rendering::Renderer::DrawLine(const glm::vec3& p_point0, const
 
 	p_shader.Bind();
 
-	AmberGL::DrawLine({ p_point0 }, { p_point1 }, p_color);
+	AmberGL::DrawLine({ p_point0 }, { p_point1 }, p_color.GetNormalizedVec4());
 }
 
 void AmberEditor::Rendering::Renderer::Render() const

@@ -4,10 +4,9 @@
 #include <cstdint>
 #include <emmintrin.h>
 
-#include "AmberGL/Data/Color.h"
 #include "AmberGL/SoftwareRenderer/RenderObject/TextureObject.h"
 
-typedef AmberGL::Data::Color RGBA8;
+typedef uint32_t RGBA8;
 typedef float Depth;
 
 inline void SSEClear(uint32_t* p_data, size_t p_size, uint32_t p_value)
@@ -116,7 +115,7 @@ namespace AmberGL::SoftwareRenderer::RenderObject
 		{
 			if constexpr (std::is_same<T, RGBA8>::value)
 			{
-				Data[p_y * Width + p_x] = p_value.Pack();
+				Data[p_y * Width + p_x] = p_value;
 			}
 			else if constexpr (std::is_same<T, Depth>::value)
 			{
@@ -175,12 +174,12 @@ namespace AmberGL::SoftwareRenderer::RenderObject
 						uint32_t flippedY = Height - 1 - y;
 						uint32_t index = flippedY * Width + x;
 
-						AmberGL::Data::Color color(Data[y * Width + x]);
+						uint32_t color = Data[y * Width + x];
 
-						textureData[index * 4 + 0] = color.r;
-						textureData[index * 4 + 1] = color.g;
-						textureData[index * 4 + 2] = color.b;
-						textureData[index * 4 + 3] = color.a;
+						textureData[index * 4 + 0] = color >> 24;
+						textureData[index * 4 + 1] = color >> 16;
+						textureData[index * 4 + 2] = color >> 8;
+						textureData[index * 4 + 3] = color;
 					}
 				}
 			}

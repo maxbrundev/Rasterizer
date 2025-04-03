@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "AmberGL/SoftwareRenderer/Programs/AProgram.h"
+#include <AmberGL/SoftwareRenderer/Programs/AProgram.h>
 
 namespace AmberEditor::Resources::Loaders
 {

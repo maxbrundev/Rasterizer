@@ -2,8 +2,9 @@
 
 #include <string>
 
+#include <AmberGL/SoftwareRenderer/Programs/AProgram.h>
+
 #include "AmberEditor/Resources/Shader.h"
-#include "AmberGL/SoftwareRenderer/Programs/AProgram.h"
 
 namespace AmberEditor::Resources::Loaders
 {

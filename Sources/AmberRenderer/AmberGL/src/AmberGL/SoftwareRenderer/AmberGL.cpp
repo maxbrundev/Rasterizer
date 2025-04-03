@@ -66,7 +66,7 @@ namespace
 
 void InitializeClippingFrustum();
 void RasterizeTriangle(const uint8_t p_primitiveMode, const AmberGL::Geometry::Vertex& p_vertex0, const AmberGL::Geometry::Vertex& p_vertex1, const AmberGL::Geometry::Vertex& p_vertex2);
-void RasterizeLine(const AmberGL::Geometry::Vertex& p_vertex0, const AmberGL::Geometry::Vertex& p_vertex1, const AmberGL::Data::Color& p_color);
+void RasterizeLine(const AmberGL::Geometry::Vertex& p_vertex0, const AmberGL::Geometry::Vertex& p_vertex1, const  glm::vec4& p_color);
 void TransformAndRasterizeVertices(const uint8_t p_primitiveMode, const std::array<glm::vec4, 3>& processedVertices);
 void ComputeFragments(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices);
 
@@ -75,11 +75,11 @@ void SetSampleFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p
 
 void RasterizeTriangleWireframe(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices);
 void RasterizeLine(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, const glm::vec4& p_start, const glm::vec4& p_end);
-void RasterizeLine(const glm::vec4& p_start, const glm::vec4& p_end, const AmberGL::Data::Color& p_color);
+void RasterizeLine(const glm::vec4& p_start, const glm::vec4& p_end, const  glm::vec4& p_color);
 
 void RasterizeTrianglePoints(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices);
 void DrawPoint(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, const glm::vec4& p_point);
-void DrawPoint(const glm::vec2& p_point, const AmberGL::Data::Color& p_color);
+void DrawPoint(const glm::vec2& p_point, const glm::vec4& p_color);
 
 glm::vec3 ComputeScreenSpaceCoordinate(const glm::vec4& p_vertexWorldPosition);
 glm::vec2 ComputeNormalizedDeviceCoordinate(const glm::vec3& p_vertexScreenSpacePosition);
@@ -90,6 +90,24 @@ void ApplyMSAA();
 
 AmberGL::SoftwareRenderer::Buffers::MSAABuffer* MSAABuffer;
 std::array<AmberGL::Geometry::Plane, 6> ClippingFrustum;
+
+inline uint32_t PackColor(const glm::vec4& p_normalizedColor)
+{
+	return static_cast<uint8_t>(p_normalizedColor.x * 255.0f) << 24 |
+		static_cast<uint8_t>(p_normalizedColor.y * 255.0f) << 16 |
+		static_cast<uint8_t>(p_normalizedColor.z * 255.0f) << 8 |
+		static_cast<uint8_t>(p_normalizedColor.w * 255.0f);
+}
+
+inline glm::vec4 UnpackColor(uint32_t p_packedColor)
+{
+	return glm::vec4(
+		(p_packedColor >> 24 & 0xFF) / 255.0f,
+		(p_packedColor >> 16 & 0xFF) / 255.0f,
+		(p_packedColor >> 8 & 0xFF) / 255.0f,
+		(p_packedColor & 0xFF) / 255.0f
+	);
+}
 
 void InitializeClippingFrustum()
 {
@@ -328,12 +346,20 @@ void SetFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p_x, ui
 		{
 			RenderContext.Program->ProcessInterpolation(barycentricCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, p_transformedVertices[2].w);
 
-			AmberGL::Data::Color color = RenderContext.Program->ProcessFragment();
+			glm::vec4 color = RenderContext.Program->ProcessFragment();
 
-			float alpha = color.a / 255.0f;
+			float alpha = color.w;
 
 			if (RenderContext.FrameBufferObject->ColorBuffer != nullptr)
-				RenderContext.FrameBufferObject->ColorBuffer->SetPixel(p_x, p_y, AmberGL::Data::Color::Mix(AmberGL::Data::Color(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(p_x, p_y)), color, alpha));
+			{
+				glm::vec4 currentPixelColor = UnpackColor(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(p_x, p_y));
+
+				glm::vec4 mixedColor = glm::mix(currentPixelColor, color, alpha);
+
+				uint32_t packedColor = PackColor(mixedColor);
+
+				RenderContext.FrameBufferObject->ColorBuffer->SetPixel(p_x, p_y, packedColor);
+			}
 
 			if (RenderContext.State & AGL_DEPTH_WRITE)
 			{
@@ -361,10 +387,12 @@ void SetSampleFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p
 		{
 			RenderContext.Program->ProcessInterpolation(barycentricCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, p_transformedVertices[2].w);
 
-			AmberGL::Data::Color color = RenderContext.Program->ProcessFragment();
+			glm::vec4 color = RenderContext.Program->ProcessFragment();
 
 			if (RenderContext.State & AGL_MULTISAMPLE)
-				MSAABuffer->SetPixelSample(p_x, p_y, p_sampleIndex, color, depth);
+			{
+				MSAABuffer->SetPixelSample(p_x, p_y, p_sampleIndex, PackColor(color), depth);
+			}
 		}
 	}
 }
@@ -411,12 +439,20 @@ void RasterizeLine(const AmberGL::Geometry::Triangle& p_triangle, const std::arr
 			{
 				RenderContext.Program->ProcessInterpolation(barycentricCoords, transformedVertices[0].w, transformedVertices[1].w, transformedVertices[2].w);
 
-				AmberGL::Data::Color color = RenderContext.Program->ProcessFragment();
+				glm::vec4 color = RenderContext.Program->ProcessFragment();
 
-				float alpha = color.a / 255.0f;
+				float alpha = color.a;
 
 				if (RenderContext.FrameBufferObject->ColorBuffer != nullptr)
-					RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x0, y0, AmberGL::Data::Color::Mix(AmberGL::Data::Color(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(x0, y0)), color, alpha));
+				{
+					glm::vec4 currentPixelColor = UnpackColor(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(x0, y0));
+
+					glm::vec4 mixedColor = glm::mix(currentPixelColor, color, alpha);
+
+					uint32_t packedColor = PackColor(mixedColor);
+
+					RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x0, y0, packedColor);
+				}
 
 				if (RenderContext.State & AGL_DEPTH_WRITE)
 				{
@@ -441,7 +477,7 @@ void RasterizeLine(const AmberGL::Geometry::Triangle& p_triangle, const std::arr
 	}
 }
 
-void RasterizeLine(const glm::vec4& p_start, const glm::vec4& p_end, const AmberGL::Data::Color& p_color)
+void RasterizeLine(const glm::vec4& p_start, const glm::vec4& p_end, const glm::vec4& p_color)
 {
 	int x0 = static_cast<int>(p_start.x);
 	int y0 = static_cast<int>(p_start.y);
@@ -475,7 +511,9 @@ void RasterizeLine(const glm::vec4& p_start, const glm::vec4& p_end, const Amber
 			if (!(RenderContext.State & AGL_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(x0, y0))
 			{
 				if (RenderContext.FrameBufferObject->ColorBuffer != nullptr)
-					RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x0, y0, p_color);
+				{
+					RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x0, y0, PackColor(p_color));
+				}
 
 				if (RenderContext.State & AGL_DEPTH_WRITE)
 				{
@@ -528,12 +566,20 @@ void DrawPoint(const AmberGL::Geometry::Triangle& p_triangle, const std::array<g
 		{
 			RenderContext.Program->ProcessInterpolation(barycentricCoords, transformedVertices[0].w, transformedVertices[1].w, transformedVertices[2].w);
 
-			AmberGL::Data::Color color = RenderContext.Program->ProcessFragment();
+			glm::vec4 color = RenderContext.Program->ProcessFragment();
 
-			float alpha = color.a / 255.0f;
+			float alpha = color.a;
 
 			if (RenderContext.FrameBufferObject->ColorBuffer != nullptr)
-				RenderContext.FrameBufferObject->ColorBuffer->SetPixel(p_point.x, p_point.y, AmberGL::Data::Color::Mix(AmberGL::Data::Color(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(p_point.x, p_point.y)), color, alpha));
+			{
+				glm::vec4 currentPixelColor = UnpackColor(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(p_point.x, p_point.y));
+
+				glm::vec4 mixedColor = glm::mix(currentPixelColor, color, alpha);
+
+				uint32_t packedColor = PackColor(mixedColor);
+
+				RenderContext.FrameBufferObject->ColorBuffer->SetPixel(p_point.x, p_point.y, packedColor);
+			}
 
 			if (RenderContext.State & AGL_DEPTH_WRITE)
 			{
@@ -543,7 +589,7 @@ void DrawPoint(const AmberGL::Geometry::Triangle& p_triangle, const std::array<g
 	}
 }
 
-void DrawPoint(const glm::vec2& p_point, const AmberGL::Data::Color& p_color)
+void DrawPoint(const glm::vec2& p_point, const  glm::vec4& p_color)
 {
 	if (RenderContext.FrameBufferObject->ColorBuffer == nullptr)
 		return;
@@ -553,11 +599,11 @@ void DrawPoint(const glm::vec2& p_point, const AmberGL::Data::Color& p_color)
 
 	if (p_point.x >= 0 && p_point.x < width && p_point.y >= 0 && p_point.y < height)
 	{
-		RenderContext.FrameBufferObject->ColorBuffer->SetPixel(p_point.x, p_point.y, p_color);
+		RenderContext.FrameBufferObject->ColorBuffer->SetPixel(p_point.x, p_point.y, PackColor(p_color));
 	}
 }
 
-void RasterizeLine(const AmberGL::Geometry::Vertex& p_vertex0, const AmberGL::Geometry::Vertex& p_vertex1, const AmberGL::Data::Color& p_color)
+void RasterizeLine(const AmberGL::Geometry::Vertex& p_vertex0, const AmberGL::Geometry::Vertex& p_vertex1, const  glm::vec4& p_color)
 {
 	glm::vec4 vertexWorldPosition0 = RenderContext.Program->ProcessVertex(p_vertex0, 0);
 	glm::vec4 vertexWorldPosition1 = RenderContext.Program->ProcessVertex(p_vertex1, 1);
@@ -604,7 +650,9 @@ void RasterizeLine(const AmberGL::Geometry::Vertex& p_vertex0, const AmberGL::Ge
 			if (!(RenderContext.State & AGL_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(x0, y0))
 			{
 				if (RenderContext.FrameBufferObject->ColorBuffer != nullptr)
-					RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x0, y0, p_color);
+				{
+					RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x0, y0, PackColor(p_color));
+				}
 
 				if (RenderContext.State & AGL_DEPTH_WRITE)
 				{
@@ -755,7 +803,6 @@ void ApplyMSAA()
 
 	const uint32_t width = RenderContext.FrameBufferObject->ColorBuffer->Width;
 	const uint32_t height = RenderContext.FrameBufferObject->ColorBuffer->Height;
-
 	float depth = 0.0f;
 
 	for (uint32_t x = 0; x < width; x++)
@@ -763,18 +810,15 @@ void ApplyMSAA()
 		for (uint32_t y = 0; y < height; y++)
 		{
 			glm::ivec4 color = { 0, 0, 0, 0 };
-
 			depth = 0.0f;
 
 			for (uint8_t sampleIndex = 0; sampleIndex < RenderContext.Samples; ++sampleIndex)
 			{
 				const auto& sample = MSAABuffer->GetSample(x, y, sampleIndex);
-
 				color.x += static_cast<uint8_t>(sample.Color >> 24);
 				color.y += static_cast<uint8_t>(sample.Color >> 16);
 				color.z += static_cast<uint8_t>(sample.Color >> 8);
 				color.w += static_cast<uint8_t>(sample.Color);
-
 				depth += sample.Depth;
 			}
 
@@ -782,13 +826,24 @@ void ApplyMSAA()
 			color.y /= RenderContext.Samples;
 			color.z /= RenderContext.Samples;
 			color.w /= RenderContext.Samples;
-
 			depth /= static_cast<float>(RenderContext.Samples);
 
-			AmberGL::Data::Color sampledColorTotal(static_cast<uint8_t>(color.x), static_cast<uint8_t>(color.y), static_cast<uint8_t>(color.z), static_cast<uint8_t>(color.w));
-			const float alpha = static_cast<float>(sampledColorTotal.a) / 255.0f;
+			glm::vec4 currentPixelColor = UnpackColor(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(x, y));
 
-			RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x, y, AmberGL::Data::Color::Mix(AmberGL::Data::Color(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(x, y)), sampledColorTotal, alpha));
+			float alpha = static_cast<float>(color.w) / 255.0f;
+
+			glm::vec4 sampledColor(
+				color.x / 255.0f,
+				color.y / 255.0f,
+				color.z / 255.0f,
+				color.w / 255.0f
+			);
+
+			glm::vec4 mixedColor = glm::mix(currentPixelColor, sampledColor, alpha);
+
+			uint32_t packedColor = PackColor(mixedColor);
+
+			RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x, y, packedColor);
 
 			if (RenderContext.State & AGL_DEPTH_WRITE)
 			{
@@ -1445,7 +1500,7 @@ void AmberGL::DrawArrays(uint8_t p_primitiveMode, uint32_t p_first, uint32_t p_c
 	ActiveDepthBuffer = originalDepthBuffer;
 }
 
-void AmberGL::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const AmberGL::Data::Color& p_color)
+void AmberGL::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const glm::vec4& p_color)
 {
 	RasterizeLine(AmberGL::Geometry::Vertex(p_point0 ), AmberGL::Geometry::Vertex(p_point1), p_color);
 }

@@ -57,6 +57,17 @@ void AmberGL::SoftwareRenderer::Buffers::MSAABuffer::SetColor(float p_red, float
 	m_clearColor = (r << 24) | (g << 16) | (b << 8) | a;
 }
 
+void AmberGL::SoftwareRenderer::Buffers::MSAABuffer::SetPixelSample(uint32_t p_x, uint32_t p_y, uint8_t p_sampleIndex, uint32_t p_color, float p_depth) const
+{
+	auto& sample = m_data[(p_y * m_width + p_x) * m_samplesAmount + p_sampleIndex];
+
+	if (p_depth < sample.Depth)
+	{
+		sample.Color = p_color;
+		sample.Depth = p_depth;
+	}
+}
+
 uint32_t AmberGL::SoftwareRenderer::Buffers::MSAABuffer::GetWidth() const
 {
 	return m_width;
@@ -70,15 +81,4 @@ uint32_t AmberGL::SoftwareRenderer::Buffers::MSAABuffer::GetHeight() const
 AmberGL::SoftwareRenderer::Buffers::MSAABuffer::Sample& AmberGL::SoftwareRenderer::Buffers::MSAABuffer::GetSample(uint32_t p_x, uint32_t p_y, uint8_t p_sampleIndex) const
 {
 	return m_data[(p_y * m_width + p_x) * m_samplesAmount + p_sampleIndex];
-}
-
-void AmberGL::SoftwareRenderer::Buffers::MSAABuffer::SetPixelSample(uint32_t p_x, uint32_t p_y, uint8_t p_sampleIndex, const Data::Color& p_color, float p_depth) const
-{
-	auto& sample = m_data[(p_y * m_width + p_x) * m_samplesAmount + p_sampleIndex];
-
-	if (p_depth < sample.Depth)
-	{
-		sample.Color = p_color.Pack();
-		sample.Depth = p_depth;
-	}
 }

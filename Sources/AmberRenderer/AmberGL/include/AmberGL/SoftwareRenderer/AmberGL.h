@@ -4,7 +4,6 @@
 
 #include "AmberGL/API/Export.h"
 
-#include "AmberGL/Data/Color.h"
 #include "AmberGL/SoftwareRenderer/Defines.h"
 #include "AmberGL/SoftwareRenderer/RenderObject/TextureObject.h"
 #include "AmberGL/SoftwareRenderer/Programs/AProgram.h"
@@ -21,7 +20,7 @@ namespace AmberGL
 	API_AMBERGL void Viewport(uint16_t p_x, uint16_t p_y, uint16_t p_width, uint16_t p_height);
 	API_AMBERGL void DrawElements(uint8_t primitiveMode, uint32_t indexCount);
 	API_AMBERGL void DrawArrays(uint8_t primitiveMode, uint32_t first, uint32_t count);
-	API_AMBERGL void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const AmberGL::Data::Color& p_color);
+	API_AMBERGL void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const glm::vec4& p_color);
 
 	API_AMBERGL uint32_t CreateProgram();
 	API_AMBERGL void DeleteProgram(uint32_t p_program);

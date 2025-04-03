@@ -1,6 +1,7 @@
 #include "AmberEditor/Context/Device.h"
 
 #include <stdexcept>
+
 #include <SDL2/SDL.h>
 
 AmberEditor::Context::Device::Device()

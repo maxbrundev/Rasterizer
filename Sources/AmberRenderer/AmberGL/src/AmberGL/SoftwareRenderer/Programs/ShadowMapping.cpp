@@ -25,7 +25,7 @@ glm::vec4 AmberGL::SoftwareRenderer::Programs::ShadowMapping::VertexPass(const G
 constexpr glm::vec3 LightDiffuse = glm::vec3(1.0f);
 constexpr glm::vec3 LightAmbient = glm::vec3(0.3f);
 
-AmberGL::Data::Color AmberGL::SoftwareRenderer::Programs::ShadowMapping::FragmentPass()
+glm::vec4 AmberGL::SoftwareRenderer::Programs::ShadowMapping::FragmentPass()
 {
 	const glm::vec3 normal = glm::normalize(GetVaryingAs<glm::vec3>("v_Normal"));
 	const glm::vec2 texCoords = GetVaryingAs<glm::vec2>("v_TexCoords");

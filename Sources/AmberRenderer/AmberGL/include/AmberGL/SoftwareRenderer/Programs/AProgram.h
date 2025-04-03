@@ -40,7 +40,7 @@ namespace AmberGL::SoftwareRenderer::Programs
 
 		void ProcessInterpolation(const glm::vec3& p_barycentricCoords, float p_w0, float p_w1, float p_w2);
 
-		Data::Color ProcessFragment();
+		glm::vec4 ProcessFragment();
 
 		template<typename T>
 		void SetUniform(const std::string_view p_name, const T& p_value)
@@ -120,7 +120,7 @@ namespace AmberGL::SoftwareRenderer::Programs
 		
 	protected:
 		virtual glm::vec4 VertexPass(const Geometry::Vertex& p_vertex) = 0;
-		virtual Data::Color FragmentPass() = 0;
+		virtual glm::vec4 FragmentPass() = 0;
 
 		glm::vec3 Lambert(const glm::vec3& p_fragPos, const glm::vec3& p_normal, const glm::vec3& p_lightPos, const glm::vec3& p_lightDiffuse, const glm::vec3& p_lightAmbient) const;
 

@@ -2,13 +2,17 @@
 
 #include <SDL2/SDL_render.h>
 
-#include "AmberEditor/Rendering/Driver.h"
+#include <AmberGL/SoftwareRenderer/Programs/AProgram.h>
+
 #include "AmberEditor/Context/SDLDriver.h"
 
-#include "AmberGL/SoftwareRenderer/Programs/AProgram.h"
+#include "AmberEditor/Data/Color.h"
+
+#include "AmberEditor/Rendering/Driver.h"
+#include "AmberEditor/Rendering/Settings/EPrimitiveMode.h"
+
 #include "AmberEditor/Resources/Model.h"
 #include "AmberEditor/Resources/Texture.h"
-#include "AmberEditor/Rendering/Settings/EPrimitiveMode.h"
 
 namespace AmberEditor::Rendering
 {
@@ -23,7 +27,7 @@ namespace AmberEditor::Rendering
 		void SetViewport(uint16_t p_x, uint16_t p_y, uint16_t p_width, uint16_t p_height) const;
 		void Draw(Resources::Model& p_model, Resources::Material* p_defaultMaterial);
 		void DrawMesh(Settings::EPrimitiveMode p_drawMode, Resources::Mesh& p_mesh, const Resources::Material& p_material);
-		void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, AmberGL::SoftwareRenderer::Programs::AProgram& p_shader, const AmberGL::Data::Color& p_color);
+		void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, AmberGL::SoftwareRenderer::Programs::AProgram& p_shader, const AmberEditor::Data::Color& p_color);
 		void Render() const;
 		void RenderClear() const;
 		void SetSamples(uint8_t p_samples) const;

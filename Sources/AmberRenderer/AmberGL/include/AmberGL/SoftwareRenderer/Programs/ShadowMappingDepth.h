@@ -14,6 +14,6 @@ namespace AmberGL::SoftwareRenderer::Programs
 
 	protected:
 		glm::vec4 VertexPass(const Geometry::Vertex& p_vertex) override;
-		Data::Color FragmentPass() override;
+		glm::vec4 FragmentPass() override;
 	};
 }

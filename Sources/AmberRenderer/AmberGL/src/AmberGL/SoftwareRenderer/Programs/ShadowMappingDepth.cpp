@@ -14,7 +14,7 @@ glm::vec4 AmberGL::SoftwareRenderer::Programs::ShadowMappingDepth::VertexPass(co
 	return u_lightSpaceMatrix * u_Model * glm::vec4(p_vertex.position, 1.0);
 }
 
-AmberGL::Data::Color AmberGL::SoftwareRenderer::Programs::ShadowMappingDepth::FragmentPass()
+glm::vec4 AmberGL::SoftwareRenderer::Programs::ShadowMappingDepth::FragmentPass()
 {
 	const glm::vec4 FragPosLightSpace = GetVaryingAs<glm::vec4>("v_FragPosLightSpace");
 

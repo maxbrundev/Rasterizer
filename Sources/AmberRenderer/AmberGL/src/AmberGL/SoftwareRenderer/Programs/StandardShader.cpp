@@ -21,7 +21,7 @@ const glm::vec3 LightPosition = glm::vec3(-9000.0f, 10000.0f, 11000.0f);
 const glm::vec3 LightDiffuse = glm::vec3(1.0f);
 const glm::vec3 LightAmbient = glm::vec3(0.3f);
 
-AmberGL::Data::Color AmberGL::SoftwareRenderer::Programs::StandardShader::FragmentPass()
+glm::vec4 AmberGL::SoftwareRenderer::Programs::StandardShader::FragmentPass()
 {
 	const glm::vec3 normal = glm::normalize(GetVaryingAs<glm::vec3>("v_Normal"));
 	//return glm::vec4(((normal * 0.5f) + 0.5f), 1.0f);

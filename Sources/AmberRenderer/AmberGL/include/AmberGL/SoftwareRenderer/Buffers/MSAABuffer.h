@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AmberGL/Data/Color.h"
+#include <cstdint>
 
 namespace AmberGL::SoftwareRenderer::Buffers
 {
@@ -20,7 +20,7 @@ namespace AmberGL::SoftwareRenderer::Buffers
 
 		void Clear() const;
 		void SetColor(float p_red, float p_green, float p_blue, float p_alpha);
-		void SetPixelSample(uint32_t p_x, uint32_t p_y, uint8_t p_sampleIndex, const Data::Color& color, float depth) const;
+		void SetPixelSample(uint32_t p_x, uint32_t p_y, uint8_t p_sampleIndex, uint32_t color, float depth) const;
 
 		uint32_t GetWidth() const;
 		uint32_t GetHeight() const;

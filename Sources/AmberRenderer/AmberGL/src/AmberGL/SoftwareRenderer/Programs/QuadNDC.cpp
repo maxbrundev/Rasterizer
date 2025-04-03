@@ -13,7 +13,7 @@ float LinearizeDepth(float p_depth, float p_nearPlane, float p_farPlane)
 	return (2.0 * p_nearPlane * p_farPlane) / (p_farPlane + p_nearPlane - z * (p_farPlane - p_nearPlane));
 }
 
-AmberGL::Data::Color AmberGL::SoftwareRenderer::Programs::QuadNDC::FragmentPass()
+glm::vec4 AmberGL::SoftwareRenderer::Programs::QuadNDC::FragmentPass()
 {
 	const glm::vec2 texCoords = GetVaryingAs<glm::vec2>("v_TexCoords");
 
