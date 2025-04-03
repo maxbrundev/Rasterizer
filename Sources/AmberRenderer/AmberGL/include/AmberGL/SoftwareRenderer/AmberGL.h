@@ -1,0 +1,67 @@
+#pragma once
+
+#include <cstdint>
+
+#include "AmberGL/API/Export.h"
+
+#include "AmberGL/Data/Color.h"
+#include "AmberGL/SoftwareRenderer/Defines.h"
+#include "AmberGL/SoftwareRenderer/RenderObject/TextureObject.h"
+#include "AmberGL/SoftwareRenderer/Programs/AProgram.h"
+
+namespace AmberGL
+{
+	API_AMBERGL void Initialize(uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight);
+	API_AMBERGL void Terminate();
+
+	API_AMBERGL void WindowHint(uint8_t p_name, uint8_t p_value);
+
+	API_AMBERGL void ClearColor(float p_red, float p_green, float p_blue, float p_alpha);
+	API_AMBERGL void Clear(uint8_t p_flags);
+	API_AMBERGL void Viewport(uint16_t p_x, uint16_t p_y, uint16_t p_width, uint16_t p_height);
+	API_AMBERGL void DrawElements(uint8_t primitiveMode, uint32_t indexCount);
+	API_AMBERGL void DrawArrays(uint8_t primitiveMode, uint32_t first, uint32_t count);
+	API_AMBERGL void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const AmberGL::Data::Color& p_color);
+
+	API_AMBERGL uint32_t CreateProgram();
+	API_AMBERGL void DeleteProgram(uint32_t p_program);
+	API_AMBERGL void UseProgram(uint32_t p_program);
+	API_AMBERGL void AttachShader(uint32_t p_program, AmberGL::SoftwareRenderer::Programs::AProgram* p_programInstance);
+	API_AMBERGL void UseProgram(AmberGL::SoftwareRenderer::Programs::AProgram* p_programInstance);
+
+	API_AMBERGL void SetSamples(uint8_t p_samples);
+	API_AMBERGL void PolygonMode(uint8_t p_mode);
+	API_AMBERGL void Enable(uint8_t p_state);
+	API_AMBERGL void Disable(uint8_t p_state);
+	API_AMBERGL bool IsEnabled(uint8_t p_capability);
+	API_AMBERGL void CullFace(uint8_t p_face);
+	API_AMBERGL void DepthMask(bool p_flag);
+	API_AMBERGL void GetBool(uint8_t p_name, bool* p_params);
+	API_AMBERGL void GetInt(uint8_t p_name, int* p_params);
+
+	API_AMBERGL void GenVertexArrays(uint32_t p_count, uint32_t* p_arrays);
+	API_AMBERGL void DeleteVertexArrays(uint32_t p_count, const uint32_t* p_arrays);
+	API_AMBERGL void BindVertexArray(uint32_t p_array);
+
+	API_AMBERGL void GenBuffers(uint32_t p_count, uint32_t* p_buffers);
+	API_AMBERGL void DeleteBuffers(uint32_t p_count, const uint32_t* p_buffers);
+	API_AMBERGL void BindBuffer(uint32_t p_target, uint32_t p_buffer);
+	API_AMBERGL void BufferData(uint32_t p_target, size_t p_size, const void* p_data);
+
+	API_AMBERGL void GenTextures(uint32_t p_count, uint32_t* p_textures);
+	API_AMBERGL void DeleteTextures(uint32_t p_count, const uint32_t* p_textures);
+	API_AMBERGL void BindTexture(uint32_t p_target, uint32_t p_texture);
+	API_AMBERGL void TexImage2D(uint32_t p_target, uint32_t p_level, uint32_t p_internalFormat, uint32_t p_width, uint32_t p_height, uint32_t p_border, uint32_t p_format, uint32_t p_type, const void* p_data);
+	API_AMBERGL void TexParameteri(uint32_t p_target, uint32_t p_pname, uint8_t p_param);
+	API_AMBERGL void ActiveTexture(uint32_t p_unit);
+	API_AMBERGL void GenerateMipmap(uint32_t p_target);
+	API_AMBERGL AmberGL::SoftwareRenderer::RenderObject::TextureObject* GetTextureObject(uint32_t p_textureUnit);
+
+	API_AMBERGL void GenFramebuffers(uint32_t p_count, uint32_t* p_framebuffers);
+	API_AMBERGL void BindFramebuffer(uint32_t p_target, uint32_t p_framebuffer);
+	API_AMBERGL void FramebufferTexture2D(uint32_t p_target, uint32_t p_attachment, uint32_t p_textarget, uint32_t p_texture, int p_level);
+	API_AMBERGL void DrawBuffer(uint32_t p_mode);
+	API_AMBERGL void ReadBuffer(uint32_t p_mode);
+	API_AMBERGL uint32_t* GetFrameBufferData();
+	API_AMBERGL uint32_t GetFrameBufferRowSize();
+}
