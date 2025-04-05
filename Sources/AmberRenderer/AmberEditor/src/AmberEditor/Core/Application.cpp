@@ -144,16 +144,16 @@ void AmberEditor::Core::Application::Run()
 
 	AmberGL::BindTexture(AGL_TEXTURE_2D, depthMap);
 
-	AmberGL::GenFramebuffers(1, &m_shadowFBO);
-	AmberGL::BindFramebuffer(AGL_FRAMEBUFFER, m_shadowFBO);
-	AmberGL::FramebufferTexture2D(AGL_FRAMEBUFFER,
+	AmberGL::GenFrameBuffers(1, &m_shadowFBO);
+	AmberGL::BindFrameBuffer(AGL_FRAMEBUFFER, m_shadowFBO);
+	AmberGL::FrameBufferTexture2D(AGL_FRAMEBUFFER,
 	                              AGL_DEPTH_ATTACHMENT,
 	                              AGL_TEXTURE_2D,
 	                              depthMap,
 	                              0);
 	AmberGL::DrawBuffer(GL_NONE);
 	AmberGL::ReadBuffer(GL_NONE);
-	AmberGL::BindFramebuffer(AGL_FRAMEBUFFER, 0);
+	AmberGL::BindFrameBuffer(AGL_FRAMEBUFFER, 0);
 
 	quadShaderResource->SetUniform("u_DepthMap", 0);
 	AmberGL::BindTexture(AGL_TEXTURE_2D, 0);
@@ -204,7 +204,7 @@ void AmberEditor::Core::Application::Run()
 
 		m_shadowDepthShaderResource->SetUniform("u_lightSpaceMatrix", lightSpaceMatrix);
 
-		AmberGL::BindFramebuffer(AGL_FRAMEBUFFER, m_shadowFBO);
+		AmberGL::BindFrameBuffer(AGL_FRAMEBUFFER, m_shadowFBO);
 		m_context.Renderer->SetViewport(0, 0, 1024, 1024);
 		m_context.Renderer->Clear(false, true);
 
@@ -229,7 +229,7 @@ void AmberEditor::Core::Application::Run()
 		AmberGL::DrawArrays(AGL_TRIANGLES, 0, FLOORMesh.GetVertexCount());
 		AmberGL::BindVertexArray(0);
 
-		AmberGL::BindFramebuffer(AGL_FRAMEBUFFER, 0);
+		AmberGL::BindFrameBuffer(AGL_FRAMEBUFFER, 0);
 
 		AmberGL::Viewport(0, 0, 800, 600);
 		m_context.Renderer->Clear(true, true);
