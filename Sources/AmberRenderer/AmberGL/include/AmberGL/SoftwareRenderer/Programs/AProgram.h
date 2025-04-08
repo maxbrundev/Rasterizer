@@ -113,11 +113,13 @@ namespace AmberGL::SoftwareRenderer::Programs
 			return ShaderTypeTraits<T>::ReadFromBuffer(it->second.Data[p_vertexIndex]);
 		}
 
+		void SetDerivative(glm::vec2 p_dfdx, glm::vec2 p_dfdy);
+
 		glm::vec4 Texture(const std::string_view p_samplerName, const glm::vec2& p_texCoords) const;
 
 		std::unordered_map<std::string_view, ShaderVarying>& GetVaryings();
 		uint8_t GetTypeCount(EShaderDataType p_type) const;
-		
+
 	protected:
 		virtual glm::vec4 VertexPass(const Geometry::Vertex& p_vertex) = 0;
 		virtual glm::vec4 FragmentPass() = 0;
@@ -127,6 +129,9 @@ namespace AmberGL::SoftwareRenderer::Programs
 	protected:
 		uint8_t m_vertexIndex = 0;
 		float m_interpolatedReciprocal = 1.0f;
+
+		glm::vec2 m_dfdx;
+		glm::vec2 m_dfdy;
 
 	private:
 		std::unordered_map<std::string_view, ShaderData> m_uniforms;

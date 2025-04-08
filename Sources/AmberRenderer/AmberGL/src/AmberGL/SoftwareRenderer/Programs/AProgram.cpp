@@ -2,8 +2,9 @@
 
 #include <glm/gtc/type_ptr.inl>
 
-#include "AmberGL/SoftwareRenderer/RenderObject/TextureObject.h"
 #include "AmberGL/SoftwareRenderer/AmberGL.h"
+#include "AmberGL/SoftwareRenderer/TextureSampler.h"
+#include "AmberGL/SoftwareRenderer/RenderObject/TextureObject.h"
 
 void AmberGL::SoftwareRenderer::Programs::AProgram::Bind()
 {
@@ -43,6 +44,12 @@ glm::vec4 AmberGL::SoftwareRenderer::Programs::AProgram::ProcessFragment()
 	return FragmentPass();
 }
 
+void AmberGL::SoftwareRenderer::Programs::AProgram::SetDerivative(glm::vec2 p_dfdx, glm::vec2 p_dfdy)
+{
+	m_dfdx = p_dfdx;
+	m_dfdy = p_dfdy;
+}
+
 glm::vec4 AmberGL::SoftwareRenderer::Programs::AProgram::Texture(const std::string_view p_samplerName, const glm::vec2& p_texCoords) const
 {
 	int textureUnit = GetUniformAs<int>(p_samplerName);
@@ -52,115 +59,7 @@ glm::vec4 AmberGL::SoftwareRenderer::Programs::AProgram::Texture(const std::stri
 	if (textureObject == nullptr)
 		return glm::vec4(1.0f);
 
-	uint32_t width = textureObject->Width;
-	uint32_t height = textureObject->Height;
-
-	bool hasMipmaps = textureObject->Mipmaps != nullptr;
-	uint8_t currentLOD = 0;
-
-	if (hasMipmaps)
-	{
-		//TODO: Compute LOD based on derivative of texture coordinates.
-		const auto& u_ViewPos = GetUniformAs<glm::vec3>("u_ViewPos");
-		const auto& v_FragPos = GetVaryingAs<glm::vec3>("v_FragPos");
-
-		int maxLevel = 1 + static_cast<int>(std::floor(std::log2(std::max(width, height))));
-
-		const auto viewPosToFragPos = glm::vec3(v_FragPos - u_ViewPos);
-
-		currentLOD = static_cast<uint8_t>(glm::clamp(
-			glm::length(glm::round(viewPosToFragPos)) / MIPMAPS_DISTANCE_STEP,
-			0.0f,
-			static_cast<float>(maxLevel - 1)));
-	}
-
-	if (hasMipmaps && currentLOD > 0)
-	{
-		width = std::max(1u, width >> currentLOD);
-		height = std::max(1u, height >> currentLOD);
-	}
-
-	float uvX = abs(p_texCoords.x);
-	float uvY = abs(p_texCoords.y);
-
-	if (textureObject->WrapS == AGL_CLAMP)
-	{
-		uvX = glm::clamp(uvX, 0.0f, 1.0f);
-	}
-	else if (textureObject->WrapS == AGL_REPEAT)
-	{
-		uvX = glm::mod(uvX, 1.0f);
-	}
-
-	if (textureObject->WrapT == AGL_CLAMP)
-	{
-		uvY = glm::clamp(uvY, 0.0f, 1.0f);
-	}
-	else if (textureObject->WrapT == AGL_REPEAT)
-	{
-		uvY = glm::mod(uvY, 1.0f);
-	}
-
-	uvX = uvX * (static_cast<float>(width) - 0.5f);
-	uvY = uvY * (static_cast<float>(height) - 0.5f);
-
-	uint8_t filter = currentLOD == 0 ? textureObject->MagFilter : textureObject->MinFilter;
-
-	uint8_t* data = hasMipmaps && currentLOD > 0 ? textureObject->Mipmaps[currentLOD] : textureObject->Data8;
-
-	if (textureObject->InternalFormat == AGL_DEPTH_COMPONENT)
-	{
-		//TODO: Handle float data
-	}
-
-	//TODO: Nearest Mipmap Nearest, Linear Mipmap Linear, Linear Mipmap Nearest, Nearest Mipmap Linear
-
-	if (filter == AGL_LINEAR)
-	{
-		int x0 = static_cast<int>(std::floor(uvX));
-		int y0 = static_cast<int>(std::floor(uvY));
-		int x1 = std::min(x0 + 1, static_cast<int>(width) - 1);
-		int y1 = std::min(y0 + 1, static_cast<int>(height) - 1);
-
-		float fracX = uvX - x0;
-		float fracY = uvY - y0;
-
-		uint32_t idx00 = (y0 * width + x0) * 4;
-		uint32_t idx01 = (y1 * width + x0) * 4;
-		uint32_t idx10 = (y0 * width + x1) * 4;
-		uint32_t idx11 = (y1 * width + x1) * 4;
-
-		glm::vec4 color;
-		for (int i = 0; i < 4; i++) 
-		{
-			float c00 = data[idx00 + i] / 255.0f;
-			float c01 = data[idx01 + i] / 255.0f;
-			float c10 = data[idx10 + i] / 255.0f;
-			float c11 = data[idx11 + i] / 255.0f;
-
-			color[i] = (1.0f - fracX) * (1.0f - fracY) * c00 +
-				fracX * (1.0f - fracY) * c10 +
-				(1.0f - fracX) * fracY * c01 +
-				fracX * fracY * c11;
-		}
-
-		return color;
-	}
-	
-	int x = static_cast<int>(std::round(uvX));
-	int y = static_cast<int>(std::round(uvY));
-
-	x = glm::clamp(x, 0, static_cast<int>(width) - 1);
-	y = glm::clamp(y, 0, static_cast<int>(height) - 1);
-
-	const uint32_t index = (y * width + x) * 4;
-
-	return glm::vec4(
-		data[index] / 255.0f,
-		data[index + 1] / 255.0f,
-		data[index + 2] / 255.0f,
-		data[index + 3] / 255.0f
-	);
+	return TextureSampler::Sample(textureObject, p_texCoords, {m_dfdx, m_dfdy });
 }
 
 glm::vec3 AmberGL::SoftwareRenderer::Programs::AProgram::Lambert(const glm::vec3& p_fragPos, const glm::vec3& p_normal, const glm::vec3& p_lightPos, const glm::vec3& p_lightDiffuse, const glm::vec3& p_lightAmbient) const
