@@ -113,7 +113,7 @@ namespace AmberGL::SoftwareRenderer::Programs
 			return ShaderTypeTraits<T>::ReadFromBuffer(it->second.Data[p_vertexIndex]);
 		}
 
-		void SetDerivative(glm::vec2 p_dfdx, glm::vec2 p_dfdy);
+		void SetDerivatives(glm::vec2 p_dfdx, glm::vec2 p_dfdy);
 
 		glm::vec4 Texture(const std::string_view p_samplerName, const glm::vec2& p_texCoords) const;
 

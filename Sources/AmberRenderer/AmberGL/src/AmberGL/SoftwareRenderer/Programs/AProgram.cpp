@@ -44,7 +44,7 @@ glm::vec4 AmberGL::SoftwareRenderer::Programs::AProgram::ProcessFragment()
 	return FragmentPass();
 }
 
-void AmberGL::SoftwareRenderer::Programs::AProgram::SetDerivative(glm::vec2 p_dfdx, glm::vec2 p_dfdy)
+void AmberGL::SoftwareRenderer::Programs::AProgram::SetDerivatives(glm::vec2 p_dfdx, glm::vec2 p_dfdy)
 {
 	m_dfdx = p_dfdx;
 	m_dfdy = p_dfdy;
