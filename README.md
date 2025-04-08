@@ -17,7 +17,7 @@ A CPU-based software renderer designed to explore low-level rendering techniques
 - Line Rasterization
 - Texture Mapping
 - Clipping
-- Mipmapping
+- Mipmapping based on texture derivates
 - MSAA
 - Vertex pass
 - Fragment pass
@@ -27,6 +27,10 @@ A CPU-based software renderer designed to explore low-level rendering techniques
 - OBJ Parsing  
  
 ![shadows](https://github.com/user-attachments/assets/1a9ad66d-19be-4d34-bf33-b411a7c03dc8)
+
+| Mipmapping | Texture Coordinates Derivates | Shadow Mapping |
+| :------------------------: | :------------------------: | :------------------------: |
+| ![Texture Sampling Technique](https://github.com/user-attachments/assets/50b01b40-f404-4209-8347-0063fbda3c9d) | ![Mipmap Level Detail](https://github.com/user-attachments/assets/5464680e-f90a-4d3c-80df-5717f84f0375) | ![Shadow Mapping](https://github.com/user-attachments/assets/c6dcfb1d-b6bd-4d34-8e0b-25655653ace8) |
 
 # AmberGL API
 An OpenGL-inspired API that encapsulates its own Rendering State and manages internal buffers to provide a streamlined interface for Drawing, handling Buffers, and processing Shaders.

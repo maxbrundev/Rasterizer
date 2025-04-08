@@ -70,8 +70,8 @@ void RasterizeLine(const AmberGL::Geometry::Vertex& p_vertex0, const AmberGL::Ge
 void TransformAndRasterizeVertices(const uint8_t p_primitiveMode, const std::array<glm::vec4, 3>& processedVertices);
 void ComputeFragments(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices);
 
-void SetFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_y, const std::array<glm::vec4, 3>& p_transformedVertices);
-void SetSampleFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_y, float p_sampleX, float p_sampleY, uint8_t p_sampleIndex, const std::array<glm::vec4, 3>& p_transformedVertices);
+void SetFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_y, const std::array<glm::vec4, 3>& p_transformedVertices, const glm::vec2& p_dfdx, const glm::vec2& p_dfdy);
+void SetSampleFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_y, float p_sampleX, float p_sampleY, uint8_t p_sampleIndex, const std::array<glm::vec4, 3>& p_transformedVertices, const glm::vec2& p_dfdx, const glm::vec2& p_dfdy);
 
 void RasterizeTriangleWireframe(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices);
 void RasterizeLine(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, const glm::vec4& p_start, const glm::vec4& p_end);
@@ -296,48 +296,86 @@ void ComputeFragments(const AmberGL::Geometry::Triangle& p_triangle, const std::
 	if (xMax <= xMin || yMax <= yMin)
 		return;
 
-	for (uint32_t x = xMin; x < xMax; x++)
+	for (uint32_t y = yMin; y < yMax; y += 2)
 	{
-		for (uint32_t y = yMin; y < yMax; y++)
+		for (uint32_t x = xMin; x < xMax; x += 2)
 		{
-			if (RenderContext.State & AGL_MULTISAMPLE && RenderContext.FrameBufferObject->ColorBuffer != nullptr)
+			glm::vec2 texCoords[2][2];
+
+			for (int dy = 0; dy < 2; dy++)
 			{
-				uint8_t gridSize = static_cast<uint8_t>(std::ceil(std::sqrt(RenderContext.Samples)));
-
-				uint8_t sampleCount = 0;
-
-				for (uint8_t j = 0; j < gridSize; j++)
+				for (int dx = 0; dx < 2; dx++)
 				{
-					for (uint8_t i = 0; i < gridSize; i++)
-					{
-						if (sampleCount >= RenderContext.Samples)
-							break;
+					uint32_t px = x + dx;
+					uint32_t py = y + dy;
 
-						const float samplePosX = x + (i + 0.5f) / gridSize;
-						const float samplePosY = y + (j + 0.5f) / gridSize;
+					if (px >= xMax || py >= yMax)
+						continue;
 
-						SetSampleFragment(p_triangle, x, y, samplePosX, samplePosY, sampleCount, transformedVertices);
-						sampleCount++;
-					}
+					const glm::vec3 barycentricCoords = p_triangle.GetBarycentricCoordinates({ px, py });
+
+					RenderContext.Program->ProcessInterpolation(barycentricCoords,
+						transformedVertices[0].w,
+						transformedVertices[1].w,
+						transformedVertices[2].w);
+
+					texCoords[dy][dx] = RenderContext.Program->GetVaryingAs<glm::vec2>("v_TexCoords");
 				}
 			}
-			else
+
+			for (int dy = 0; dy < 2; ++dy)
 			{
-				SetFragment(p_triangle, x, y, transformedVertices);
+				for (int dx = 0; dx < 2; ++dx)
+				{
+					uint32_t px = x + dx;
+					uint32_t py = y + dy;
+
+					if (px >= xMax || py >= yMax)
+						continue;
+
+					glm::vec2 dfdx = texCoords[dy][1] - texCoords[dy][0];
+					glm::vec2 dfdy = texCoords[1][dx] - texCoords[0][dx];
+
+					if (RenderContext.State & AGL_MULTISAMPLE && RenderContext.FrameBufferObject->ColorBuffer != nullptr)
+					{
+						uint8_t gridSize = static_cast<uint8_t>(std::ceil(std::sqrt(RenderContext.Samples)));
+
+						uint8_t sampleCount = 0;
+
+						for (uint8_t j = 0; j < gridSize; j++)
+						{
+							for (uint8_t i = 0; i < gridSize; i++)
+							{
+								if (sampleCount >= RenderContext.Samples)
+									break;
+
+								const float samplePosX = px + (i + 0.5f) / gridSize;
+								const float samplePosY = py + (j + 0.5f) / gridSize;
+
+								SetSampleFragment(p_triangle, px, py, samplePosX, samplePosY, sampleCount, transformedVertices, dfdx, dfdy);
+								sampleCount++;
+							}
+						}
+					}
+					else
+					{
+						SetFragment(p_triangle, px, py, transformedVertices, dfdx, dfdy);
+					}
+				}
 			}
 		}
 	}
 }
 
-void SetFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_y, const std::array<glm::vec4, 3>& p_transformedVertices)
+void SetFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_y, const std::array<glm::vec4, 3>& p_transformedVertices, const glm::vec2& p_dfdx, const glm::vec2& p_dfdy)
 {
 	const glm::vec3 barycentricCoords = p_triangle.GetBarycentricCoordinates({ p_x, p_y });
 
 	if (barycentricCoords.x >= 0.0f && barycentricCoords.y >= 0.0f && barycentricCoords.x + barycentricCoords.y <= 1.0f)
 	{
 		float depth = p_transformedVertices[0].z * barycentricCoords.x
-		+ p_transformedVertices[1].z * barycentricCoords.y
-		+ p_transformedVertices[2].z * barycentricCoords.z;
+			+ p_transformedVertices[1].z * barycentricCoords.y
+			+ p_transformedVertices[2].z * barycentricCoords.z;
 
 		depth = depth * 0.5f + 0.5f;
 
@@ -347,6 +385,8 @@ void SetFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p_x, ui
 		if (!(RenderContext.State & AGL_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(p_x, p_y))
 		{
 			RenderContext.Program->ProcessInterpolation(barycentricCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, p_transformedVertices[2].w);
+
+			RenderContext.Program->SetDerivative(p_dfdx, p_dfdy);
 
 			const glm::vec4 color = RenderContext.Program->ProcessFragment();
 
@@ -363,8 +403,7 @@ void SetFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p_x, ui
 	}
 }
 
-
-void SetSampleFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_y, float p_sampleX, float p_sampleY, uint8_t p_sampleIndex, const std::array<glm::vec4, 3>& p_transformedVertices)
+void SetSampleFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_y, float p_sampleX, float p_sampleY, uint8_t p_sampleIndex, const std::array<glm::vec4, 3>& p_transformedVertices, const glm::vec2& p_dfdx, const glm::vec2& p_dfdy)
 {
 	const glm::vec3 barycentricCoords = p_triangle.GetBarycentricCoordinates({ p_sampleX, p_sampleY });
 
@@ -380,7 +419,9 @@ void SetSampleFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p
 		if (!(RenderContext.State & AGL_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(p_x, p_y))
 		{
 			RenderContext.Program->ProcessInterpolation(barycentricCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, p_transformedVertices[2].w);
-		
+
+			RenderContext.Program->SetDerivative(p_dfdx, p_dfdy);
+
 			const glm::vec4 color = RenderContext.Program->ProcessFragment();
 
 			MSAABuffer->SetPixelSample(p_x, p_y, p_sampleIndex, PackColor(color), depth);
@@ -1377,7 +1418,6 @@ void AmberGL::DrawElements(uint8_t p_primitiveMode, uint32_t p_indexCount)
 		ActiveDepthBuffer = originalDepthBuffer;
 		return;
 	}
-
 
 	AmberGL::SoftwareRenderer::RenderObject::BufferObject& indexBufferObject = itIndex->second;
 	AmberGL::SoftwareRenderer::RenderObject::BufferObject& vertexBuffer = itVertex->second;
