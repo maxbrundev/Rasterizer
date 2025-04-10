@@ -386,7 +386,7 @@ void SetFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p_x, ui
 		{
 			RenderContext.Program->ProcessInterpolation(barycentricCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, p_transformedVertices[2].w);
 
-			RenderContext.Program->SetDerivative(p_dfdx, p_dfdy);
+			RenderContext.Program->SetDerivatives(p_dfdx, p_dfdy);
 
 			const glm::vec4 color = RenderContext.Program->ProcessFragment();
 
@@ -420,7 +420,7 @@ void SetSampleFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p
 		{
 			RenderContext.Program->ProcessInterpolation(barycentricCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, p_transformedVertices[2].w);
 
-			RenderContext.Program->SetDerivative(p_dfdx, p_dfdy);
+			RenderContext.Program->SetDerivatives(p_dfdx, p_dfdy);
 
 			const glm::vec4 color = RenderContext.Program->ProcessFragment();
 
