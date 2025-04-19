@@ -27,9 +27,10 @@ A CPU-based software renderer designed to explore low-level rendering techniques
 - Shadow Mapping 
 - OBJ Parsing  
 
-| Primitive Mode | Polygone Mode | Clipping | Model Rasterization |
-| :------------------------: | :------------------------: | :------------------------: | :------------------------: |
-| ![primitiveMode](https://github.com/user-attachments/assets/da984a4a-5f58-4716-81a0-d8ab13fef2e9) | ![polygoneMode](https://github.com/user-attachments/assets/7f43f69a-7621-4441-b8db-8b63b1a9a3ad) | ![clipping](https://github.com/user-attachments/assets/e0f2d8fb-1a8f-4ced-aae6-053245e33563) | ![modelRasterization](https://github.com/user-attachments/assets/6555c768-3f92-42da-aa37-8c30ec42678c) |
+| Primitive Mode | Polygone Mode | Clipping | Model Rasterization | Multisample Anti-Aliasing |
+| :------------------------: | :------------------------: | :------------------------: | :------------------------: | :------------------------: |
+| ![primitiveMode](https://github.com/user-attachments/assets/da984a4a-5f58-4716-81a0-d8ab13fef2e9) | ![polygoneMode](https://github.com/user-attachments/assets/7f43f69a-7621-4441-b8db-8b63b1a9a3ad) | ![clipping](https://github.com/user-attachments/assets/e0f2d8fb-1a8f-4ced-aae6-053245e33563) | ![modelRasterization](https://github.com/user-attachments/assets/6555c768-3f92-42da-aa37-8c30ec42678c) | ![msaa](https://github.com/user-attachments/assets/1871223b-d290-43ea-95c6-7e9f738afe30) |
+
 
 | Mipmapping | Texture Coordinates Derivates | Shadow Mapping | Complete Rasterization Feature Set |
 | :------------------------: | :------------------------: | :------------------------: | :------------------------: |
