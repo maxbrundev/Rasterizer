@@ -36,11 +36,12 @@ void AmberEditor::Context::Device::PollEvents()
 		switch (event.type) 
 		{
 		case SDL_KEYDOWN:
-			KeyPressedEvent.Invoke(event.key.keysym.scancode);
+			if(event.key.repeat == 0)
+				KeyPressedEvent.Invoke(event.key.keysym.scancode);
 			break;
 
 		case SDL_KEYUP:
-			KeyReleasedEvent.Invoke(event.key.keysym.sym);
+			KeyReleasedEvent.Invoke(event.key.keysym.scancode);
 			break;
 
 		case SDL_MOUSEBUTTONDOWN:

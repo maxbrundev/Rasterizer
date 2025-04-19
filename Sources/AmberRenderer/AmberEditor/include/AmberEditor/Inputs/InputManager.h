@@ -22,11 +22,9 @@ namespace AmberEditor::Inputs
 		EMouseButtonState GetMouseButtonState(EMouseButton p_button) const;
 
 		bool IsKeyPressed(EKey p_key) const;
-
 		bool IsKeyReleased(EKey p_key) const;
 
 		bool IsMouseButtonPressed(EMouseButton p_button) const;
-
 		bool IsMouseButtonReleased(EMouseButton p_button) const;
 
 		std::pair<int, int> GetMousePosition() const;
@@ -34,7 +32,6 @@ namespace AmberEditor::Inputs
 		int GetMouseWheel() const;
 
 		void LockMouse() const;
-
 		void UnlockMouse() const;
 
 		bool IsMouseLocked() const;
@@ -58,9 +55,8 @@ namespace AmberEditor::Inputs
 		uint64_t m_mouseButtonReleasedListener;
 		uint64_t m_mouseMovedListener;
 
-		std::unordered_map<EKey, EKeyState>					m_keyEvents;
-		std::unordered_map<EMouseButton, EMouseButtonState>	m_mouseButtonEvents;
-
+		std::unordered_map<EKey, EKeyState> m_keyEvents;
+		std::unordered_map<EMouseButton, EMouseButtonState> m_mouseButtonEvents;
 		std::pair<int, int> m_mouseRelativeMovement;
 		int m_mouseWheel;
 	};
