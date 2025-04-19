@@ -1,5 +1,5 @@
 <p align="center" style="margin-bottom: 0;">
-  <img src="https://github.com/user-attachments/assets/5e4d9c2a-f825-4428-9464-f95a6d26f1dc" alt="Logo" />
+  <img src="https://github.com/user-attachments/assets/39a51717-743a-420a-aaa9-b3815570b9f3" alt="Logo" />
 </p>
 
 <p align="center">
@@ -15,6 +15,7 @@ A CPU-based software renderer designed to explore low-level rendering techniques
 # Features
 - Triangle Rasterization
 - Line Rasterization
+- Point
 - Texture Mapping
 - Clipping
 - Mipmapping based on texture derivates
@@ -25,12 +26,14 @@ A CPU-based software renderer designed to explore low-level rendering techniques
 - Depth Testing
 - Shadow Mapping 
 - OBJ Parsing  
- 
-![shadows](https://github.com/user-attachments/assets/1a9ad66d-19be-4d34-bf33-b411a7c03dc8)
 
-| Clipping | Mipmapping | Texture Coordinates Derivates | Shadow Mapping |
+| Primitive Mode | Polygone Mode | Clipping | Model Rasterization |
 | :------------------------: | :------------------------: | :------------------------: | :------------------------: |
-![clipping](https://github.com/user-attachments/assets/f5f7125d-3c33-48be-819e-e2d14efe8dff) | ![Texture Sampling Technique](https://github.com/user-attachments/assets/50b01b40-f404-4209-8347-0063fbda3c9d) | ![Mipmap Level Detail](https://github.com/user-attachments/assets/5464680e-f90a-4d3c-80df-5717f84f0375) | ![Shadow Mapping](https://github.com/user-attachments/assets/c6dcfb1d-b6bd-4d34-8e0b-25655653ace8) |
+| ![primitiveMode](https://github.com/user-attachments/assets/da984a4a-5f58-4716-81a0-d8ab13fef2e9) | ![polygoneMode](https://github.com/user-attachments/assets/7f43f69a-7621-4441-b8db-8b63b1a9a3ad) | ![clipping](https://github.com/user-attachments/assets/e0f2d8fb-1a8f-4ced-aae6-053245e33563) | ![modelRasterization](https://github.com/user-attachments/assets/6555c768-3f92-42da-aa37-8c30ec42678c) |
+
+| Mipmapping | Texture Coordinates Derivates | Shadow Mapping | Complete Rasterization Feature Set |
+| :------------------------: | :------------------------: | :------------------------: | :------------------------: |
+| ![Texture Sampling Technique](https://github.com/user-attachments/assets/50b01b40-f404-4209-8347-0063fbda3c9d) | ![Mipmap Level Detail](https://github.com/user-attachments/assets/5464680e-f90a-4d3c-80df-5717f84f0375) | ![Shadow Mapping](https://github.com/user-attachments/assets/c6dcfb1d-b6bd-4d34-8e0b-25655653ace8) ![simpleShadow](https://github.com/user-attachments/assets/b1209db6-421e-456a-b4f3-b51a14ddf993) | ![demoTest](https://github.com/user-attachments/assets/0ff270e0-2686-47db-aa85-ab7bf383bd8e) |
 
 # AmberGL API
 An OpenGL-inspired API that encapsulates its own Rendering State and manages internal buffers to provide a streamlined interface for Drawing, handling Buffers, and processing Shaders.
@@ -414,16 +417,6 @@ AmberGL::DeleteProgram(postProcessProgram);
 ```
 
 # Roadmap
-- **Rendering Enhancements:**  
-  - **Renderer:**  
-    The current Renderer is minimal; to enhance modularity and extensibility, a rework is required to support a stateful pipeline and accommodate multiple render passes.
-  - **Anti-aliasing:**  
-    Refine the existing MSAA implementation and explore additional multi-sampling techniques (e.g., FXAA, SMAA) to effectively reduce aliasing artifacts while maintaining performance.
-  - **Mipmapping:**  
-    Optimize the mipmap generation algorithm for improved texture sampling and memory efficiency, and rework the adaptive level-of-detail (LOD) system to increase realtime performance and visual quality.
-  - **Shadow Mapping:**  
-    Implement a robust shadow mapping pipeline that addresses common challenges (e.g., shadow acne, depth biasing) to achieve dynamic shadows.
-
 - **UI Integration:**  
   Implement a dedicated Panel to allow realtime control over:
   - Rasterization settings
