@@ -148,7 +148,6 @@ void AmberEditor::Rendering::Renderer::ApplyStateMask(uint8_t p_mask)
 {
 	if (p_mask != m_state)
 	{
-
 		if ((p_mask & 0x01) != (m_state & 0x01)) m_driver.SetDepthWriting(p_mask & 0x01);
 		if ((p_mask & 0x02) != (m_state & 0x02)) m_driver.SetCapability(Settings::ERenderingCapability::DEPTH_TEST, p_mask & 0x02);
 		if ((p_mask & 0x04) != (m_state & 0x04)) m_driver.SetCapability(Settings::ERenderingCapability::CULL_FACE, p_mask & 0x04);

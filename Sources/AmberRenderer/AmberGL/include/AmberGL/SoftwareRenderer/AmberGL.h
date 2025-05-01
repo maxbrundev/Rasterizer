@@ -5,14 +5,13 @@
 #include "AmberGL/API/Export.h"
 
 #include "AmberGL/SoftwareRenderer/Defines.h"
-#include "AmberGL/SoftwareRenderer/RenderObject/TextureObject.h"
 #include "AmberGL/SoftwareRenderer/Programs/AProgram.h"
+#include "AmberGL/SoftwareRenderer/RenderObject/TextureObject.h"
 
 namespace AmberGL
 {
 	API_AMBERGL void Initialize(uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight);
 	API_AMBERGL void Terminate();
-
 	API_AMBERGL void WindowHint(uint8_t p_name, uint8_t p_value);
 
 	API_AMBERGL void ClearColor(float p_red, float p_green, float p_blue, float p_alpha);
@@ -20,7 +19,11 @@ namespace AmberGL
 	API_AMBERGL void Viewport(uint16_t p_x, uint16_t p_y, uint16_t p_width, uint16_t p_height);
 	API_AMBERGL void DrawElements(uint8_t primitiveMode, uint32_t indexCount);
 	API_AMBERGL void DrawArrays(uint8_t primitiveMode, uint32_t first, uint32_t count);
+	API_AMBERGL void PointSize(float p_size);
+	API_AMBERGL void LineWidth(float p_width);
 	API_AMBERGL void DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const glm::vec4& p_color);
+	API_AMBERGL void DrawPoint(const glm::vec3& p_point0);
+	API_AMBERGL void DepthFunc(uint16_t p_func);
 
 	API_AMBERGL uint32_t CreateProgram();
 	API_AMBERGL void DeleteProgram(uint32_t p_program);

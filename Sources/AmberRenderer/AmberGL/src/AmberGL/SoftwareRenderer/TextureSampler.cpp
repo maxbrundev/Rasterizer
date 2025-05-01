@@ -48,6 +48,68 @@ glm::vec4 AmberGL::SoftwareRenderer::TextureSampler::Sample(const RenderObject::
 	return SampleNearest(data, width, height, uvX, uvY);
 }
 
+void AmberGL::SoftwareRenderer::TextureSampler::GenerateMipmaps(RenderObject::TextureObject* p_textureObject)
+{
+	int currentLevelWidth = p_textureObject->Width;
+	int currentLevelHeight = p_textureObject->Height;
+
+	const int totalMipmapLevels = 1 + static_cast<int>(std::floor(std::log2(std::max(currentLevelWidth, currentLevelHeight))));
+
+	p_textureObject->Mipmaps = new uint8_t * [totalMipmapLevels];
+
+	p_textureObject->Mipmaps[0] = new uint8_t[currentLevelWidth * currentLevelHeight * 4];
+	std::memcpy(p_textureObject->Mipmaps[0], p_textureObject->Data8, currentLevelWidth * currentLevelHeight * 4);
+
+	for (int mipmapLevel = 1; mipmapLevel < totalMipmapLevels; mipmapLevel++)
+	{
+		int previousLevelWidth = currentLevelWidth;
+		int previousLevelHeight = currentLevelHeight;
+
+		currentLevelWidth = std::max(1, currentLevelWidth / 2);
+		currentLevelHeight = std::max(1, currentLevelHeight / 2);
+
+		p_textureObject->Mipmaps[mipmapLevel] = new uint8_t[currentLevelWidth * currentLevelHeight * 4];
+
+		uint8_t* previousLevelData = p_textureObject->Mipmaps[mipmapLevel - 1];
+		uint8_t* currentLevelData = p_textureObject->Mipmaps[mipmapLevel];
+
+		for (int pixelY = 0; pixelY < currentLevelHeight; pixelY++)
+		{
+			for (int pixelX = 0; pixelX < currentLevelWidth; pixelX++)
+			{
+				int sourcePosX = pixelX * 2;
+				int sourcePosY = pixelY * 2;
+
+				int sourcePosXEnd = std::min(sourcePosX + 2, previousLevelWidth);
+				int sourcePosYEnd = std::min(sourcePosY + 2, previousLevelHeight);
+
+				int sourcePixelCount = (sourcePosXEnd - sourcePosX) * (sourcePosYEnd - sourcePosY);
+
+				float colorChannelSums[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+				for (int sourceY = sourcePosY; sourceY < sourcePosYEnd; sourceY++)
+				{
+					for (int sourceX = sourcePosX; sourceX < sourcePosXEnd; sourceX++)
+					{
+						int sourcePixelIndex = (sourceY * previousLevelWidth + sourceX) * 4;
+						for (int channel = 0; channel < 4; channel++)
+						{
+							colorChannelSums[channel] += previousLevelData[sourcePixelIndex + channel];
+						}
+					}
+				}
+
+				int currentPixelIndex = (pixelY * currentLevelWidth + pixelX) * 4;
+
+				for (int channel = 0; channel < 4; channel++)
+				{
+					currentLevelData[currentPixelIndex + channel] = static_cast<uint8_t>(colorChannelSums[channel] / sourcePixelCount);
+				}
+			}
+		}
+	}
+}
+
 uint8_t AmberGL::SoftwareRenderer::TextureSampler::ComputeMipmapLevel(const RenderObject::TextureObject* p_textureObject, const glm::vec2& p_dfdx, const glm::vec2& p_dfdy)
 {
 	if (!p_textureObject || !p_textureObject->Mipmaps)

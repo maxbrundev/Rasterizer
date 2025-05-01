@@ -1,5 +1,7 @@
 #pragma once
 
+//TODO: Convert #define constants to enum classes. Current approach mimics OpenGL API style but lacks type safety.
+
 // -----------------------------------------------------------------------------
 // PRIMITIVE TYPES
 // -----------------------------------------------------------------------------
@@ -85,6 +87,18 @@
 // TEXTURE UNIT
 // -----------------------------------------------------------------------------
 #define AGL_TEXTURE0 0
+
+// -----------------------------------------------------------------------------
+// DEPTH OPERAND
+// -----------------------------------------------------------------------------
+#define AGL_NEVER        0x0200
+#define AGL_LESS         0x0201
+#define AGL_EQUAL        0x0202
+#define AGL_LEQUAL       0x0203
+#define AGL_GREATER      0x0204
+#define AGL_NOTEQUAL     0x0205
+#define AGL_GEQUAL       0x0206
+#define AGL_ALWAYS       0x0207
 
 // -----------------------------------------------------------------------------
 // FRAMEBUFFER ATTACHMENTS

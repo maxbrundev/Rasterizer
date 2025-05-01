@@ -39,6 +39,21 @@ void AmberGL::SoftwareRenderer::Programs::AProgram::ProcessInterpolation(const g
 	}
 }
 
+void AmberGL::SoftwareRenderer::Programs::AProgram::ProcessPointInterpolation(float p_w0)
+{
+	m_interpolatedReciprocal = 1.0f / p_w0;
+
+	for (auto& [key, varData] : m_varyings)
+	{
+		int count = GetTypeCount(varData.Type);
+		for (int i = 0; i < count; i++)
+		{
+			float d0 = varData.Data[0][i];
+			varData.Interpolated[i] = d0 / p_w0;
+		}
+	}
+}
+
 glm::vec4 AmberGL::SoftwareRenderer::Programs::AProgram::ProcessFragment()
 {
 	return FragmentPass();

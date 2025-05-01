@@ -13,8 +13,8 @@ namespace AmberGL::Geometry
 	struct Polygon
 	{
 		std::array<glm::vec4, MAX_POLY_COUNT> Vertices;
-		std::array <glm::vec2, MAX_POLY_COUNT> TexCoords;
-		std::array <glm::vec3, MAX_POLY_COUNT> Normals;
+		std::array<glm::vec2, MAX_POLY_COUNT> TexCoords;
+		std::array<glm::vec3, MAX_POLY_COUNT> Normals;
 
 		float Varyings[MAX_POLY_COUNT][16];
 		uint8_t VaryingsDataSize;
