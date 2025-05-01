@@ -39,6 +39,7 @@ namespace AmberGL::SoftwareRenderer::Programs
 		virtual glm::vec4 ProcessVertex(const Geometry::Vertex& p_vertex, uint8_t p_vertexID);
 
 		void ProcessInterpolation(const glm::vec3& p_barycentricCoords, float p_w0, float p_w1, float p_w2);
+		void ProcessPointInterpolation(float p_w0);
 
 		glm::vec4 ProcessFragment();
 

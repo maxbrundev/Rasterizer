@@ -14,6 +14,9 @@ namespace AmberGL::SoftwareRenderer
 		~TextureSampler() = default;
 
 		static glm::vec4 Sample(const RenderObject::TextureObject* p_textureObject, const glm::vec2& p_texCoords, const std::array<glm::vec2, 2>& p_texCoordsDerivatives);
+
+		static void GenerateMipmaps(RenderObject::TextureObject* p_textureObject);
+
 		static uint8_t ComputeMipmapLevel(const RenderObject::TextureObject* p_textureObject, const glm::vec2& p_dfdx, const glm::vec2& p_dfdy);
 	private:
 		static float ApplyWrapMode(float p_coord, uint8_t p_wrapMode);

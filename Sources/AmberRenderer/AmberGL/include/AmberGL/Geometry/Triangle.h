@@ -1,6 +1,8 @@
 #pragma once
 
-#include <glm/vec3.hpp>
+#include <array>
+
+#include <glm/glm.hpp>
 
 #include "AmberGL/Geometry/BoundingBox2D.h"
 
@@ -20,6 +22,8 @@ namespace AmberGL::Geometry
 		float ComputeEdge(const glm::vec2& p_vertex0, const glm::vec2& p_vertex1, const glm::vec2& p_vertex2) const;
 
 		float ComputeArea() const;
+
+		float ComputeMaxDepthSlope(const std::array<glm::vec4, 3>& p_vertices) const;
 
 	private:
 		glm::vec2 m_vertex0;

@@ -6,17 +6,18 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/compatibility.hpp>
 
+#include "AmberGL/Geometry/Line.h"
 #include "AmberGL/Geometry/Plane.h"
+#include "AmberGL/Geometry/Point.h"
 #include "AmberGL/Geometry/Polygon.h"
 #include "AmberGL/Geometry/Triangle.h"
+#include "AmberGL/SoftwareRenderer/TextureSampler.h"
 
 #include "AmberGL/SoftwareRenderer/Buffers/MSAABuffer.h"
 #include "AmberGL/SoftwareRenderer/RenderObject/ProgramObject.h"
 #include "AmberGL/SoftwareRenderer/RenderObject/RenderContext.h"
 #include "AmberGL/SoftwareRenderer/RenderObject/VertexArrayObject.h"
 #include "AmberGL/SoftwareRenderer/RenderObject/VertexBufferObject.h"
-
-constexpr bool CLIPPING = true;
 
 namespace
 {
@@ -65,28 +66,35 @@ namespace
 }
 
 void InitializeClippingFrustum();
-void RasterizeTriangle(const uint8_t p_primitiveMode, const AmberGL::Geometry::Vertex& p_vertex0, const AmberGL::Geometry::Vertex& p_vertex1, const AmberGL::Geometry::Vertex& p_vertex2);
-void RasterizeLine(const AmberGL::Geometry::Vertex& p_vertex0, const AmberGL::Geometry::Vertex& p_vertex1, const  glm::vec4& p_color);
-void TransformAndRasterizeVertices(const uint8_t p_primitiveMode, const std::array<glm::vec4, 3>& processedVertices);
-void ComputeFragments(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices);
-
-void SetFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_y, const std::array<glm::vec4, 3>& p_transformedVertices, const glm::vec2& p_dfdx, const glm::vec2& p_dfdy);
-void SetSampleFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_y, float p_sampleX, float p_sampleY, uint8_t p_sampleIndex, const std::array<glm::vec4, 3>& p_transformedVertices, const glm::vec2& p_dfdx, const glm::vec2& p_dfdy);
-
-void RasterizeTriangleWireframe(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices);
-void RasterizeLine(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, const glm::vec4& p_start, const glm::vec4& p_end);
-void RasterizeLine(const glm::vec4& p_start, const glm::vec4& p_end, const  glm::vec4& p_color);
-
-void RasterizeTrianglePoints(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices);
-void DrawPoint(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, const glm::vec4& p_point);
-void DrawPoint(const glm::vec2& p_point, const glm::vec4& p_color);
 
 glm::vec3 ComputeScreenSpaceCoordinate(const glm::vec4& p_vertexWorldPosition);
 glm::vec2 ComputeNormalizedDeviceCoordinate(const glm::vec3& p_vertexScreenSpacePosition);
 glm::vec2 ComputeRasterSpaceCoordinate(glm::vec2 p_vertexNormalizedPosition);
 
+void RasterizeTriangle(const AmberGL::Geometry::Vertex& p_vertex0, const AmberGL::Geometry::Vertex& p_vertex1, const AmberGL::Geometry::Vertex& p_vertex2);
+
+void TransformAndRasterizeVertices(const std::array<glm::vec4, 3>& processedVertices);
+
+void ComputeFragments(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices);
+void SetFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_y, const std::array<glm::vec4, 3>& p_transformedVertices, const glm::vec2& p_dfdx, const glm::vec2& p_dfdy);
+void SetSampleFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p_x, uint32_t p_y, float p_sampleX, float p_sampleY, uint8_t p_sampleIndex, const std::array<glm::vec4, 3>& p_transformedVertices, const glm::vec2& p_dfdx, const glm::vec2& p_dfdy);
+
 void ClipAgainstPlane(AmberGL::Geometry::Polygon& p_polygon, const AmberGL::Geometry::Plane& p_plane);
+
+void ProcessPoint(const AmberGL::Geometry::Vertex& p_vertex);
+void RasterizePoint(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& p_transformedVertices, const glm::vec4& p_point);
+void RasterizePoint(const AmberGL::Geometry::Point& p_point);
+
+void ProcessLine(const AmberGL::Geometry::Vertex& p_vertex0, const AmberGL::Geometry::Vertex& p_vertex1);
+void RasterizeLineDirectly(const std::array<glm::vec4, 2>& p_transformedVertices);
+void RasterizeLine(const std::array<glm::vec4, 3>& transformedVertices, const glm::vec4& p_start, const glm::vec4& p_end);
+
+void RasterizeTriangleWireframe(const std::array<glm::vec4, 3>& transformedVertices);
+void RasterizeTrianglePoints(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices);
+
 void ApplyMSAA();
+
+bool DepthTest(float fragmentDepth, float bufferDepth);
 
 AmberGL::SoftwareRenderer::Buffers::MSAABuffer* MSAABuffer;
 std::array<AmberGL::Geometry::Plane, 6> ClippingFrustum;
@@ -142,88 +150,106 @@ void InitializeClippingFrustum()
 	ClippingFrustum[5].Normal.z = -1.0f;
 }
 
-void RasterizeTriangle(const uint8_t p_primitiveMode, const AmberGL::Geometry::Vertex& p_vertex0, const AmberGL::Geometry::Vertex& p_vertex1, const AmberGL::Geometry::Vertex& p_vertex2)
+glm::vec3 ComputeScreenSpaceCoordinate(const glm::vec4& p_vertexWorldPosition)
 {
-	std::array<glm::vec4, 3> processedVertices{
+	return p_vertexWorldPosition / p_vertexWorldPosition.w;
+}
+
+glm::vec2 ComputeNormalizedDeviceCoordinate(const glm::vec3& p_vertexScreenSpacePosition)
+{
+	glm::vec2 normalizedCoordinate;
+
+	normalizedCoordinate.x = (p_vertexScreenSpacePosition.x + 1.0f) * 0.5f;
+	normalizedCoordinate.y = (1.0f - p_vertexScreenSpacePosition.y) * 0.5f;
+
+	return normalizedCoordinate;
+}
+
+glm::vec2 ComputeRasterSpaceCoordinate(glm::vec2 p_vertexNormalizedPosition)
+{
+	p_vertexNormalizedPosition.x = RenderContext.ViewPortX + p_vertexNormalizedPosition.x * RenderContext.ViewPortWidth - 0.5f;
+	p_vertexNormalizedPosition.y = RenderContext.ViewPortY + p_vertexNormalizedPosition.y * RenderContext.ViewPortHeight - 0.5f;
+
+	return p_vertexNormalizedPosition;
+}
+
+void RasterizeTriangle(const AmberGL::Geometry::Vertex& p_vertex0, const AmberGL::Geometry::Vertex& p_vertex1, const AmberGL::Geometry::Vertex& p_vertex2)
+{
+	std::array<glm::vec4, 3> processedVertices
+	{
 		RenderContext.Program->ProcessVertex(p_vertex0, 0),
 		RenderContext.Program->ProcessVertex(p_vertex1, 1),
 		RenderContext.Program->ProcessVertex(p_vertex2, 2)
 	};
 
-	if constexpr (CLIPPING)
+	AmberGL::Geometry::Polygon currentPoly;
+	currentPoly.Vertices = { processedVertices[0], processedVertices[1], processedVertices[2] };
+	currentPoly.TexCoords = { p_vertex0.texCoords, p_vertex1.texCoords, p_vertex2.texCoords };
+	currentPoly.Normals = { p_vertex0.normal, p_vertex1.normal, p_vertex2.normal };
+	currentPoly.VerticesCount = 3;
+
+	auto& programVaryings = RenderContext.Program->GetVaryings();
+
+	int totalSize = 0;
+
+	for (const auto& [name, varying] : programVaryings)
 	{
-		AmberGL::Geometry::Polygon currentPoly;
-		currentPoly.Vertices = { processedVertices[0], processedVertices[1], processedVertices[2] };
-		currentPoly.TexCoords = { p_vertex0.texCoords, p_vertex1.texCoords, p_vertex2.texCoords };
-		currentPoly.Normals = { p_vertex0.normal, p_vertex1.normal, p_vertex2.normal };
-		currentPoly.VerticesCount = 3;
+		totalSize += RenderContext.Program->GetTypeCount(varying.Type);
+	}
 
-		auto& programVaryings = RenderContext.Program->GetVaryings();
+	currentPoly.VaryingsDataSize = totalSize;
 
-		int totalSize = 0;
+	uint16_t offset = 0;
 
-		for (const auto& [name, varying] : programVaryings)
+	for (auto& [name, varying] : programVaryings)
+	{
+		uint8_t typeCount = RenderContext.Program->GetTypeCount(varying.Type);
+
+		for (uint8_t vertIdx = 0; vertIdx < 3; vertIdx++)
 		{
-			totalSize += RenderContext.Program->GetTypeCount(varying.Type);
+			for (uint8_t i = 0; i < typeCount; i++)
+			{
+				currentPoly.Varyings[vertIdx][offset + i] = varying.Data[vertIdx][i];
+			}
 		}
 
-		currentPoly.VaryingsDataSize = totalSize;
+		offset += typeCount;
+	}
 
-		uint16_t offset = 0;
+	for (const auto& plane : ClippingFrustum)
+	{
+		ClipAgainstPlane(currentPoly, plane);
+	}
 
+	for (uint8_t i = 0; i < currentPoly.VerticesCount - 2; i++)
+	{
+		const std::array<glm::vec4, 3> clippedVertices
+		{
+			currentPoly.Vertices[0],
+			currentPoly.Vertices[i + 1],
+			currentPoly.Vertices[i + 2]
+		};
+
+		offset = 0;
 		for (auto& [name, varying] : programVaryings)
 		{
 			uint8_t typeCount = RenderContext.Program->GetTypeCount(varying.Type);
 
-			for (uint8_t vertIdx = 0; vertIdx < 3; vertIdx++)
+			for (uint8_t j = 0; j < typeCount; j++)
 			{
-				for (uint8_t i = 0; i < typeCount; i++)
-				{
-					currentPoly.Varyings[vertIdx][offset + i] = varying.Data[vertIdx][i];
-				}
+				varying.Data[0][j] = currentPoly.Varyings[0][offset + j];
+				varying.Data[1][j] = currentPoly.Varyings[i + 1][offset + j];
+				varying.Data[2][j] = currentPoly.Varyings[i + 2][offset + j];
 			}
 
 			offset += typeCount;
 		}
 
-		for (const auto& plane : ClippingFrustum)
-		{
-			ClipAgainstPlane(currentPoly, plane);
-		}
-
-		for (uint8_t i = 0; i < currentPoly.VerticesCount - 2; i++)
-		{
-			const std::array<glm::vec4, 3> clippedVertices{
-				currentPoly.Vertices[0],
-				currentPoly.Vertices[i + 1],
-				currentPoly.Vertices[i + 2]
-			};
-
-			offset = 0;
-			for (auto& [name, varying] : programVaryings)
-			{
-				uint8_t typeCount = RenderContext.Program->GetTypeCount(varying.Type);
-
-				for (uint8_t j = 0; j < typeCount; j++)
-				{
-					varying.Data[0][j] = currentPoly.Varyings[0][offset + j];
-					varying.Data[1][j] = currentPoly.Varyings[i + 1][offset + j];
-					varying.Data[2][j] = currentPoly.Varyings[i + 2][offset + j];
-				}
-
-				offset += typeCount;
-			}
-
-			TransformAndRasterizeVertices(p_primitiveMode, clippedVertices);
-		}
-	}
-	else
-	{
-		TransformAndRasterizeVertices(p_primitiveMode, processedVertices);
+		TransformAndRasterizeVertices(clippedVertices);
 	}
 }
 
-void TransformAndRasterizeVertices(const uint8_t p_primitiveMode, const std::array<glm::vec4, 3>& processedVertices)
+void TransformAndRasterizeVertices(const std::array<glm::vec4, 3>& processedVertices)
 {
 	glm::vec3 vertexScreenPosition0 = ComputeScreenSpaceCoordinate(processedVertices[0]);
 	glm::vec3 vertexScreenPosition1 = ComputeScreenSpaceCoordinate(processedVertices[1]);
@@ -255,34 +281,25 @@ void TransformAndRasterizeVertices(const uint8_t p_primitiveMode, const std::arr
 
 	float area = triangle.ComputeArea();
 
-
-	if ((RenderContext.CullFace == AGL_BACK && area > 0.0f) ||
-		(RenderContext.CullFace == AGL_FRONT && area < 0.0f) ||
-		RenderContext.CullFace == AGL_FRONT_AND_BACK)
-		return;
-
-	if (p_primitiveMode == AGL_TRIANGLES || p_primitiveMode == AGL_TRIANGLE_STRIP)
+	if (RenderContext.State & AGL_CULL_FACE)
 	{
-		switch (RenderContext.PolygonMode)
-		{
-		case AGL_FILL:
-			ComputeFragments(triangle, transformedVertices);
-			break;
-		case AGL_LINE:
-			RasterizeTriangleWireframe(triangle, transformedVertices);
-			break;
-		case AGL_POINT:
-			RasterizeTrianglePoints(triangle, transformedVertices);
-			break;
-		}
+		if ((RenderContext.CullFace == AGL_BACK && area > 0.0f) 
+			|| (RenderContext.CullFace == AGL_FRONT && area < 0.0f) 
+			|| RenderContext.CullFace == AGL_FRONT_AND_BACK)
+			return;
 	}
-	else if (p_primitiveMode == AGL_LINES)
+
+	switch (RenderContext.PolygonMode)
 	{
-		RasterizeTriangleWireframe(triangle, transformedVertices);
-	}
-	else if (p_primitiveMode == AGL_POINTS)
-	{
+	case AGL_FILL:
+		ComputeFragments(triangle, transformedVertices);
+		break;
+	case AGL_LINE:
+		RasterizeTriangleWireframe(transformedVertices);
+		break;
+	case AGL_POINT:
 		RasterizeTrianglePoints(triangle, transformedVertices);
+		break;
 	}
 }
 
@@ -314,10 +331,7 @@ void ComputeFragments(const AmberGL::Geometry::Triangle& p_triangle, const std::
 
 					const glm::vec3 barycentricCoords = p_triangle.GetBarycentricCoordinates({ px, py });
 
-					RenderContext.Program->ProcessInterpolation(barycentricCoords,
-						transformedVertices[0].w,
-						transformedVertices[1].w,
-						transformedVertices[2].w);
+					RenderContext.Program->ProcessInterpolation(barycentricCoords, transformedVertices[0].w, transformedVertices[1].w, transformedVertices[2].w);
 
 					texCoords[dy][dx] = RenderContext.Program->GetVaryingAs<glm::vec2>("v_TexCoords");
 				}
@@ -382,7 +396,7 @@ void SetFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p_x, ui
 		if (depth < 0.0f || depth > 1.0f)
 			return;
 
-		if (!(RenderContext.State & AGL_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(p_x, p_y))
+		if (!(RenderContext.State & AGL_DEPTH_TEST) || DepthTest(depth, RenderContext.FrameBufferObject->DepthBuffer->GetPixel(p_x, p_y)))
 		{
 			RenderContext.Program->ProcessInterpolation(barycentricCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, p_transformedVertices[2].w);
 
@@ -416,7 +430,7 @@ void SetSampleFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p
 		if (depth < 0.0f || depth > 1.0f)
 			return;
 
-		if (!(RenderContext.State & AGL_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(p_x, p_y))
+		if (!(RenderContext.State & AGL_DEPTH_TEST) || DepthTest(depth, RenderContext.FrameBufferObject->DepthBuffer->GetPixel(p_x, p_y)))
 		{
 			RenderContext.Program->ProcessInterpolation(barycentricCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, p_transformedVertices[2].w);
 
@@ -427,290 +441,6 @@ void SetSampleFragment(const AmberGL::Geometry::Triangle& p_triangle, uint32_t p
 			MSAABuffer->SetPixelSample(p_x, p_y, p_sampleIndex, PackColor(color), depth);
 		}
 	}
-}
-
-void RasterizeTriangleWireframe(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices)
-{
-	RasterizeLine(p_triangle, transformedVertices, transformedVertices[0], transformedVertices[1]);
-	RasterizeLine(p_triangle, transformedVertices, transformedVertices[1], transformedVertices[2]);
-	RasterizeLine(p_triangle, transformedVertices, transformedVertices[2], transformedVertices[0]);
-}
-
-void RasterizeLine(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, const glm::vec4& p_start, const glm::vec4& p_end)
-{
-	int x0 = static_cast<int>(p_start.x);
-	int y0 = static_cast<int>(p_start.y);
-	int x1 = static_cast<int>(p_end.x);
-	int y1 = static_cast<int>(p_end.y);
-
-	// Bresenham's line algorithm.
-	int dx = abs(x1 - x0);
-	int dy = abs(y1 - y0);
-	int sx = x0 < x1 ? 1 : -1;
-	int sy = y0 < y1 ? 1 : -1;
-	int err = dx - dy;
-
-	const int width = static_cast<int>(RenderContext.FrameBufferObject->ColorBuffer ? RenderContext.FrameBufferObject->ColorBuffer->Width : RenderContext.FrameBufferObject->DepthBuffer->Width);
-	const int height = static_cast<int>(RenderContext.FrameBufferObject->ColorBuffer ? RenderContext.FrameBufferObject->ColorBuffer->Height : RenderContext.FrameBufferObject->DepthBuffer->Height);
-
-	while (x0 != x1 || y0 != y1)
-	{
-		if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
-		{
-			const glm::vec3 barycentricCoords = p_triangle.GetBarycentricCoordinates({ x0, y0 });
-
-			float depth = transformedVertices[0].z * barycentricCoords.x + transformedVertices[1].z * barycentricCoords.y + transformedVertices[2].z * barycentricCoords.z;
-			depth = depth * 0.5f + 0.5f;
-
-			if (depth < 0.0f || depth > 1.0f)
-				return;
-
-			if (!(RenderContext.State & AGL_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(x0, y0))
-			{
-				RenderContext.Program->ProcessInterpolation(barycentricCoords, transformedVertices[0].w, transformedVertices[1].w, transformedVertices[2].w);
-
-				glm::vec4 color = RenderContext.Program->ProcessFragment();
-
-				if (RenderContext.FrameBufferObject->ColorBuffer != nullptr)
-				{
-					RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x0, y0, PackColor(glm::mix(UnpackColor(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(x0, y0)), color, color.a)));
-				}
-
-				if (RenderContext.State & AGL_DEPTH_WRITE)
-				{
-					RenderContext.FrameBufferObject->DepthBuffer->SetPixel(x0, y0, depth);
-				}
-			}
-		}
-
-		const int e2 = (err << 1);
-
-		if (e2 > -dy)
-		{
-			err -= dy;
-			x0 += sx;
-		}
-
-		if (e2 < dx)
-		{
-			err += dx;
-			y0 += sy;
-		}
-	}
-}
-
-void RasterizeLine(const glm::vec4& p_start, const glm::vec4& p_end, const glm::vec4& p_color)
-{
-	int x0 = static_cast<int>(p_start.x);
-	int y0 = static_cast<int>(p_start.y);
-	int x1 = static_cast<int>(p_end.x);
-	int y1 = static_cast<int>(p_end.y);
-
-	// Bresenham's line algorithm.
-	int dx = abs(x1 - x0);
-	int dy = abs(y1 - y0);
-	int sx = x0 < x1 ? 1 : -1;
-	int sy = y0 < y1 ? 1 : -1;
-	int err = dx - dy;
-
-	const int width = static_cast<int>(RenderContext.FrameBufferObject->ColorBuffer ? RenderContext.FrameBufferObject->ColorBuffer->Width : RenderContext.FrameBufferObject->DepthBuffer->Width);
-	const int height = static_cast<int>(RenderContext.FrameBufferObject->ColorBuffer ? RenderContext.FrameBufferObject->ColorBuffer->Height : RenderContext.FrameBufferObject->DepthBuffer->Height);
-
-	float totalDistance = sqrt(dx * dx + dy * dy);
-
-	while (x0 != x1 || y0 != y1)
-	{
-		const float currentDistance = sqrt((x0 - p_start.x) * (x0 - p_start.x) + (y0 - p_end.y) * (y0 - p_end.y));
-
-		float depth = p_start.z * ((totalDistance - currentDistance) / totalDistance) + p_end.z * (currentDistance / totalDistance);
-		depth = depth * 0.5f + 0.5f;
-
-		if (depth < 0.0f || depth > 1.0f)
-			return;
-
-		if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
-		{
-			if (!(RenderContext.State & AGL_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(x0, y0))
-			{
-				if (RenderContext.FrameBufferObject->ColorBuffer != nullptr)
-				{
-					RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x0, y0, PackColor(p_color));
-				}
-
-				if (RenderContext.State & AGL_DEPTH_WRITE)
-				{
-					RenderContext.FrameBufferObject->DepthBuffer->SetPixel(x0, y0, depth);
-				}
-			}
-		}
-
-		const int e2 = (err << 1);
-
-		if (e2 > -dy)
-		{
-			err -= dy;
-			x0 += sx;
-		}
-
-		if (e2 < dx)
-		{
-			err += dx;
-			y0 += sy;
-		}
-	}
-}
-
-void RasterizeTrianglePoints(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices)
-{
-	DrawPoint(p_triangle, transformedVertices, transformedVertices[0]);
-	DrawPoint(p_triangle, transformedVertices, transformedVertices[1]);
-	DrawPoint(p_triangle, transformedVertices, transformedVertices[2]);
-}
-
-void DrawPoint(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices, const glm::vec4& p_point)
-{
-	const int width = static_cast<int>(RenderContext.FrameBufferObject->ColorBuffer ? RenderContext.FrameBufferObject->ColorBuffer->Width : RenderContext.FrameBufferObject->DepthBuffer->Width);
-	const int height = static_cast<int>(RenderContext.FrameBufferObject->ColorBuffer ? RenderContext.FrameBufferObject->ColorBuffer->Height : RenderContext.FrameBufferObject->DepthBuffer->Height);
-
-	if (p_point.x >= 0 && p_point.x < width && p_point.y >= 0 && p_point.y < height)
-	{
-		const glm::vec3 barycentricCoords = p_triangle.GetBarycentricCoordinates({ p_point.x, p_point.y });
-
-		float depth = transformedVertices[0].z * barycentricCoords.x +
-			transformedVertices[1].z * barycentricCoords.y +
-			transformedVertices[2].z * barycentricCoords.z;
-		depth = depth * 0.5f + 0.5f;
-
-		if (depth < 0.0f || depth > 1.0f)
-			return;
-
-		if (!(RenderContext.State & AGL_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(p_point.x, p_point.y))
-		{
-			RenderContext.Program->ProcessInterpolation(barycentricCoords, transformedVertices[0].w, transformedVertices[1].w, transformedVertices[2].w);
-
-			glm::vec4 color = RenderContext.Program->ProcessFragment();
-
-			if (RenderContext.FrameBufferObject->ColorBuffer != nullptr)
-			{
-				RenderContext.FrameBufferObject->ColorBuffer->SetPixel(p_point.x, p_point.y, PackColor(glm::mix(UnpackColor(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(p_point.x, p_point.y)), color, color.a)));
-			}
-
-			if (RenderContext.State & AGL_DEPTH_WRITE)
-			{
-				RenderContext.FrameBufferObject->DepthBuffer->SetPixel(p_point.x, p_point.y, depth);
-			}
-		}
-	}
-}
-
-void DrawPoint(const glm::vec2& p_point, const glm::vec4& p_color)
-{
-	if (RenderContext.FrameBufferObject->ColorBuffer == nullptr)
-		return;
-
-	const int width = static_cast<int>(RenderContext.FrameBufferObject->ColorBuffer->Width);
-	const int height = static_cast<int>(RenderContext.FrameBufferObject->ColorBuffer->Height);
-
-	if (p_point.x >= 0 && p_point.x < width && p_point.y >= 0 && p_point.y < height)
-	{
-		RenderContext.FrameBufferObject->ColorBuffer->SetPixel(p_point.x, p_point.y, PackColor(p_color));
-	}
-}
-
-void RasterizeLine(const AmberGL::Geometry::Vertex& p_vertex0, const AmberGL::Geometry::Vertex& p_vertex1, const  glm::vec4& p_color)
-{
-	glm::vec4 vertexWorldPosition0 = RenderContext.Program->ProcessVertex(p_vertex0, 0);
-	glm::vec4 vertexWorldPosition1 = RenderContext.Program->ProcessVertex(p_vertex1, 1);
-
-	glm::vec3 vertexScreenPosition0 = ComputeScreenSpaceCoordinate(vertexWorldPosition0);
-	glm::vec3 vertexScreenPosition1 = ComputeScreenSpaceCoordinate(vertexWorldPosition1);
-
-	glm::vec2 vertexNormalizedPosition0 = ComputeNormalizedDeviceCoordinate(vertexScreenPosition0);
-	glm::vec2 vertexNormalizedPosition1 = ComputeNormalizedDeviceCoordinate(vertexScreenPosition1);
-
-	glm::vec2 vertexRasterPosition0 = ComputeRasterSpaceCoordinate(vertexNormalizedPosition0);
-	glm::vec2 vertexRasterPosition1 = ComputeRasterSpaceCoordinate(vertexNormalizedPosition1);
-
-	int x0 = static_cast<int>(vertexRasterPosition0.x);
-	int y0 = static_cast<int>(vertexRasterPosition0.y);
-	int x1 = static_cast<int>(vertexRasterPosition1.x);
-	int y1 = static_cast<int>(vertexRasterPosition1.y);
-
-	// Bresenham's line algorithm.
-	int dx = abs(x1 - x0);
-	int dy = abs(y1 - y0);
-	int sx = x0 < x1 ? 1 : -1;
-	int sy = y0 < y1 ? 1 : -1;
-	int err = dx - dy;
-
-	const int width = static_cast<int>(RenderContext.FrameBufferObject->ColorBuffer ? RenderContext.FrameBufferObject->ColorBuffer->Width : RenderContext.FrameBufferObject->DepthBuffer->Width);
-	const int height = static_cast<int>(RenderContext.FrameBufferObject->ColorBuffer ? RenderContext.FrameBufferObject->ColorBuffer->Height : RenderContext.FrameBufferObject->DepthBuffer->Height);
-
-	float totalDistance = sqrt(dx * dx + dy * dy);
-
-	while (x0 != x1 || y0 != y1)
-	{
-		float currentDistance = sqrt((x0 - vertexRasterPosition0.x) * (x0 - vertexRasterPosition0.x) + (y0 - vertexRasterPosition0.y) * (y0 - vertexRasterPosition0.y));
-
-		float depth = vertexScreenPosition0.z * ((totalDistance - currentDistance) / totalDistance) + vertexScreenPosition1.z * (currentDistance / totalDistance);
-		depth = depth * 0.5f + 0.5f;
-
-		if (depth < 0.0f || depth > 1.0f)
-			return;
-
-		if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
-		{
-			if (!(RenderContext.State & AGL_DEPTH_TEST) || depth <= RenderContext.FrameBufferObject->DepthBuffer->GetPixel(x0, y0))
-			{
-				if (RenderContext.FrameBufferObject->ColorBuffer != nullptr)
-				{
-					RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x0, y0, PackColor(p_color));
-				}
-
-				if (RenderContext.State & AGL_DEPTH_WRITE)
-				{
-					RenderContext.FrameBufferObject->DepthBuffer->SetPixel(x0, y0, depth);
-				}
-			}
-		}
-
-		const int e2 = (err << 1);
-
-		if (e2 > -dy)
-		{
-			err -= dy;
-			x0 += sx;
-		}
-
-		if (e2 < dx)
-		{
-			err += dx;
-			y0 += sy;
-		}
-	}
-}
-
-glm::vec3 ComputeScreenSpaceCoordinate(const glm::vec4& p_vertexWorldPosition)
-{
-	return p_vertexWorldPosition / p_vertexWorldPosition.w;
-}
-
-glm::vec2 ComputeNormalizedDeviceCoordinate(const glm::vec3& p_vertexScreenSpacePosition)
-{
-	glm::vec2 normalizedCoordinate;
-
-	normalizedCoordinate.x = (p_vertexScreenSpacePosition.x + 1.0f) * 0.5f;
-	normalizedCoordinate.y = (1.0f - p_vertexScreenSpacePosition.y) * 0.5f;
-
-	return normalizedCoordinate;
-}
-
-glm::vec2 ComputeRasterSpaceCoordinate(glm::vec2 p_vertexNormalizedPosition)
-{
-	p_vertexNormalizedPosition.x = RenderContext.ViewPortX + p_vertexNormalizedPosition.x * RenderContext.ViewPortWidth - 0.5f;
-	p_vertexNormalizedPosition.y = RenderContext.ViewPortY + p_vertexNormalizedPosition.y * RenderContext.ViewPortHeight - 0.5f;
-
-	return p_vertexNormalizedPosition;
 }
 
 void ClipAgainstPlane(AmberGL::Geometry::Polygon& p_polygon, const AmberGL::Geometry::Plane& p_plane)
@@ -809,6 +539,836 @@ void ClipAgainstPlane(AmberGL::Geometry::Polygon& p_polygon, const AmberGL::Geom
 	}
 }
 
+void ProcessPoint(const AmberGL::Geometry::Vertex& p_vertex)
+{
+	glm::vec4 processedVertex = RenderContext.Program->ProcessVertex(p_vertex, 0);
+
+	for (const auto& plane : ClippingFrustum)
+	{
+		if (!plane.IsInFront(processedVertex))
+			return;
+	}
+
+	glm::vec3 vertexScreenPosition = ComputeScreenSpaceCoordinate(processedVertex);
+	glm::vec2 vertexNormalizedPosition = ComputeNormalizedDeviceCoordinate(vertexScreenPosition);
+	glm::vec2 vertexRasterPosition = ComputeRasterSpaceCoordinate(vertexNormalizedPosition);
+
+	glm::vec4 transformedVertex(vertexRasterPosition.x, vertexRasterPosition.y, vertexScreenPosition.z, processedVertex.w);
+
+	AmberGL::Geometry::Point point(transformedVertex);
+
+	RasterizePoint(point);
+}
+
+void RasterizePoint(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& p_transformedVertices, const glm::vec4& p_point)
+{
+	const int width = static_cast<int>(RenderContext.FrameBufferObject->ColorBuffer ? RenderContext.FrameBufferObject->ColorBuffer->Width : RenderContext.FrameBufferObject->DepthBuffer->Width);
+	const int height = static_cast<int>(RenderContext.FrameBufferObject->ColorBuffer ? RenderContext.FrameBufferObject->ColorBuffer->Height : RenderContext.FrameBufferObject->DepthBuffer->Height);
+
+	const glm::vec3 centerBarycentricCoords = p_triangle.GetBarycentricCoordinates({ p_point.x, p_point.y });
+
+	float depth = p_transformedVertices[0].z * centerBarycentricCoords.x +
+		p_transformedVertices[1].z * centerBarycentricCoords.y +
+		p_transformedVertices[2].z * centerBarycentricCoords.z;
+
+	depth = depth * 0.5f + 0.5f;
+	depth = std::max(0.0f, std::min(1.0f, depth));
+
+	float w = p_transformedVertices[0].w * centerBarycentricCoords.x +
+		p_transformedVertices[1].w * centerBarycentricCoords.y +
+		p_transformedVertices[2].w * centerBarycentricCoords.z;
+
+	const float scaledPointSize = RenderContext.PointSize * (1.0f / std::abs(w));
+	const float halfSize = scaledPointSize * 0.5f;
+
+	const int startX = std::max(0, static_cast<int>(std::floor(p_point.x - halfSize)));
+	const int endX = std::min(width - 1, static_cast<int>(std::ceil(p_point.x + halfSize)));
+	const int startY = std::max(0, static_cast<int>(std::floor(p_point.y - halfSize)));
+	const int endY = std::min(height - 1, static_cast<int>(std::ceil(p_point.y + halfSize)));
+
+	for (int y = startY; y <= endY; y++)
+	{
+		for (int x = startX; x <= endX; x++)
+		{
+			if (RenderContext.State & AGL_MULTISAMPLE && RenderContext.FrameBufferObject->ColorBuffer != nullptr)
+			{
+				const glm::vec3 barycentricCoords = p_triangle.GetBarycentricCoordinates({ static_cast<float>(x), static_cast<float>(y) });
+
+				if (!(RenderContext.State & AGL_DEPTH_TEST) || DepthTest(depth, RenderContext.FrameBufferObject->DepthBuffer->GetPixel(x, y)))
+				{
+					RenderContext.Program->ProcessInterpolation(barycentricCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, p_transformedVertices[2].w);
+
+					const glm::vec4 color = RenderContext.Program->ProcessFragment();
+
+					for (uint8_t sampleIndex = 0; sampleIndex < RenderContext.Samples; sampleIndex++)
+					{
+						MSAABuffer->SetPixelSample(x, y, sampleIndex, PackColor(color), depth);
+					}
+				}
+			}
+			else
+			{
+				if (!(RenderContext.State & AGL_DEPTH_TEST) || DepthTest(depth, RenderContext.FrameBufferObject->DepthBuffer->GetPixel(x, y)))
+				{
+					const glm::vec3 barycentricCoords = p_triangle.GetBarycentricCoordinates({ static_cast<float>(x), static_cast<float>(y) });
+
+					RenderContext.Program->ProcessInterpolation(barycentricCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, p_transformedVertices[2].w);
+
+					const glm::vec4 color = RenderContext.Program->ProcessFragment();
+
+					if (RenderContext.FrameBufferObject->ColorBuffer != nullptr)
+					{
+						RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x, y, PackColor(glm::mix(UnpackColor(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(x, y)), color, color.w)));
+					}
+
+					if (RenderContext.State & AGL_DEPTH_WRITE)
+					{
+						RenderContext.FrameBufferObject->DepthBuffer->SetPixel(x, y, depth);
+					}
+				}
+			}
+		}
+	}
+}
+
+void RasterizePoint(const AmberGL::Geometry::Point& p_point)
+{
+	const int width = static_cast<int>(RenderContext.FrameBufferObject->ColorBuffer ? RenderContext.FrameBufferObject->ColorBuffer->Width : RenderContext.FrameBufferObject->DepthBuffer->Width);
+	const int height = static_cast<int>(RenderContext.FrameBufferObject->ColorBuffer ? RenderContext.FrameBufferObject->ColorBuffer->Height : RenderContext.FrameBufferObject->DepthBuffer->Height);
+
+	float depth = p_point.ScreenSpaceCoordinate.z;
+
+	depth = depth * 0.5f + 0.5f;
+	depth = std::max(0.0f, std::min(1.0f, depth));
+
+	const float scaledPointSize = RenderContext.PointSize * (1.0f / std::abs(p_point.ScreenSpaceCoordinate.w));
+	const float halfSize = scaledPointSize * 0.5f;
+
+	const int startX = std::max(0, static_cast<int>(std::floor(p_point.ScreenSpaceCoordinate.x - halfSize)));
+	const int endX = std::min(width - 1, static_cast<int>(std::ceil(p_point.ScreenSpaceCoordinate.x + halfSize)));
+	const int startY = std::max(0, static_cast<int>(std::floor(p_point.ScreenSpaceCoordinate.y - halfSize)));
+	const int endY = std::min(height - 1, static_cast<int>(std::ceil(p_point.ScreenSpaceCoordinate.y + halfSize)));
+
+	for (int y = startY; y <= endY; y++)
+	{
+		for (int x = startX; x <= endX; x++)
+		{
+			if (RenderContext.State & AGL_MULTISAMPLE && RenderContext.FrameBufferObject->ColorBuffer != nullptr)
+			{
+				if (!(RenderContext.State & AGL_DEPTH_TEST) || DepthTest(depth, RenderContext.FrameBufferObject->DepthBuffer->GetPixel(x, y)))
+				{
+					RenderContext.Program->ProcessPointInterpolation(p_point.ScreenSpaceCoordinate.w);
+
+					const glm::vec4 color = RenderContext.Program->ProcessFragment();
+
+					for (uint8_t sampleIndex = 0; sampleIndex < RenderContext.Samples; sampleIndex++)
+					{
+						MSAABuffer->SetPixelSample(x, y, sampleIndex, PackColor(color), depth);
+					}
+				}
+			}
+			else
+			{
+				if (!(RenderContext.State & AGL_DEPTH_TEST) || DepthTest(depth, RenderContext.FrameBufferObject->DepthBuffer->GetPixel(x, y)))
+				{
+					RenderContext.Program->ProcessPointInterpolation(p_point.ScreenSpaceCoordinate.w);
+
+					if (RenderContext.FrameBufferObject->ColorBuffer != nullptr)
+					{
+						const glm::vec4 color = RenderContext.Program->ProcessFragment();
+
+						RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x, y, PackColor(glm::mix(UnpackColor(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(x, y)), color, color.w)));
+					}
+
+					if (RenderContext.State & AGL_DEPTH_WRITE)
+					{
+						RenderContext.FrameBufferObject->DepthBuffer->SetPixel(x, y, depth);
+					}
+				}
+			}
+		}
+	}
+}
+
+void ProcessLine(const AmberGL::Geometry::Vertex& p_vertex0, const AmberGL::Geometry::Vertex& p_vertex1)
+{
+	std::array<glm::vec4, 2> processedVertices
+	{
+		RenderContext.Program->ProcessVertex(p_vertex0, 0),
+		RenderContext.Program->ProcessVertex(p_vertex1, 1)
+	};
+	
+	AmberGL::Geometry::Polygon currentPoly;
+	currentPoly.Vertices[0] = processedVertices[0];
+	currentPoly.Vertices[1] = processedVertices[1];
+	currentPoly.TexCoords[0] = p_vertex0.texCoords;
+	currentPoly.TexCoords[1] = p_vertex1.texCoords;
+	currentPoly.Normals[0] = p_vertex0.normal;
+	currentPoly.Normals[1] = p_vertex1.normal;
+	currentPoly.VerticesCount = 2;
+
+	auto& programVaryings = RenderContext.Program->GetVaryings();
+	int totalSize = 0;
+
+	for (const auto& [name, varying] : programVaryings)
+	{
+		totalSize += RenderContext.Program->GetTypeCount(varying.Type);
+	}
+
+	currentPoly.VaryingsDataSize = totalSize;
+
+	uint16_t offset = 0;
+	for (auto& [name, varying] : programVaryings)
+	{
+		uint8_t typeCount = RenderContext.Program->GetTypeCount(varying.Type);
+		for (uint8_t vertIdx = 0; vertIdx < 2; vertIdx++)
+		{
+			for (uint8_t i = 0; i < typeCount; i++)
+			{
+				currentPoly.Varyings[vertIdx][offset + i] = varying.Data[vertIdx][i];
+			}
+		}
+		offset += typeCount;
+	}
+
+	for (const auto& plane : ClippingFrustum)
+	{
+		plane.ClipLine(currentPoly);
+	}
+
+	if (currentPoly.VerticesCount < 2)
+		return;
+
+	offset = 0;
+	for (auto& [name, varying] : programVaryings)
+	{
+		uint8_t typeCount = RenderContext.Program->GetTypeCount(varying.Type);
+		for (uint8_t j = 0; j < typeCount; j++)
+		{
+			varying.Data[0][j] = currentPoly.Varyings[0][offset + j];
+			varying.Data[1][j] = currentPoly.Varyings[1][offset + j];
+		}
+		offset += typeCount;
+	}
+
+	std::array<glm::vec4, 2> transformedVertices;
+
+	for (int i = 0; i < 2; i++)
+	{
+		glm::vec3 screenPos = ComputeScreenSpaceCoordinate(currentPoly.Vertices[i]);
+		glm::vec2 ndcPos = ComputeNormalizedDeviceCoordinate(screenPos);
+		glm::vec2 rasterPos = ComputeRasterSpaceCoordinate(ndcPos);
+
+		transformedVertices[i] = currentPoly.Vertices[i];
+		transformedVertices[i].x = rasterPos.x;
+		transformedVertices[i].y = rasterPos.y;
+		transformedVertices[i].z = screenPos.z;
+	}
+
+	RasterizeLineDirectly(transformedVertices);
+}
+
+void RasterizeLineDirectly(const std::array<glm::vec4, 2>& p_transformedVertices)
+{
+	float startX = p_transformedVertices[0].x;
+	float startY = p_transformedVertices[0].y;
+	float startZ = p_transformedVertices[0].z;
+	float startW = p_transformedVertices[0].w;
+	float endX = p_transformedVertices[1].x;
+	float endY = p_transformedVertices[1].y;
+	float endZ = p_transformedVertices[1].z;
+	float endW = p_transformedVertices[1].w;
+
+	int width = RenderContext.FrameBufferObject->ColorBuffer ? RenderContext.FrameBufferObject->ColorBuffer->Width : RenderContext.FrameBufferObject->DepthBuffer->Width;
+	int height = RenderContext.FrameBufferObject->ColorBuffer ? RenderContext.FrameBufferObject->ColorBuffer->Height : RenderContext.FrameBufferObject->DepthBuffer->Height;
+
+	float deltaX = endX - startX;
+	float deltaY = endY - startY;
+	float lineLength = std::sqrt(deltaX * deltaX + deltaY * deltaY);
+
+	float normalizedDirX = deltaX / lineLength;
+	float normalizedDirY = deltaY / lineLength;
+
+	float perpendicularsX = -normalizedDirY;
+	float perpendicularsY = normalizedDirX;
+
+	float safeStartW = std::abs(startW);
+	float safeEndW = std::abs(endW);
+
+	float invDotProduct = 1.0f / (deltaX * deltaX + deltaY * deltaY);
+
+	if (RenderContext.LineWidth == 1.0f) 
+	{
+		int startPointX = static_cast<int>(std::floor(startX + 0.5f));
+		int startPointY = static_cast<int>(std::floor(startY + 0.5f));
+		int endPointX = static_cast<int>(std::floor(endX + 0.5f));
+		int endPointY = static_cast<int>(std::floor(endY + 0.5f));
+
+		if ((startPointX < 0 && endPointX  < 0) || (startPointX >= width && endPointX  >= width) 
+			|| (startPointY  < 0 && endPointY  < 0) || (startPointY  >= height && endPointY  >= height)) 
+		{
+			return;
+		}
+
+		bool isSteep = std::abs(endPointY  - startPointY) > std::abs(endPointX  - startPointX);
+
+		if (isSteep) 
+		{
+			std::swap(startPointX, startPointY);
+			std::swap(endPointX , endPointY);
+		}
+
+		if (startPointX > endPointX)
+		{
+			std::swap(startPointX, endPointX);
+			std::swap(startPointY , endPointY);
+			std::swap(startX, endX);
+			std::swap(startY, endY);
+			std::swap(startZ, endZ);
+			std::swap(startW, endW);
+		}
+
+		int xDiff = endPointX  - startPointX;
+		int yDiff = std::abs(endPointY  - startPointY);
+		int bresenhamError = xDiff * 0.5f;
+
+		int yDirection = (startPointY  < endPointY) ? 1 : -1;
+		int currentY = startPointY;
+
+		for (int currentX = startPointX; currentX <= endPointX ; ++currentX)
+		{
+			int pixelX = isSteep ? currentY : currentX;
+			int pixelY = isSteep ? currentX : currentY;
+
+			if (pixelX >= 0 && pixelX < width && pixelY >= 0 && pixelY < height) 
+			{
+				//TODO: Implement Xiaolin Wu's algorithm. The MSAA makes no sense for Bresenham line here.
+				//MSAA not effective of course because Bresenham produces binary (fully covered/not covered) pixels.
+				if (RenderContext.State & AGL_MULTISAMPLE && RenderContext.FrameBufferObject->ColorBuffer)
+				{
+					uint8_t gridSize = static_cast<uint8_t>(std::ceil(std::sqrt(RenderContext.Samples)));
+					uint8_t sampleCount = 0;
+
+					for (uint8_t j = 0; j < gridSize; j++)
+					{
+						for (uint8_t i = 0; i < gridSize; i++)
+						{
+							if (sampleCount >= RenderContext.Samples)
+								break;
+
+							float samplePosX = pixelX + (i + 0.5f) / gridSize;
+							float samplePosY = pixelY + (j + 0.5f) / gridSize;
+
+							float interpolationParam = ((samplePosX - startX) * deltaX + (samplePosY - startY) * deltaY) * invDotProduct;
+							interpolationParam = std::max(0.0f, std::min(1.0f, interpolationParam));
+
+							float invWInterpolated = (1.0f - interpolationParam) / safeStartW + interpolationParam / safeEndW;
+							float interpolatedZ = (1.0f - interpolationParam) * startZ / safeStartW + interpolationParam * endZ / safeEndW;
+							float sampleDepth = (interpolatedZ / invWInterpolated) * 0.5f + 0.5f;
+
+							RenderContext.Program->ProcessInterpolation(
+								{ 1.0f - interpolationParam, interpolationParam, 0.0f },
+								p_transformedVertices[0].w,
+								p_transformedVertices[1].w,
+								1.0f);
+
+							const glm::vec4 color = RenderContext.Program->ProcessFragment();
+							MSAABuffer->SetPixelSample(pixelX, pixelY, sampleCount, PackColor(color), sampleDepth);
+
+							sampleCount++;
+						}
+					}
+				}
+				else
+				{
+					float pixelPosX = isSteep ? pixelY + 0.5f : pixelX + 0.5f;
+					float pixelPosY = isSteep ? pixelX + 0.5f : pixelY + 0.5f;
+
+					float interpolationParam = ((pixelPosX - startX) * deltaX + (pixelPosY - startY) * deltaY) * invDotProduct;
+					interpolationParam = std::max(0.0f, std::min(1.0f, interpolationParam));
+
+					float invWInterpolated = (1.0f - interpolationParam) / safeStartW + interpolationParam / safeEndW;
+					float interpolatedZ = (1.0f - interpolationParam) * startZ / safeStartW + interpolationParam * endZ / safeEndW;
+					float pixelDepth = (interpolatedZ / invWInterpolated) * 0.5f + 0.5f;
+
+					if (!(RenderContext.State & AGL_DEPTH_TEST) || DepthTest(pixelDepth, RenderContext.FrameBufferObject->DepthBuffer->GetPixel(pixelX, pixelY)))
+					{
+						RenderContext.Program->ProcessInterpolation(
+							{ 1.0f - interpolationParam, interpolationParam, 0.0f },
+							p_transformedVertices[0].w,
+							p_transformedVertices[1].w,
+							1.0f);
+
+						if (RenderContext.FrameBufferObject->ColorBuffer)
+						{
+							const glm::vec4 color = RenderContext.Program->ProcessFragment();
+							RenderContext.FrameBufferObject->ColorBuffer->SetPixel(pixelX, pixelY, PackColor(glm::mix(UnpackColor(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(pixelX, pixelY)), color, color.w)));
+						}
+
+						if (RenderContext.State & AGL_DEPTH_WRITE)
+						{
+							RenderContext.FrameBufferObject->DepthBuffer->SetPixel(pixelX, pixelY, pixelDepth);
+						}
+					}
+				}
+			}
+
+			bresenhamError -= yDiff;
+
+			if (bresenhamError < 0) 
+			{
+				currentY += yDirection;
+				bresenhamError += xDiff;
+			}
+		}
+	}
+	else
+	{
+		float halfWidthStart = (RenderContext.LineWidth * 0.5f) / safeStartW;
+		float halfWidthEnd = (RenderContext.LineWidth * 0.5f) / safeEndW;
+
+		float corner0X = startX - perpendicularsX * halfWidthStart;
+		float corner0Y = startY - perpendicularsY * halfWidthStart;
+
+		float corner1X = startX + perpendicularsX * halfWidthStart;
+		float corner1Y = startY + perpendicularsY * halfWidthStart;
+
+		float corner2X = endX + perpendicularsX * halfWidthEnd;
+		float corner2Y = endY + perpendicularsY * halfWidthEnd;
+
+		float corner3X = endX - perpendicularsX * halfWidthEnd;
+		float corner3Y = endY - perpendicularsY * halfWidthEnd;
+
+		float edge0X = corner1X - corner0X;  float edge0Y = corner1Y - corner0Y;
+		float edge1X = corner2X - corner1X;  float edge1Y = corner2Y - corner1Y;
+		float edge2X = corner3X - corner2X;  float edge2Y = corner3Y - corner2Y;
+		float edge3X = corner0X - corner3X;  float edge3Y = corner0Y - corner3Y;
+
+		float minBoxX = std::min(std::min(corner0X, corner1X), std::min(corner2X, corner3X));
+		float maxBoxX = std::max(std::max(corner0X, corner1X), std::max(corner2X, corner3X));
+		float minBoxY = std::min(std::min(corner0Y, corner1Y), std::min(corner2Y, corner3Y));
+		float maxBoxY = std::max(std::max(corner0Y, corner1Y), std::max(corner2Y, corner3Y));
+
+		int boxStartX = std::max(0, static_cast<int>(minBoxX));
+		int boxEndX = std::min(width - 1, static_cast<int>(maxBoxX));
+		int boxStartY = std::max(0, static_cast<int>(minBoxY));
+		int boxEndY = std::min(height - 1, static_cast<int>(maxBoxY));
+
+		for (int y = boxStartY; y <= boxEndY; y++)
+		{
+			for (int x = boxStartX; x <= boxEndX; x++)
+			{
+				if (RenderContext.State & AGL_MULTISAMPLE && RenderContext.FrameBufferObject->ColorBuffer)
+				{
+					uint8_t gridSize = static_cast<uint8_t>(std::ceil(std::sqrt(RenderContext.Samples)));
+					uint8_t sampleCount = 0;
+
+					for (uint8_t j = 0; j < gridSize; j++)
+					{
+						for (uint8_t i = 0; i < gridSize; i++)
+						{
+							if (sampleCount >= RenderContext.Samples)
+								break;
+
+							float samplePosX = x + (i + 0.5f) / gridSize;
+							float samplePosY = y + (j + 0.5f) / gridSize;
+
+							float sampleCross0 = (samplePosX - corner0X) * edge0Y - (samplePosY - corner0Y) * edge0X;
+							float sampleCross1 = (samplePosX - corner1X) * edge1Y - (samplePosY - corner1Y) * edge1X;
+							float sampleCross2 = (samplePosX - corner2X) * edge2Y - (samplePosY - corner2Y) * edge2X;
+							float sampleCross3 = (samplePosX - corner3X) * edge3Y - (samplePosY - corner3Y) * edge3X;
+
+							if (!((sampleCross0 >= 0 && sampleCross1 >= 0 && sampleCross2 >= 0 && sampleCross3 >= 0)
+								|| (sampleCross0 <= 0 && sampleCross1 <= 0 && sampleCross2 <= 0 && sampleCross3 <= 0)))
+							{
+								sampleCount++;
+								continue;
+							}
+
+							float sampleInterpolationParam = ((samplePosX - startX) * deltaX + (samplePosY - startY) * deltaY) * invDotProduct;
+							sampleInterpolationParam = std::max(0.0f, std::min(1.0f, sampleInterpolationParam));
+
+							float sampleInvW = (1.0f - sampleInterpolationParam) / safeStartW + sampleInterpolationParam / safeEndW;
+							float sampleZ = (1.0f - sampleInterpolationParam) * startZ / safeStartW + sampleInterpolationParam * endZ / safeEndW;
+							float sampleDepth = (sampleZ / sampleInvW) * 0.5f + 0.5f;
+
+							RenderContext.Program->ProcessInterpolation(
+								{ 1.0f - sampleInterpolationParam, sampleInterpolationParam, 0.0f },
+								p_transformedVertices[0].w,
+								p_transformedVertices[1].w,
+								1.0f);
+
+							const glm::vec4 color = RenderContext.Program->ProcessFragment();
+
+							MSAABuffer->SetPixelSample(x, y, sampleCount, PackColor(color), sampleDepth);
+
+							sampleCount++;
+						}
+					}
+				}
+				else
+				{
+					float pixelCenterX = x + 0.5f;
+					float pixelCenterY = y + 0.5f;
+
+					float pixelCross0 = (pixelCenterX - corner0X) * edge0Y - (pixelCenterY - corner0Y) * edge0X;
+					float pixelCross1 = (pixelCenterX - corner1X) * edge1Y - (pixelCenterY - corner1Y) * edge1X;
+					float pixelCross2 = (pixelCenterX - corner2X) * edge2Y - (pixelCenterY - corner2Y) * edge2X;
+					float pixelCross3 = (pixelCenterX - corner3X) * edge3Y - (pixelCenterY - corner3Y) * edge3X;
+
+					if (!((pixelCross0 >= 0 && pixelCross1 >= 0 && pixelCross2 >= 0 && pixelCross3 >= 0)
+						|| (pixelCross0 <= 0 && pixelCross1 <= 0 && pixelCross2 <= 0 && pixelCross3 <= 0)))
+						continue;
+
+					float pixelInterpolationParam = ((pixelCenterX - startX) * deltaX + (pixelCenterY - startY) * deltaY) * invDotProduct;
+					pixelInterpolationParam = std::max(0.0f, std::min(1.0f, pixelInterpolationParam));
+
+					float pixelInvW = (1.0f - pixelInterpolationParam) / safeStartW + pixelInterpolationParam / safeEndW;
+					float pixelZ = (1.0f - pixelInterpolationParam) * startZ / safeStartW + pixelInterpolationParam * endZ / safeEndW;
+					float pixelDepth = (pixelZ / pixelInvW) * 0.5f + 0.5f;
+
+					if (RenderContext.State & AGL_DEPTH_TEST && DepthTest(pixelDepth, RenderContext.FrameBufferObject->DepthBuffer->GetPixel(x, y)))
+					{
+						RenderContext.Program->ProcessInterpolation(
+							{ 1.0f - pixelInterpolationParam, pixelInterpolationParam, 0.0f },
+							p_transformedVertices[0].w,
+							p_transformedVertices[1].w,
+							1.0f);
+
+						if (RenderContext.FrameBufferObject->ColorBuffer)
+						{
+							const glm::vec4 color = RenderContext.Program->ProcessFragment();
+
+							RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x, y, PackColor(glm::mix(UnpackColor(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(x, y)), color, color.w)));
+						}
+
+						if (RenderContext.State & AGL_DEPTH_WRITE)
+						{
+							RenderContext.FrameBufferObject->DepthBuffer->SetPixel(x, y, pixelDepth);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	//ROUNDED LINES TEST, WORKING WELL EXCEPT WHEN LINE IS ALIGNED WITH THE CAMERA, LINE WIDTH BECOME WRONG DUE TO PERSPECTIVE ISSUE
+	/*float x0 = p_transformedVertices[0].x;
+	float y0 = p_transformedVertices[0].y;
+	float z0 = p_transformedVertices[0].z;
+	float x1 = p_transformedVertices[1].x;
+	float y1 = p_transformedVertices[1].y;
+	float z1 = p_transformedVertices[1].z;
+	float w0 = p_transformedVertices[0].w;
+	float w1 = p_transformedVertices[1].w;
+
+	float dx = x1 - x0;
+	float dy = y1 - y0;
+
+	const int width = static_cast<int>(RenderContext.FrameBufferObject->ColorBuffer ? RenderContext.FrameBufferObject->ColorBuffer->Width : RenderContext.FrameBufferObject->DepthBuffer->Width);
+	const int height = static_cast<int>(RenderContext.FrameBufferObject->ColorBuffer ? RenderContext.FrameBufferObject->ColorBuffer->Height : RenderContext.FrameBufferObject->DepthBuffer->Height);
+
+	float thickness0 = std::min(RenderContext.LineWidth * (1.0f / w0), RenderContext.LineWidth * 2.0f);
+	float thickness1 = std::min(RenderContext.LineWidth * (1.0f / w1), RenderContext.LineWidth * 2.0f);
+
+	thickness0 = std::max(thickness0, 1.0f);
+	thickness1 = std::max(thickness1, 1.0f);
+
+	float maxThickness = std::max(thickness0, thickness1);
+	float halfMaxThickness = maxThickness * 0.5f;
+
+	float padding = 1.0f;
+	float minX = std::min(x0, x1) - halfMaxThickness - padding;
+	float maxX = std::max(x0, x1) + halfMaxThickness + padding;
+	float minY = std::min(y0, y1) - halfMaxThickness - padding;
+	float maxY = std::max(y0, y1) + halfMaxThickness + padding;
+
+	int startX = std::max(0, static_cast<int>(std::floor(minX)));
+	int endX = std::min(width - 1, static_cast<int>(std::ceil(maxX)));
+	int startY = std::max(0, static_cast<int>(std::floor(minY)));
+	int endY = std::min(height - 1, static_cast<int>(std::ceil(maxY)));
+
+	float invLen2 = 1.0f / (dx * dx + dy * dy);
+
+	for (int y = startY; y <= endY; y++)
+	{
+		for (int x = startX; x <= endX; x++)
+		{
+			if (RenderContext.State & AGL_MULTISAMPLE && RenderContext.FrameBufferObject->ColorBuffer)
+			{
+				uint8_t gridSize = static_cast<uint8_t>(std::ceil(std::sqrt(RenderContext.Samples)));
+
+				uint8_t sampleCount = 0;
+
+				for (uint8_t j = 0; j < gridSize; j++)
+				{
+					for (uint8_t i = 0; i < gridSize; i++)
+					{
+						if (sampleCount >= RenderContext.Samples)
+							break;
+
+						const float sampleX = x + (i + 0.5f) / gridSize;
+						const float sampleY = y + (j + 0.5f) / gridSize;
+
+						const float t = ((sampleX - x0) * dx + (sampleY - y0) * dy) * invLen2;
+						const float clampedT = std::max(0.0f, std::min(1.0f, t));
+
+						const float closestX = x0 + clampedT * dx;
+						const float closestY = y0 + clampedT * dy;
+
+						float invW = (1.0f - clampedT) / w0 + clampedT / w1;
+						float correctW = 1.0f / invW;
+
+						float z = (1.0f - clampedT) * z0 / w0 + clampedT * z1 / w1;
+						float correctZ = z * correctW;
+
+						float depth = correctZ * 0.5f + 0.5f;
+						depth = std::max(0.0f, std::min(1.0f, depth));
+
+						float interpolatedThickness = thickness0 * (1.0f - clampedT) + thickness1 * clampedT;
+						float halfThickness = interpolatedThickness * 0.5f;
+
+						const float distance = std::sqrt(
+							(sampleX - closestX) * (sampleX - closestX) +
+							(sampleY - closestY) * (sampleY - closestY));
+
+						if (distance <= halfThickness)
+						{
+							const glm::vec3 weightedCoords(1.0f - clampedT, clampedT, 0.0f);
+
+							RenderContext.Program->ProcessInterpolation(weightedCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, 1.0f);
+
+							const glm::vec4 color = RenderContext.Program->ProcessFragment();
+
+							MSAABuffer->SetPixelSample(x, y, sampleCount, PackColor(color), depth);
+						}
+
+						sampleCount++;
+					}
+				}
+			}
+			else
+			{
+				const float pixelX = x + 0.5f;
+				const float pixelY = y + 0.5f;
+
+				const float t = ((pixelX - x0) * dx + (pixelY - y0) * dy) * invLen2;
+				const float clampedT = std::max(0.0f, std::min(1.0f, t));
+
+				const float closestX = x0 + clampedT * dx;
+				const float closestY = y0 + clampedT * dy;
+
+				float invW = (1.0f - clampedT) / w0 + clampedT / w1;
+				float correctW = 1.0f / invW;
+
+				float z = (1.0f - clampedT) * z0 / w0 + clampedT * z1 / w1;
+				float correctZ = z * correctW;
+
+				float interpolatedThickness = thickness0 * (1.0f - clampedT) + thickness1 * clampedT;
+				float halfThickness = interpolatedThickness * 0.5f;
+
+				const float distance = std::sqrt(
+					(pixelX - closestX) * (pixelX - closestX) +
+					(pixelY - closestY) * (pixelY - closestY));
+
+				float depth = correctZ * 0.5f + 0.5f;
+				depth = std::max(0.0f, std::min(1.0f, depth));
+
+				if (distance <= halfThickness)
+				{
+					if (!(RenderContext.State & AGL_DEPTH_TEST) || PerformDepthTest(depth, RenderContext.FrameBufferObject->DepthBuffer->GetPixel(x, y)))
+					{
+						const glm::vec3 weightedCoords(1.0f - clampedT, clampedT, 0.0f);
+
+						RenderContext.Program->ProcessInterpolation(weightedCoords, p_transformedVertices[0].w, p_transformedVertices[1].w, 1.0f);
+
+						if (RenderContext.FrameBufferObject->ColorBuffer != nullptr)
+						{
+							const glm::vec4 color = RenderContext.Program->ProcessFragment();
+
+							RenderContext.FrameBufferObject->ColorBuffer->SetPixel(x, y, PackColor(glm::mix(UnpackColor(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(x, y)), color, color.w)));
+						}
+
+						if (RenderContext.State & AGL_DEPTH_WRITE)
+						{
+							RenderContext.FrameBufferObject->DepthBuffer->SetPixel(x, y, depth);
+						}
+					}
+				}
+			}
+		}
+	}*/
+}
+
+void RasterizeLine(const std::array<glm::vec4, 3>& transformedVertices, const glm::vec4& p_start, const glm::vec4& p_end)
+{
+	float startX = p_start.x;
+	float startY = p_start.y;
+	float startZ = p_start.z;
+	float startW = p_start.w;
+	float endX = p_end.x;
+	float endY = p_end.y;
+	float endZ = p_end.z;
+	float endW = p_end.w;
+
+	float deltaX = endX - startX;
+	float deltaY = endY - startY;
+	float lineLength = std::sqrt(deltaX * deltaX + deltaY * deltaY);
+
+	float safeStartW = std::abs(startW);
+	float safeEndW = std::abs(endW);
+
+	const int frameBufferWidth = static_cast<int>(RenderContext.FrameBufferObject->ColorBuffer ? RenderContext.FrameBufferObject->ColorBuffer->Width : RenderContext.FrameBufferObject->DepthBuffer->Width);
+	const int frameBufferHeight = static_cast<int>(RenderContext.FrameBufferObject->ColorBuffer ? RenderContext.FrameBufferObject->ColorBuffer->Height : RenderContext.FrameBufferObject->DepthBuffer->Height);
+
+	float thicknessStart = std::min(RenderContext.LineWidth * (1.0f / safeStartW), RenderContext.LineWidth);
+	float thicknessEnd = std::min(RenderContext.LineWidth * (1.0f / safeEndW), RenderContext.LineWidth);
+
+	thicknessStart = std::max(thicknessStart, 1.0f);
+	thicknessEnd = std::max(thicknessEnd, 1.0f);
+
+	float maxThickness = std::max(thicknessStart, thicknessEnd);
+	float halfMaxThickness = maxThickness * 0.5f;
+
+	float padding = 1.0f;
+	float minX = std::min(startX, endX) - halfMaxThickness - padding;
+	float maxX = std::max(startX, endX) + halfMaxThickness + padding;
+	float minY = std::min(startY, endY) - halfMaxThickness - padding;
+	float maxY = std::max(startY, endY) + halfMaxThickness + padding;
+
+	int startPointX = std::max(0, static_cast<int>(std::floor(minX)));
+	int endPointX = std::min(frameBufferWidth - 1, static_cast<int>(std::ceil(maxX)));
+	int startPointY = std::max(0, static_cast<int>(std::floor(minY)));
+	int endPointY = std::min(frameBufferHeight - 1, static_cast<int>(std::ceil(maxY)));
+
+	float invLengthSquared = 1.0f / (deltaX * deltaX + deltaY * deltaY);
+
+	for (int scanY = startPointY; scanY <= endPointY; scanY++)
+	{
+		for (int scanX = startPointX; scanX <= endPointX; scanX++)
+		{
+			if (RenderContext.State & AGL_MULTISAMPLE && RenderContext.FrameBufferObject->ColorBuffer)
+			{
+				uint8_t gridSideLength = static_cast<uint8_t>(std::ceil(std::sqrt(RenderContext.Samples)));
+				uint8_t currentSampleIndex = 0;
+
+				for (uint8_t gridRow = 0; gridRow < gridSideLength; gridRow++)
+				{
+					for (uint8_t gridCol = 0; gridCol < gridSideLength; gridCol++)
+					{
+						if (currentSampleIndex >= RenderContext.Samples)
+							break;
+
+						const float samplePosX = scanX + (gridCol + 0.5f) / gridSideLength;
+						const float samplePosY = scanY + (gridRow + 0.5f) / gridSideLength;
+
+						const float t = ((samplePosX - startX) * deltaX + (samplePosY - startY) * deltaY) * invLengthSquared;
+						const float clampedT = std::max(0.0f, std::min(1.0f, t));
+
+						const float closestPosX = startX + clampedT * deltaX;
+						const float closestPosY = startY + clampedT * deltaY;
+
+						float invWInterpolated = (1.0f - clampedT) / safeStartW + clampedT / safeEndW;
+						float interpolatedW = 1.0f / invWInterpolated;
+
+						float interpolatedZ = (1.0f - clampedT) * startZ / safeStartW + clampedT * endZ / safeEndW;
+						float finalZ = interpolatedZ * interpolatedW;
+
+						float sampleDepth = finalZ * 0.5f + 0.5f;
+						sampleDepth = std::max(0.0f, std::min(1.0f, sampleDepth));
+
+						float interpolatedThickness = thicknessStart * (1.0f - clampedT) + thicknessEnd * clampedT;
+						float halfInterpolatedThickness = interpolatedThickness * 0.5f;
+
+						const float distanceFromLine = (samplePosX - closestPosX) * (samplePosX - closestPosX) + (samplePosY - closestPosY) * (samplePosY - closestPosY);
+
+						if (distanceFromLine <= halfInterpolatedThickness * halfInterpolatedThickness)
+						{
+							const glm::vec3 barycentricWeights(1.0f - clampedT, clampedT, 0.0f);
+
+							RenderContext.Program->ProcessInterpolation(
+								barycentricWeights,
+								transformedVertices[0].w,
+								transformedVertices[1].w,
+								transformedVertices[2].w);
+
+							const glm::vec4 color = RenderContext.Program->ProcessFragment();
+
+							MSAABuffer->SetPixelSample(scanX, scanY, currentSampleIndex, PackColor(color), sampleDepth);
+						}
+
+						currentSampleIndex++;
+					}
+				}
+			}
+			else
+			{
+				const float pixelCenterX = scanX + 0.5f;
+				const float pixelCenterY = scanY + 0.5f;
+
+				const float t = ((pixelCenterX - startX) * deltaX + (pixelCenterY - startY) * deltaY) * invLengthSquared;
+				const float clampedT = std::max(0.0f, std::min(1.0f, t));
+
+				const float closestPosX = startX + clampedT * deltaX;
+				const float closestPosY = startY + clampedT * deltaY;
+
+				float invWInterpolated = (1.0f - clampedT) / safeStartW + clampedT / safeEndW;
+				float interpolatedW = 1.0f / invWInterpolated;
+
+				float interpolatedZ = (1.0f - clampedT) * startZ / safeStartW + clampedT * endZ / safeEndW;
+				float finalZ = interpolatedZ * interpolatedW;
+
+				float interpolatedThickness = thicknessStart * (1.0f - clampedT) + thicknessEnd * clampedT;
+				float halfInterpolatedThickness = interpolatedThickness * 0.5f;
+
+				const float distanceFromLine = (pixelCenterX - closestPosX) * (pixelCenterX - closestPosX) + (pixelCenterY - closestPosY) * (pixelCenterY - closestPosY);
+
+				float pixelDepth = finalZ * 0.5f + 0.5f;
+				pixelDepth = std::max(0.0f, std::min(1.0f, pixelDepth));
+
+				if (distanceFromLine <= halfInterpolatedThickness * halfInterpolatedThickness)
+				{
+					if (!(RenderContext.State & AGL_DEPTH_TEST) || DepthTest(pixelDepth, RenderContext.FrameBufferObject->DepthBuffer->GetPixel(scanX, scanY)))
+					{
+						const glm::vec3 barycentricWeights(1.0f - clampedT, clampedT, 0.0f);
+
+						RenderContext.Program->ProcessInterpolation(
+							barycentricWeights,
+							transformedVertices[0].w,
+							transformedVertices[1].w,
+							transformedVertices[2].w);
+						const glm::vec4 color = RenderContext.Program->ProcessFragment();
+
+						if (RenderContext.FrameBufferObject->ColorBuffer != nullptr)
+						{
+							RenderContext.FrameBufferObject->ColorBuffer->SetPixel(scanX, scanY, PackColor(glm::mix(UnpackColor(RenderContext.FrameBufferObject->ColorBuffer->GetPixel(scanX, scanY)), color, color.w)));
+						}
+
+						if (RenderContext.State & AGL_DEPTH_WRITE)
+						{
+							RenderContext.FrameBufferObject->DepthBuffer->SetPixel(scanX, scanY, pixelDepth);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void RasterizeTriangleWireframe(const std::array<glm::vec4, 3>& transformedVertices)
+{
+	RasterizeLine(transformedVertices, transformedVertices[0], transformedVertices[1]);
+	RasterizeLine(transformedVertices, transformedVertices[1], transformedVertices[2]);
+	RasterizeLine(transformedVertices, transformedVertices[2], transformedVertices[0]);
+}
+
+void RasterizeTrianglePoints(const AmberGL::Geometry::Triangle& p_triangle, const std::array<glm::vec4, 3>& transformedVertices)
+{
+	RasterizePoint(p_triangle, transformedVertices, transformedVertices[0]);
+	RasterizePoint(p_triangle, transformedVertices, transformedVertices[1]);
+	RasterizePoint(p_triangle, transformedVertices, transformedVertices[2]);
+}
+
 void ApplyMSAA()
 {
 	if (!RenderContext.FrameBufferObject->ColorBuffer)
@@ -860,6 +1420,31 @@ void ApplyMSAA()
 				RenderContext.FrameBufferObject->DepthBuffer->SetPixel(x, y, depth);
 			}
 		}
+	}
+}
+
+bool DepthTest(float p_fragmentDepth, float p_bufferDepth)
+{
+	switch (RenderContext.DepthFunc)
+	{
+	case AGL_NEVER:
+		return false;
+	case AGL_LESS:
+		return p_fragmentDepth < p_bufferDepth;
+	case AGL_EQUAL:
+		return p_fragmentDepth == p_bufferDepth;
+	case AGL_LEQUAL:
+		return p_fragmentDepth <= p_bufferDepth;
+	case AGL_GREATER:
+		return p_fragmentDepth > p_bufferDepth;
+	case AGL_NOTEQUAL:
+		return p_fragmentDepth != p_bufferDepth;
+	case AGL_GEQUAL:
+		return p_fragmentDepth >= p_bufferDepth;
+	case AGL_ALWAYS:
+		return true;
+	default:
+		return p_fragmentDepth < p_bufferDepth;
 	}
 }
 
@@ -1147,64 +1732,7 @@ void AmberGL::GenerateMipmap(uint32_t p_target)
 	}
 
 	AmberGL::SoftwareRenderer::RenderObject::TextureObject& textureObject = *TextureObjects[CurrentTexture];
-
-	int width = textureObject.Width;
-	int height = textureObject.Height;
-
-	const int maxLevel = 1 + static_cast<int>(std::floor(std::log2(std::max(width, height))));
-
-	textureObject.Mipmaps = new uint8_t * [maxLevel];
-
-	textureObject.Mipmaps[0] = new uint8_t[width * height * 4];
-	std::memcpy(textureObject.Mipmaps[0], textureObject.Data8, width * height * 4);
-
-	for (int level = 1; level < maxLevel; level++)
-	{
-		int prevWidth = width;
-		int prevHeight = height;
-
-		width = std::max(1, width / 2);
-		height = std::max(1, height / 2);
-
-		textureObject.Mipmaps[level] = new uint8_t[width * height * 4];
-
-		uint8_t* previousData = textureObject.Mipmaps[level - 1];
-		uint8_t* currentData = textureObject.Mipmaps[level];
-
-		for (int y = 0; y < height; y++)
-		{
-			for (int x = 0; x < width; x++)
-			{
-				int x2 = x * 2;
-				int y2 = y * 2;
-
-				int x2End = std::min(x2 + 2, prevWidth);
-				int y2End = std::min(y2 + 2, prevHeight);
-
-				int pixelCount = (x2End - x2) * (y2End - y2);
-
-				float sum[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-
-				for (int sy = y2; sy < y2End; sy++)
-				{
-					for (int sx = x2; sx < x2End; sx++)
-					{
-						int idx = (sy * prevWidth + sx) * 4;
-						for (int c = 0; c < 4; c++)
-						{
-							sum[c] += previousData[idx + c];
-						}
-					}
-				}
-
-				int dstIdx = (y * width + x) * 4;
-				for (int c = 0; c < 4; c++)
-				{
-					currentData[dstIdx + c] = static_cast<uint8_t>(sum[c] / pixelCount);
-				}
-			}
-		}
-	}
+	AmberGL::SoftwareRenderer::TextureSampler::GenerateMipmaps(&textureObject);
 }
 
 AmberGL::SoftwareRenderer::RenderObject::TextureObject* AmberGL::GetTextureObject(uint32_t p_textureUnit)
@@ -1413,7 +1941,7 @@ void AmberGL::DrawElements(uint8_t p_primitiveMode, uint32_t p_indexCount)
 	if (itIndex == BufferObjects.end() || itVertex == BufferObjects.end())
 	{
 		std::cout << "Buffers not found!\n";
-		
+
 		ActiveColorBuffer = originalColorBuffer;
 		ActiveDepthBuffer = originalDepthBuffer;
 		return;
@@ -1423,14 +1951,46 @@ void AmberGL::DrawElements(uint8_t p_primitiveMode, uint32_t p_indexCount)
 	AmberGL::SoftwareRenderer::RenderObject::BufferObject& vertexBuffer = itVertex->second;
 	AmberGL::Geometry::Vertex* vertices = reinterpret_cast<AmberGL::Geometry::Vertex*>(vertexBuffer.Data.data());
 	uint32_t* indices = reinterpret_cast<uint32_t*>(indexBufferObject.Data.data());
-	
-	size_t availableIndices = indexBufferObject.Size / sizeof(uint32_t);
-	uint32_t actualCount = std::min(p_indexCount, static_cast<uint32_t>(availableIndices));
-	for (size_t i = 0; i + 2 < actualCount; i += 3)
+
+	switch (p_primitiveMode)
 	{
-		RasterizeTriangle(p_primitiveMode, vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
+	case AGL_TRIANGLES:
+		for (size_t i = 0; i + 2 < p_indexCount; i += 3)
+		{
+			RasterizeTriangle(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
+		}
+		break;
+	case AGL_TRIANGLE_STRIP:
+		for (size_t i = 0; i + 2 < p_indexCount; i++)
+		{
+			if (i % 2 == 0)
+			{
+				RasterizeTriangle(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]);
+			}
+			else
+			{
+				RasterizeTriangle(vertices[indices[i]], vertices[indices[i + 2]], vertices[indices[i + 1]]);
+			}
+		}
+		break;
+	case AGL_LINES:
+		for (size_t i = 0; i + 1 < p_indexCount; i += 2)
+		{
+			ProcessLine(vertices[indices[i]], vertices[indices[i + 1]]);
+		}
+		break;
+	case AGL_POINTS:
+		for (size_t i = 0; i < p_indexCount; i++)
+		{
+			ProcessPoint(vertices[indices[i]]);
+		}
+		break;
+
+	default:
+		//TODO: Log Unsupported primitive mode.
+		break;
 	}
-	
+
 	if (RenderContext.State & AGL_MULTISAMPLE && ActiveColorBuffer != nullptr)
 		ApplyMSAA();
 
@@ -1465,7 +2025,6 @@ void AmberGL::DrawArrays(uint8_t p_primitiveMode, uint32_t p_first, uint32_t p_c
 		return;
 	}
 
-	
 	auto itVertex = BufferObjects.find(vao->BoundArrayBuffer);
 	if (itVertex == BufferObjects.end())
 	{
@@ -1479,26 +2038,42 @@ void AmberGL::DrawArrays(uint8_t p_primitiveMode, uint32_t p_first, uint32_t p_c
 	AmberGL::SoftwareRenderer::RenderObject::BufferObject& vertexBuffer = itVertex->second;
 	AmberGL::Geometry::Vertex* vertices = reinterpret_cast<AmberGL::Geometry::Vertex*>(vertexBuffer.Data.data());
 
-	if (p_primitiveMode == AGL_TRIANGLE_STRIP)
+	switch (p_primitiveMode)
 	{
+	case AGL_TRIANGLES:
+		for (uint32_t i = p_first; i + 2 < p_first + p_count; i += 3)
+		{
+			RasterizeTriangle(vertices[i], vertices[i + 1], vertices[i + 2]);
+		}
+		break;
+	case AGL_TRIANGLE_STRIP:
 		for (uint32_t i = p_first; i < p_first + p_count - 2; i++)
 		{
 			if ((i - p_first) % 2 == 0)
 			{
-				RasterizeTriangle(p_primitiveMode, vertices[i], vertices[i + 1], vertices[i + 2]);
+				RasterizeTriangle(vertices[i], vertices[i + 1], vertices[i + 2]);
 			}
 			else
 			{
-				RasterizeTriangle(p_primitiveMode, vertices[i + 1], vertices[i], vertices[i + 2]);
+				RasterizeTriangle(vertices[i + 1], vertices[i], vertices[i + 2]);
 			}
 		}
-	}
-	else if (p_primitiveMode == AGL_TRIANGLES)
-	{
-		for (uint32_t i = p_first; i + 2 < p_first + p_count; i += 3)
+		break;
+	case AGL_LINES:
+		for (uint32_t i = p_first; i + 1 < p_first + p_count; i += 2)
 		{
-			RasterizeTriangle(p_primitiveMode, vertices[i], vertices[i + 1], vertices[i + 2]);
+			ProcessLine(vertices[i], vertices[i + 1]);
 		}
+		break;
+	case AGL_POINTS:
+		for (uint32_t i = p_first; i < p_first + p_count; i++)
+		{
+			ProcessPoint(vertices[i]);
+		}
+		break;
+	default:
+		std::cout << "Unsupported primitive mode: " << static_cast<int>(p_primitiveMode) << std::endl;
+		break;
 	}
 
 	if (RenderContext.State & AGL_MULTISAMPLE && ActiveColorBuffer != nullptr)
@@ -1508,9 +2083,52 @@ void AmberGL::DrawArrays(uint8_t p_primitiveMode, uint32_t p_first, uint32_t p_c
 	ActiveDepthBuffer = originalDepthBuffer;
 }
 
+void AmberGL::PointSize(float p_size)
+{
+	RenderContext.PointSize = p_size;
+}
+
+void AmberGL::LineWidth(float p_width)
+{
+	RenderContext.LineWidth = p_width;
+}
+
 void AmberGL::DrawLine(const glm::vec3& p_point0, const glm::vec3& p_point1, const glm::vec4& p_color)
 {
-	RasterizeLine(AmberGL::Geometry::Vertex(p_point0 ), AmberGL::Geometry::Vertex(p_point1), p_color);
+	AmberGL::Geometry::Vertex vertex0(p_point0);
+	AmberGL::Geometry::Vertex vertex1(p_point1);
+
+	ProcessLine(vertex0, vertex1);
+
+	if (RenderContext.State & AGL_MULTISAMPLE && RenderContext.FrameBufferObject->ColorBuffer != nullptr)
+	{
+		ApplyMSAA();
+	}
+}
+
+void AmberGL::DrawPoint(const glm::vec3& p_point0)
+{
+	AmberGL::Geometry::Vertex vertex0(p_point0);
+
+	ProcessPoint(vertex0);
+
+	if (RenderContext.State & AGL_MULTISAMPLE && RenderContext.FrameBufferObject->ColorBuffer != nullptr)
+	{
+		ApplyMSAA();
+	}
+}
+
+void AmberGL::DepthFunc(uint16_t p_func)
+{
+	if (p_func >= AGL_NEVER && p_func <= AGL_ALWAYS)
+	{
+		RenderContext.DepthFunc = p_func;
+	}
+	else
+	{
+		RenderContext.DepthFunc = AGL_LESS;
+		//TODO: Log Invalid depth function, falling back to AGL_LESS.
+	}
 }
 
 uint32_t AmberGL::CreateProgram()

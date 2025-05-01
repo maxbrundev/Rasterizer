@@ -55,3 +55,14 @@ float AmberGL::Geometry::Triangle::ComputeArea() const
 {
 	return ComputeEdge(Vertices[0], Vertices[1], Vertices[2]);
 }
+
+float AmberGL::Geometry::Triangle::ComputeMaxDepthSlope(const std::array<glm::vec4, 3>& p_vertices) const
+{
+	float dzdx = std::abs((p_vertices[1].z - p_vertices[0].z) / (p_vertices[1].x - p_vertices[0].x));
+	float dzdy = std::abs((p_vertices[2].z - p_vertices[0].z) / (p_vertices[2].y - p_vertices[0].y));
+
+	if (!std::isfinite(dzdx)) dzdx = 0.0f;
+	if (!std::isfinite(dzdy)) dzdy = 0.0f;
+
+	return std::max(dzdx, dzdy);
+}
