@@ -16,6 +16,7 @@
 #include "AmberEditor/Resources/Loaders/ShaderLoader.h"
 
 #include "AmberEditor/Tools/Time/Clock.h"
+#include "AmberGL/SoftwareRenderer/Defines.h"
 
 //TODO: Scene system.
 AmberEditor::Core::Application::Application() :
@@ -151,8 +152,7 @@ void AmberEditor::Core::Application::Run()
 	                              AGL_TEXTURE_2D,
 	                              depthMap,
 	                              0);
-	AmberGL::DrawBuffer(GL_NONE);
-	AmberGL::ReadBuffer(GL_NONE);
+
 	AmberGL::BindFrameBuffer(AGL_FRAMEBUFFER, 0);
 
 	quadShaderResource->SetUniform("u_DepthMap", 0);
@@ -273,13 +273,13 @@ void AmberEditor::Core::Application::Run()
 		AmberGL::BindVertexArray(0);
 
 		//Debug depth texture.
-		quadShaderResource->Bind();
-		AmberGL::BindVertexArray(VAO);
-		AmberGL::ActiveTexture(AGL_TEXTURE0);
-		AmberGL::BindTexture(AGL_TEXTURE_2D, depthMap);
-		AmberGL::DrawArrays(AGL_TRIANGLE_STRIP, 0, planeMesh.GetVertexCount());
-		AmberGL::BindVertexArray(0);
-		quadShaderResource->Unbind();
+		AmberGL::BlitFrameBuffer(
+			m_shadowFBO, 0,
+			0, 0, 1024, 1024,
+			0, 0, 100, 100,
+			AGL_COLOR_BUFFER_BIT,
+			AGL_LINEAR
+		);
 
 		m_context.Renderer->Render();
 		m_context.InputManager->ClearEvents();

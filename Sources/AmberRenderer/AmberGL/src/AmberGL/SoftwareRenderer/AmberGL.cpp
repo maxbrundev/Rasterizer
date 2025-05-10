@@ -11,6 +11,7 @@
 #include "AmberGL/Geometry/Point.h"
 #include "AmberGL/Geometry/Polygon.h"
 #include "AmberGL/Geometry/Triangle.h"
+#include "AmberGL/SoftwareRenderer/Defines.h"
 #include "AmberGL/SoftwareRenderer/TextureSampler.h"
 
 #include "AmberGL/SoftwareRenderer/Buffers/MSAABuffer.h"
@@ -51,7 +52,7 @@ namespace
 	uint32_t CurrentActiveTextureUnit = 0;
 	AmberGL::SoftwareRenderer::RenderObject::TextureObject* BoundTextureUnits[MAX_TEXTURE_UNITS] = { nullptr };
 
-	AmberGL::SoftwareRenderer::RenderObject::FrameBufferObject DefaultFrameBufferObject;
+	AmberGL::SoftwareRenderer::RenderObject::FrameBufferObject BackBuffer;
 
 	AmberGL::SoftwareRenderer::RenderObject::FrameBufferObjectData<RGBA8>* ActiveColorBuffer = nullptr;
 	AmberGL::SoftwareRenderer::RenderObject::FrameBufferObjectData<Depth>* ActiveDepthBuffer = nullptr;
@@ -96,6 +97,7 @@ void ApplyMSAA();
 
 bool DepthTest(float fragmentDepth, float bufferDepth);
 
+//TODO: One MSAA per framebuffer
 AmberGL::SoftwareRenderer::Buffers::MSAABuffer* MSAABuffer;
 std::array<AmberGL::Geometry::Plane, 6> ClippingFrustum;
 
@@ -167,8 +169,8 @@ glm::vec2 ComputeNormalizedDeviceCoordinate(const glm::vec3& p_vertexScreenSpace
 
 glm::vec2 ComputeRasterSpaceCoordinate(glm::vec2 p_vertexNormalizedPosition)
 {
-	p_vertexNormalizedPosition.x = RenderContext.ViewPortX + p_vertexNormalizedPosition.x * RenderContext.ViewPortWidth - 0.5f;
-	p_vertexNormalizedPosition.y = RenderContext.ViewPortY + p_vertexNormalizedPosition.y * RenderContext.ViewPortHeight - 0.5f;
+	p_vertexNormalizedPosition.x = RenderContext.Viewport.X + p_vertexNormalizedPosition.x * RenderContext.Viewport.Width - 0.5f;
+	p_vertexNormalizedPosition.y = RenderContext.Viewport.Y + p_vertexNormalizedPosition.y * RenderContext.Viewport.Height - 0.5f;
 
 	return p_vertexNormalizedPosition;
 }
@@ -1676,7 +1678,7 @@ void AmberGL::TexImage2D(uint32_t p_target, uint32_t p_level, uint32_t p_interna
 	}
 }
 
-void AmberGL::TexParameteri(uint32_t p_target, uint32_t p_pname, uint8_t p_param)
+void AmberGL::TexParameteri(uint32_t p_target, uint16_t p_pname, uint16_t p_param)
 {
 	if (p_target != AGL_TEXTURE_2D) 
 	{
@@ -1784,11 +1786,11 @@ void AmberGL::BindFrameBuffer(uint32_t p_target, uint32_t p_frameBuffer)
 			}
 		}
 
-		ActiveDepthBuffer = DefaultFrameBufferObject.DepthBuffer;
-		ActiveColorBuffer = DefaultFrameBufferObject.ColorBuffer;
+		ActiveDepthBuffer = BackBuffer.DepthBuffer;
+		ActiveColorBuffer = BackBuffer.ColorBuffer;
 		CurrentFrameBuffer = 0;
 
-		RenderContext.FrameBufferObject = &DefaultFrameBufferObject;
+		RenderContext.FrameBufferObject = &BackBuffer;
 	}
 	else
 	{
@@ -1796,7 +1798,7 @@ void AmberGL::BindFrameBuffer(uint32_t p_target, uint32_t p_frameBuffer)
 		AmberGL::SoftwareRenderer::RenderObject::FrameBufferObject& frameBufferObject = FrameBufferObjects[CurrentFrameBuffer];
 
 		ActiveDepthBuffer = frameBufferObject.DepthBuffer;
-		ActiveColorBuffer = frameBufferObject.ColorWriteEnabled ? frameBufferObject.ColorBuffer : nullptr;
+		ActiveColorBuffer = frameBufferObject.Attachment == AGL_COLOR_ATTACHMENT ? frameBufferObject.ColorBuffer : nullptr;
 
 		RenderContext.FrameBufferObject = &frameBufferObject;
 	}
@@ -1857,23 +1859,13 @@ void AmberGL::FrameBufferTexture2D(uint32_t p_target, uint32_t p_attachment, uin
 
 		frameBufferObject.ColorBuffer = new AmberGL::SoftwareRenderer::RenderObject::FrameBufferObjectData<RGBA8>(textureObject->Width, textureObject->Height);
 	}
+
+	frameBufferObject.Attachment = p_attachment;
 }
 
 void AmberGL::DrawBuffer(uint32_t p_mode)
 {
-	if (CurrentFrameBuffer == 0)
-		return;
-
-	AmberGL::SoftwareRenderer::RenderObject::FrameBufferObject& frameBufferObject = FrameBufferObjects[CurrentFrameBuffer];
-
-	if (p_mode == GL_NONE)
-	{
-		frameBufferObject.ColorWriteEnabled = false;
-	}
-	else
-	{
-		frameBufferObject.ColorWriteEnabled = true;
-	}
+	//TODO
 }
 
 void AmberGL::ReadBuffer(uint32_t p_mode)
@@ -1893,23 +1885,23 @@ uint32_t AmberGL::GetFrameBufferRowSize()
 
 void AmberGL::Initialize(uint16_t p_rasterizationBufferWidth, uint16_t p_rasterizationBufferHeight)
 {
-	RenderContext.ViewPortWidth = p_rasterizationBufferWidth;
-	RenderContext.ViewPortHeight = p_rasterizationBufferHeight;
+	RenderContext.Viewport.Width = p_rasterizationBufferWidth;
+	RenderContext.Viewport.Height = p_rasterizationBufferHeight;
 
-	DefaultFrameBufferObject.ColorBuffer = new AmberGL::SoftwareRenderer::RenderObject::FrameBufferObjectData<RGBA8>(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
-	DefaultFrameBufferObject.DepthBuffer = new AmberGL::SoftwareRenderer::RenderObject::FrameBufferObjectData<Depth>(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
+	BackBuffer.ColorBuffer = new AmberGL::SoftwareRenderer::RenderObject::FrameBufferObjectData<RGBA8>(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
+	BackBuffer.DepthBuffer = new AmberGL::SoftwareRenderer::RenderObject::FrameBufferObjectData<Depth>(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
 
-	ActiveColorBuffer = DefaultFrameBufferObject.ColorBuffer;
-	ActiveDepthBuffer = DefaultFrameBufferObject.DepthBuffer;
+	ActiveColorBuffer = BackBuffer.ColorBuffer;
+	ActiveDepthBuffer = BackBuffer.DepthBuffer;
 
-	RenderContext.FrameBufferObject = &DefaultFrameBufferObject;
+	RenderContext.FrameBufferObject = &BackBuffer;
 
 	MSAABuffer = new AmberGL::SoftwareRenderer::Buffers::MSAABuffer(p_rasterizationBufferWidth, p_rasterizationBufferHeight);
 
 	InitializeClippingFrustum();
 }
 
-void AmberGL::DrawElements(uint8_t p_primitiveMode, uint32_t p_indexCount)
+void AmberGL::DrawElements(uint16_t p_primitiveMode, uint32_t p_indexCount)
 {
 	AmberGL::SoftwareRenderer::RenderObject::FrameBufferObjectData<RGBA8>* originalColorBuffer = ActiveColorBuffer;
 	AmberGL::SoftwareRenderer::RenderObject::FrameBufferObjectData<Depth>* originalDepthBuffer = ActiveDepthBuffer;
@@ -1918,12 +1910,12 @@ void AmberGL::DrawElements(uint8_t p_primitiveMode, uint32_t p_indexCount)
 	{
 		AmberGL::SoftwareRenderer::RenderObject::FrameBufferObject& fbo = FrameBufferObjects[CurrentFrameBuffer];
 		ActiveDepthBuffer = fbo.DepthBuffer;
-		ActiveColorBuffer = fbo.ColorWriteEnabled ? fbo.ColorBuffer : nullptr;
+		ActiveColorBuffer = fbo.Attachment == AGL_COLOR_ATTACHMENT ? fbo.ColorBuffer : nullptr;
 	}
 	else
 	{
-		ActiveColorBuffer = DefaultFrameBufferObject.ColorBuffer;
-		ActiveDepthBuffer = DefaultFrameBufferObject.DepthBuffer;
+		ActiveColorBuffer = BackBuffer.ColorBuffer;
+		ActiveDepthBuffer = BackBuffer.DepthBuffer;
 	}
 
 	AmberGL::SoftwareRenderer::RenderObject::VertexArrayObject* vao = GetBoundVertexArrayObject();
@@ -1998,7 +1990,7 @@ void AmberGL::DrawElements(uint8_t p_primitiveMode, uint32_t p_indexCount)
 	ActiveDepthBuffer = originalDepthBuffer;
 }
 
-void AmberGL::DrawArrays(uint8_t p_primitiveMode, uint32_t p_first, uint32_t p_count)
+void AmberGL::DrawArrays(uint16_t p_primitiveMode, uint32_t p_first, uint32_t p_count)
 {
 	AmberGL::SoftwareRenderer::RenderObject::FrameBufferObjectData<RGBA8>* originalColorBuffer = ActiveColorBuffer;
 	AmberGL::SoftwareRenderer::RenderObject::FrameBufferObjectData<Depth>* originalDepthBuffer = ActiveDepthBuffer;
@@ -2007,12 +1999,12 @@ void AmberGL::DrawArrays(uint8_t p_primitiveMode, uint32_t p_first, uint32_t p_c
 	{
 		AmberGL::SoftwareRenderer::RenderObject::FrameBufferObject& fbo = FrameBufferObjects[CurrentFrameBuffer];
 		ActiveDepthBuffer = fbo.DepthBuffer;
-		ActiveColorBuffer = fbo.ColorWriteEnabled ? fbo.ColorBuffer : nullptr;
+		ActiveColorBuffer = fbo.Attachment == AGL_COLOR_ATTACHMENT ? fbo.ColorBuffer : nullptr;
 	}
 	else
 	{
-		ActiveColorBuffer = DefaultFrameBufferObject.ColorBuffer;
-		ActiveDepthBuffer = DefaultFrameBufferObject.DepthBuffer;
+		ActiveColorBuffer = BackBuffer.ColorBuffer;
+		ActiveDepthBuffer = BackBuffer.DepthBuffer;
 	}
 
 	AmberGL::SoftwareRenderer::RenderObject::VertexArrayObject* vao = GetBoundVertexArrayObject();
@@ -2222,7 +2214,7 @@ void AmberGL::SetSamples(uint8_t p_samples)
 	MSAABuffer->SetSamplesAmount(p_samples);
 }
 
-void AmberGL::PolygonMode(uint8_t p_mode)
+void AmberGL::PolygonMode(uint16_t p_mode)
 {
 	if (p_mode <= AGL_POINT)
 		RenderContext.PolygonMode = p_mode;
@@ -2245,7 +2237,7 @@ bool AmberGL::IsEnabled(uint8_t p_capability)
 	return (RenderContext.State & p_capability) != 0;
 }
 
-void AmberGL::CullFace(uint8_t p_face)
+void AmberGL::CullFace(uint16_t p_face)
 {
 	if (p_face <= AGL_FRONT_AND_BACK)
 		RenderContext.CullFace = p_face;
@@ -2265,7 +2257,7 @@ void AmberGL::DepthMask(bool p_flag)
 	}
 }
 
-void AmberGL::GetBool(uint8_t p_name, bool* p_params)
+void AmberGL::GetBool(uint16_t p_name, bool* p_params)
 {
 	if (!p_params) return;
 
@@ -2286,7 +2278,7 @@ void AmberGL::GetBool(uint8_t p_name, bool* p_params)
 	}
 }
 
-void AmberGL::GetInt(uint8_t p_name, int* p_params)
+void AmberGL::GetInt(uint16_t p_name, int* p_params)
 {
 	if (!p_params) return;
 
@@ -2300,11 +2292,11 @@ void AmberGL::GetInt(uint8_t p_name, int* p_params)
 	case AGL_POINT:
 		*p_params = RenderContext.PolygonMode;
 		break;
-	case AGL_VIEW_PORT:
-		p_params[0] = RenderContext.ViewPortX;
-		p_params[1] = RenderContext.ViewPortY;
-		p_params[2] = RenderContext.ViewPortWidth;
-		p_params[3] = RenderContext.ViewPortHeight;
+	case AGL_VIEWPORT:
+		p_params[0] = RenderContext.Viewport.X;
+		p_params[1] = RenderContext.Viewport.Y;
+		p_params[2] = RenderContext.Viewport.Width;
+		p_params[3] = RenderContext.Viewport.Height;
 		break;
 	default:
 		*p_params = -1;
@@ -2376,11 +2368,238 @@ void AmberGL::Terminate()
 	}
 }
 
-void AmberGL::WindowHint(uint8_t p_name, uint8_t p_value)
+void AmberGL::WindowHint(uint16_t p_name, int p_value)
 {
 	if (p_name == AGL_SAMPLES)
 	{
 		SetSamples(p_value);
+	}
+}
+
+void AmberGL::BlitFrameBuffer(uint32_t p_sourceFrameBuffer, uint32_t p_destinationFrameBuffer, int p_sourceX0, int p_sourceY0, int p_sourceX1, int p_sourceY1, int p_destinationX0, int p_destinationY0, int p_destinationX1, int p_destinationY1, uint16_t p_mask, uint16_t p_filter)
+{
+	AmberGL::SoftwareRenderer::RenderObject::FrameBufferObject* sourceFrameBufferObject = nullptr;
+
+	if (p_sourceFrameBuffer == 0)
+	{
+		sourceFrameBufferObject = &BackBuffer;
+	}
+	else
+	{
+		auto it = FrameBufferObjects.find(p_sourceFrameBuffer);
+
+		if (it == FrameBufferObjects.end())
+		{
+			//TODO: Log source not found.
+			return;
+		}
+		sourceFrameBufferObject = &it->second;
+	}
+
+	AmberGL::SoftwareRenderer::RenderObject::FrameBufferObject* destinationFrameBufferObject = nullptr;
+
+	if (p_destinationFrameBuffer == 0)
+	{
+		destinationFrameBufferObject = &BackBuffer;
+	}
+	else
+	{
+		auto it = FrameBufferObjects.find(p_destinationFrameBuffer);
+		if (it == FrameBufferObjects.end())
+		{
+			//TODO: Log dest not found.
+			return;
+		}
+		destinationFrameBufferObject = &it->second;
+	}
+
+	bool isDepthVisualization = false;
+
+	if (p_mask & AGL_COLOR_BUFFER_BIT && !sourceFrameBufferObject->ColorBuffer && sourceFrameBufferObject->DepthBuffer && destinationFrameBufferObject->ColorBuffer)
+	{
+		isDepthVisualization = true;
+	}
+
+	p_sourceX0 = std::max(0, p_sourceX0);
+	p_sourceY0 = std::max(0, p_sourceY0);
+
+	uint32_t sourceWidth = 0;
+	uint32_t sourceHeight = 0;
+
+	if (sourceFrameBufferObject->ColorBuffer)
+	{
+		sourceWidth = sourceFrameBufferObject->ColorBuffer->Width;
+		sourceHeight = sourceFrameBufferObject->ColorBuffer->Height;
+	}
+	else if (sourceFrameBufferObject->DepthBuffer)
+	{
+		sourceWidth = sourceFrameBufferObject->DepthBuffer->Width;
+		sourceHeight = sourceFrameBufferObject->DepthBuffer->Height;
+	}
+	else
+	{
+		//TODO: Log source has no color or depth buffer.
+		return;
+	}
+
+	p_sourceX1 = std::min(p_sourceX1, static_cast<int>(sourceWidth));
+	p_sourceY1 = std::min(p_sourceY1, static_cast<int>(sourceHeight));
+
+	p_destinationX0 = std::max(0, p_destinationX0);
+	p_destinationY0 = std::max(0, p_destinationY0);
+
+	uint32_t destinationWidth = 0;
+	uint32_t destinationHeight = 0;
+
+	if (destinationFrameBufferObject->ColorBuffer)
+	{
+		destinationWidth = destinationFrameBufferObject->ColorBuffer->Width;
+		destinationHeight = destinationFrameBufferObject->ColorBuffer->Height;
+	}
+	else if (destinationFrameBufferObject->DepthBuffer)
+	{
+		destinationWidth = destinationFrameBufferObject->DepthBuffer->Width;
+		destinationHeight = destinationFrameBufferObject->DepthBuffer->Height;
+	}
+	else
+	{
+		//TODO: Log dest has no color or depth buffer.
+		return;
+	}
+
+	p_destinationX1 = std::min(p_destinationX1, static_cast<int>(destinationWidth));
+	p_destinationY1 = std::min(p_destinationY1, static_cast<int>(destinationHeight));
+
+	int sourceRegionWidth = p_sourceX1 - p_sourceX0;
+	int sourceRegionHeight = p_sourceY1 - p_sourceY0;
+	int destinationRegionWidth = p_destinationX1 - p_destinationX0;
+	int destinationRegionHeight = p_destinationY1 - p_destinationY0;
+
+	if (sourceRegionWidth <= 0 || sourceRegionHeight <= 0 || destinationRegionWidth <= 0 || destinationRegionHeight <= 0)
+	{
+		//TODO: Log invalid region.
+		return;
+	}
+
+	float scaleX = static_cast<float>(sourceRegionWidth) / destinationRegionWidth;
+	float scaleY = static_cast<float>(sourceRegionHeight) / destinationRegionHeight;
+
+	if ((p_mask & AGL_COLOR_BUFFER_BIT && sourceFrameBufferObject->ColorBuffer && destinationFrameBufferObject->ColorBuffer) || isDepthVisualization)
+	{
+		for (int y = 0; y < destinationRegionHeight; y++)
+		{
+			for (int x = 0; x < destinationRegionWidth; x++)
+			{
+				int destinationX = p_destinationX0 + x;
+				int destinationY = p_destinationY0 + y;
+
+				if (p_filter == AGL_NEAREST)
+				{
+					int sourceX = p_sourceX0 + static_cast<int>(x * scaleX);
+					int sourceY = p_sourceY0 + static_cast<int>(y * scaleY);
+
+					if (isDepthVisualization)
+					{
+						float depth = sourceFrameBufferObject->DepthBuffer->GetPixel(sourceX, sourceY);
+						depth = 1.0f - depth;
+						glm::vec4 depthColor(depth, depth, depth, 1.0f);
+						destinationFrameBufferObject->ColorBuffer->SetPixel(destinationX, destinationY, PackColor(depthColor));
+					}
+					else
+					{
+						uint32_t color = sourceFrameBufferObject->ColorBuffer->GetPixel(sourceX, sourceY);
+						destinationFrameBufferObject->ColorBuffer->SetPixel(destinationX, destinationY, color);
+					}
+				}
+				else
+				{
+					float sourceFloatX = p_sourceX0 + x * scaleX;
+					float sourceFloatY = p_sourceY0 + y * scaleY;
+
+					int sourceX1 = static_cast<int>(sourceFloatX);
+					int sourceY1 = static_cast<int>(sourceFloatY);
+					int sourceX2 = std::min(sourceX1 + 1, p_sourceX1 - 1);
+					int sourceY2 = std::min(sourceY1 + 1, p_sourceY1 - 1);
+
+					float fracX = sourceFloatX - sourceX1;
+					float fracY = sourceFloatY - sourceY1;
+
+					if (isDepthVisualization)
+					{
+						float depth11 = sourceFrameBufferObject->DepthBuffer->GetPixel(sourceX1, sourceY1);
+						float depth12 = sourceFrameBufferObject->DepthBuffer->GetPixel(sourceX1, sourceY2);
+						float depth21 = sourceFrameBufferObject->DepthBuffer->GetPixel(sourceX2, sourceY1);
+						float depth22 = sourceFrameBufferObject->DepthBuffer->GetPixel(sourceX2, sourceY2);
+
+						float depthTop = glm::mix(depth11, depth21, fracX);
+						float depthBottom = glm::mix(depth12, depth22, fracX);
+						float finalDepth = glm::mix(depthTop, depthBottom, fracY);
+
+						finalDepth = 1.0f - finalDepth;
+						glm::vec4 depthColor(finalDepth, finalDepth, finalDepth, 1.0f);
+						destinationFrameBufferObject->ColorBuffer->SetPixel(destinationX, destinationY, PackColor(depthColor));
+					}
+					else
+					{
+						glm::vec4 color11 = UnpackColor(sourceFrameBufferObject->ColorBuffer->GetPixel(sourceX1, sourceY1));
+						glm::vec4 color12 = UnpackColor(sourceFrameBufferObject->ColorBuffer->GetPixel(sourceX1, sourceY2));
+						glm::vec4 color21 = UnpackColor(sourceFrameBufferObject->ColorBuffer->GetPixel(sourceX2, sourceY1));
+						glm::vec4 color22 = UnpackColor(sourceFrameBufferObject->ColorBuffer->GetPixel(sourceX2, sourceY2));
+
+						glm::vec4 colorTop = glm::mix(color11, color21, fracX);
+						glm::vec4 colorBottom = glm::mix(color12, color22, fracX);
+						glm::vec4 finalColor = glm::mix(colorTop, colorBottom, fracY);
+
+						destinationFrameBufferObject->ColorBuffer->SetPixel(destinationX, destinationY, PackColor(finalColor));
+					}
+				}
+			}
+		}
+	}
+
+	if (p_mask & AGL_DEPTH_BUFFER_BIT && sourceFrameBufferObject->DepthBuffer && destinationFrameBufferObject->DepthBuffer)
+	{
+		for (int y = 0; y < destinationRegionHeight; ++y)
+		{
+			for (int x = 0; x < destinationRegionWidth; ++x)
+			{
+				int destinationX = p_destinationX0 + x;
+				int destinationY = p_destinationY0 + y;
+
+				if (p_filter == AGL_NEAREST)
+				{
+					int sourceX = p_sourceX0 + static_cast<int>(x * scaleX);
+					int sourceY = p_sourceY0 + static_cast<int>(y * scaleY);
+
+					float depth = sourceFrameBufferObject->DepthBuffer->GetPixel(sourceX, sourceY);
+					destinationFrameBufferObject->DepthBuffer->SetPixel(destinationX, destinationY, depth);
+				}
+				else
+				{
+					float sourceFloatX = p_sourceX0 + x * scaleX;
+					float sourceFloatY = p_sourceY0 + y * scaleY;
+
+					int sourceX1 = static_cast<int>(sourceFloatX);
+					int sourceY1 = static_cast<int>(sourceFloatY);
+					int sourceX2 = std::min(sourceX1 + 1, p_sourceX1 - 1);
+					int sourceY2 = std::min(sourceY1 + 1, p_sourceY1 - 1);
+
+					float fracX = sourceFloatX - sourceX1;
+					float fracY = sourceFloatY - sourceY1;
+
+					float depth11 = sourceFrameBufferObject->DepthBuffer->GetPixel(sourceX1, sourceY1);
+					float depth12 = sourceFrameBufferObject->DepthBuffer->GetPixel(sourceX1, sourceY2);
+					float depth21 = sourceFrameBufferObject->DepthBuffer->GetPixel(sourceX2, sourceY1);
+					float depth22 = sourceFrameBufferObject->DepthBuffer->GetPixel(sourceX2, sourceY2);
+
+					float depthTop = glm::mix(depth11, depth21, fracX);
+					float depthBottom = glm::mix(depth12, depth22, fracX);
+					float finalDepth = glm::mix(depthTop, depthBottom, fracY);
+
+					destinationFrameBufferObject->DepthBuffer->SetPixel(destinationX, destinationY, finalDepth);
+				}
+			}
+		}
 	}
 }
 
@@ -2412,11 +2631,8 @@ void AmberGL::Clear(uint8_t p_flags)
 
 void AmberGL::Viewport(uint16_t p_x, uint16_t p_y, uint16_t p_width, uint16_t p_height)
 {
-	if (RenderContext.ViewPortWidth == p_width && RenderContext.ViewPortHeight == p_height)
-		return;
-
-	RenderContext.ViewPortX = p_x;
-	RenderContext.ViewPortY = p_y;
-	RenderContext.ViewPortWidth = p_width;
-	RenderContext.ViewPortHeight = p_height;
+	RenderContext.Viewport.X = p_x;
+	RenderContext.Viewport.Y = p_y;
+	RenderContext.Viewport.Width = p_width;
+	RenderContext.Viewport.Height = p_height;
 }

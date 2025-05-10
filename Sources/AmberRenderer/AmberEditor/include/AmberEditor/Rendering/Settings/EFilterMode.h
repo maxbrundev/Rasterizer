@@ -4,10 +4,9 @@
 
 namespace AmberEditor::Rendering::Settings
 {
-	enum class ECullFace : uint8_t
+	enum class EFilterMode : uint8_t
 	{
-		BACK,
-		FRONT,
-		FRONT_AND_BACK
+		NEAREST,
+		LINEAR
 	};
 }

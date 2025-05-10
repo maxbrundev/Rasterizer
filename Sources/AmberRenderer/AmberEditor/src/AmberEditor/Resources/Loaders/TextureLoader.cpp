@@ -1,11 +1,12 @@
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image/stb_image.h>
-
 #include "AmberEditor/Resources/Loaders/TextureLoader.h"
 
 #include <iostream>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image/stb_image.h>
+
 #include <AmberGL/SoftwareRenderer/AmberGL.h>
+
 #include "AmberEditor/Tools/Utils/String.h"
 
 std::string AmberEditor::Resources::Loaders::TextureLoader::FILE_TRACE;

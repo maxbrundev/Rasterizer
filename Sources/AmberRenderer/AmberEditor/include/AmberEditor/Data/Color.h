@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdint>
 #include <tuple>
 
 #include <glm/vec3.hpp>

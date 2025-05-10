@@ -15,16 +15,19 @@ namespace AmberGL::SoftwareRenderer::RenderObject
 		float LineWidth;
 		float PointSize;
 
-		uint16_t ViewPortX;
-		uint16_t ViewPortY;
+		struct
+		{
+			uint16_t X = 0;
+			uint16_t Y = 0;
+			uint16_t Width = 0;
+			uint16_t Height = 0;
+		} Viewport;
 
-		uint16_t ViewPortWidth;
-		uint16_t ViewPortHeight;
-
-		uint16_t DepthFunc;
-		uint8_t State;
-		uint8_t PolygonMode;
-		uint8_t CullFace;
+		uint16_t DepthFunc = AGL_LESS;
+		uint16_t PolygonMode = AGL_FILL;
+		uint16_t CullFace = AGL_BACK;
 		uint8_t Samples;
+
+		uint8_t State;
 	};
 }

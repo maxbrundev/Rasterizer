@@ -19,10 +19,10 @@ namespace AmberGL::SoftwareRenderer::RenderObject
 			//float* Data32;
 		};
 
-		uint8_t MinFilter;
-		uint8_t MagFilter;
-		uint8_t WrapS;
-		uint8_t WrapT;
+		uint16_t MinFilter;
+		uint16_t MagFilter;
+		uint16_t WrapS;
+		uint16_t WrapT;
 
 		uint8_t** Mipmaps;
 	};

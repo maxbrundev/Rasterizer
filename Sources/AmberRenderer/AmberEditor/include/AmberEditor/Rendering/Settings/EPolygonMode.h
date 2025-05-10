@@ -4,10 +4,10 @@
 
 namespace AmberEditor::Rendering::Settings
 {
-	enum class ECullFace : uint8_t
+	enum class EPolygonMode : uint8_t
 	{
-		BACK,
-		FRONT,
-		FRONT_AND_BACK
+		FILL,
+		LINE,
+		POINT
 	};
 }

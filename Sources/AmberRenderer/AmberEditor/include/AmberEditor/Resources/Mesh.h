@@ -7,9 +7,9 @@
 
 #include "AmberEditor/Resources/IMesh.h"
 
-#include "AmberEditor/Buffers/VertexBuffer.h"
 #include "AmberEditor/Buffers/IndexBuffer.h"
 #include "AmberEditor/Buffers/VertexArray.h"
+#include "AmberEditor/Buffers/VertexBuffer.h"
 
 namespace AmberEditor::Resources
 {

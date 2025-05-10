@@ -4,10 +4,9 @@
 
 namespace AmberEditor::Rendering::Settings
 {
-	enum class ECullFace : uint8_t
+	enum class EClearFlag : uint8_t
 	{
-		BACK,
-		FRONT,
-		FRONT_AND_BACK
+		COLOR,
+		DEPTH
 	};
 }

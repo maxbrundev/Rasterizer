@@ -5,15 +5,15 @@
 AmberEditor::Buffers::FrameBuffer::FrameBuffer(uint32_t p_width, uint32_t p_height)
 {
 	AmberGL::GenFrameBuffers(1, &m_bufferID);
-	AmberGL::GenTextures(1, &m_renderTexture);
+	AmberGL::GenTextures(1, &m_textureID);
 
-	AmberGL::BindTexture(AGL_TEXTURE_2D, m_renderTexture);
+	AmberGL::BindTexture(AGL_TEXTURE_2D, m_textureID);
 	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MAG_FILTER, AGL_NEAREST);
 	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MIN_FILTER, AGL_NEAREST);
 	AmberGL::BindTexture(AGL_TEXTURE_2D, 0);
 
 	Bind();
-	AmberGL::FrameBufferTexture2D(AGL_FRAMEBUFFER, AGL_COLOR_ATTACHMENT, AGL_TEXTURE_2D, m_renderTexture, 0);
+	AmberGL::FrameBufferTexture2D(AGL_FRAMEBUFFER, AGL_COLOR_ATTACHMENT, AGL_TEXTURE_2D, m_textureID, 0);
 	Unbind();
 
 	//Resize(p_width, p_height);
@@ -46,7 +46,43 @@ uint32_t AmberEditor::Buffers::FrameBuffer::GetID() const
 
 uint32_t AmberEditor::Buffers::FrameBuffer::GetTextureID() const
 {
-	return m_renderTexture;
+	return m_textureID;
+}
+
+void AmberEditor::Buffers::FrameBuffer::Blit(const FrameBuffer& p_destination, int p_sourceX0, int p_sourceY0, int p_sourceX1, int p_sourceY1, int p_destinationX0, int p_destinationY0, int p_destinationX1, int p_destinationY1, bool p_blitColor, bool p_blitDepth, bool p_useLinearFilter) const
+{
+	if (p_sourceX1 < 0) p_sourceX1 = m_size.first;
+	if (p_sourceY1 < 0) p_sourceY1 = m_size.second;
+	if (p_destinationX1 < 0) p_destinationX1 = p_destination.GetSize().first;
+	if (p_destinationY1 < 0) p_destinationY1 = p_destination.GetSize().second;
+	
+	uint8_t mask = 0;
+	if (p_blitColor) mask |= AGL_COLOR_BUFFER_BIT;
+	if (p_blitDepth) mask |= AGL_DEPTH_BUFFER_BIT;
+
+	uint8_t filter = p_useLinearFilter ? AGL_LINEAR : AGL_NEAREST;
+
+	AmberGL::BlitFrameBuffer(m_bufferID, p_destination.GetID(),
+		p_sourceX0, p_sourceY0, p_sourceX1, p_sourceY1,
+		p_destinationX0, p_destinationY0, p_destinationX1, p_destinationY1,
+		mask, filter);
+}
+
+void AmberEditor::Buffers::FrameBuffer::BlitToScreen(int p_sourceX0, int p_sourceY0, int p_sourceX1, int p_sourceY1, int p_destinationX0, int p_destinationY0, int p_destinationX1, int p_destinationY1, bool p_blitColor, bool p_blitDepth, bool p_useLinearFilter) const
+{
+	if (p_sourceX1 < 0) p_sourceX1 = m_size.first;
+	if (p_sourceY1 < 0) p_sourceY1 = m_size.second;
+
+	uint8_t mask = 0;
+	if (p_blitColor) mask |= AGL_COLOR_BUFFER_BIT;
+	if (p_blitDepth) mask |= AGL_DEPTH_BUFFER_BIT;
+
+	uint8_t filter = p_useLinearFilter ? AGL_LINEAR : AGL_NEAREST;
+
+	AmberGL::BlitFrameBuffer(m_bufferID, 0,
+		p_sourceX0, p_sourceY0, p_sourceX1, p_sourceY1,
+		p_destinationX0, p_destinationY0, p_destinationX1, p_destinationY1,
+		mask, filter);
 }
 
 const std::pair<uint16_t, uint16_t> AmberEditor::Buffers::FrameBuffer::GetSize() const

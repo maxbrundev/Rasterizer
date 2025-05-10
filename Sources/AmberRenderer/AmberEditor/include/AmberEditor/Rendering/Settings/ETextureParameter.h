@@ -4,9 +4,11 @@
 
 namespace AmberEditor::Rendering::Settings
 {
-	enum class EProjectionMode : uint8_t
+	enum class ETextureParameter : uint8_t
 	{
-		PERSPECTIVE,
-		ORTHOGRAPHIC
+		MIN_FILTER,
+		MAG_FILTER,
+		WRAP_S,
+		WRAP_T
 	};
 }

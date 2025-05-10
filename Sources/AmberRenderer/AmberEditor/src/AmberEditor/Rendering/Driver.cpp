@@ -30,7 +30,7 @@ void AmberEditor::Rendering::Driver::SetViewport(uint16_t p_x, uint16_t p_y, uin
 	AmberGL::Viewport(p_x, p_y, p_width, p_height);
 }
 
-void AmberEditor::Rendering::Driver::SetRasterizationMode(Settings::ERasterizationMode p_rasterizationMode) const
+void AmberEditor::Rendering::Driver::SetRasterizationMode(Settings::EPolygonMode p_rasterizationMode) const
 {
 	AmberGL::PolygonMode(static_cast<uint8_t>(p_rasterizationMode));
 }
@@ -55,14 +55,14 @@ void AmberEditor::Rendering::Driver::SetDepthWriting(bool p_enable) const
 	AmberGL::DepthMask(p_enable);
 }
 
-bool AmberEditor::Rendering::Driver::GetBool(uint8_t p_parameter) const
+bool AmberEditor::Rendering::Driver::GetBool(int p_parameter) const
 {
 	bool result;
 	AmberGL::GetBool(p_parameter, &result);
 	return result;
 }
 
-int AmberEditor::Rendering::Driver::GetInt(uint8_t p_parameter) const
+int AmberEditor::Rendering::Driver::GetInt(int p_parameter) const
 {
 	int result;
 	AmberGL::GetInt(p_parameter, &result);
