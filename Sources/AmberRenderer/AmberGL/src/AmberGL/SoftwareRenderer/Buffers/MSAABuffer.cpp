@@ -7,7 +7,8 @@ AmberGL::SoftwareRenderer::Buffers::MSAABuffer::MSAABuffer(uint32_t p_width, uin
 m_width(p_width),
 m_height(p_height),
 m_samplesAmount(0),
-m_data(nullptr)
+m_data(nullptr),
+m_clearColor(0)
 {
 }
 

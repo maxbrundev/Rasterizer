@@ -36,7 +36,7 @@ glm::vec4 AmberGL::SoftwareRenderer::TextureSampler::Sample(const RenderObject::
 	uvX = uvX * (static_cast<float>(width) - 0.5f);
 	uvY = uvY * (static_cast<float>(height) - 0.5f);
 
-	uint8_t filter = currentLOD == 0 ? p_textureObject->MagFilter : p_textureObject->MinFilter;
+	uint16_t filter = currentLOD == 0 ? p_textureObject->MagFilter : p_textureObject->MinFilter;
 
 	const uint8_t* data = hasMipmaps && currentLOD > 0 ? p_textureObject->Mipmaps[currentLOD] : p_textureObject->Data8;
 
@@ -136,19 +136,19 @@ uint8_t AmberGL::SoftwareRenderer::TextureSampler::ComputeMipmapLevel(const Rend
 	return std::min<uint8_t>(mipmapCurrentLevel, mipmapMaxLevel - 1);
 }
 
-float AmberGL::SoftwareRenderer::TextureSampler::ApplyWrapMode(float p_coord, uint8_t p_wrapMode)
+float AmberGL::SoftwareRenderer::TextureSampler::ApplyWrapMode(float p_texCoord, uint16_t p_wrapMode)
 {
 	if (p_wrapMode == AGL_CLAMP)
 	{
-		return glm::clamp(p_coord, 0.0f, 1.0f);
+		return glm::clamp(p_texCoord, 0.0f, 1.0f);
 	}
 
 	if (p_wrapMode == AGL_REPEAT)
 	{
-		return glm::mod(p_coord, 1.0f);
+		return glm::mod(p_texCoord, 1.0f);
 	}
 
-	return glm::clamp(p_coord, 0.0f, 1.0f);
+	return glm::clamp(p_texCoord, 0.0f, 1.0f);
 }
 
 glm::vec4 AmberGL::SoftwareRenderer::TextureSampler::SampleNearest(const uint8_t* p_data, uint32_t p_width, uint32_t p_height, float p_x, float p_y)

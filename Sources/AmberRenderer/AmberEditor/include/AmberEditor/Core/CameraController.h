@@ -2,9 +2,9 @@
 
 #include "AmberEditor/Context/Window.h"
 
-#include "AmberEditor/Inputs/InputManager.h"
-
 #include "AmberEditor/Entities/Camera.h"
+
+#include "AmberEditor/Inputs/InputManager.h"
 
 namespace AmberEditor::Core
 {

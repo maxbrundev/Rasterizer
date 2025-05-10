@@ -11,8 +11,8 @@ namespace AmberGL::SoftwareRenderer::RenderObject
 		FrameBufferObjectData<Depth>* DepthBuffer = nullptr;
 		TextureObject* AttachedTexture = nullptr;
 		uint32_t ID = 0;
-		bool ColorWriteEnabled = true;
-
+		uint16_t Attachment;
+		//bool ColorWriteEnabled = true;
 
 		~FrameBufferObject()
 		{

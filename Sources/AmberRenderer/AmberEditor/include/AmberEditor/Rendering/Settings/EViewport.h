@@ -1,11 +1,11 @@
 #pragma once
 
+#include <cstdint>
+
 namespace AmberEditor::Rendering::Settings
 {
-	enum class ERasterizationMode : uint8_t
+	enum class EViewport : uint8_t
 	{
-		FILL,
-		LINE,
-		POINT
+		VIEWPORT
 	};
 }
