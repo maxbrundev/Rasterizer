@@ -18,14 +18,16 @@ namespace AmberEditor::Buffers
 
 		uint32_t GetID() const;
 		uint32_t GetTextureID() const;
-		//uint32_t GetRenderBufferID() const;
+
+		void Blit(const FrameBuffer& p_destination, int p_sourceX0, int p_sourceY0, int p_sourceX1, int p_sourceY1, int p_destinationX0, int p_destinationY0, int p_destinationX1, int p_destinationY1, bool p_blitColor, bool p_blitDepth, bool p_useLinearFilter)const;
+
+		void BlitToScreen(int p_sourceX0, int p_sourceY0, int p_sourceX1, int p_sourceY1, int p_destinationX0, int p_destinationY0, int p_destinationX1, int p_destinationY1, bool p_blitColor, bool p_blitDepth, bool p_useLinearFilter =false) const;
 
 		const std::pair<uint16_t, uint16_t> GetSize() const;
 
 	private:
 		uint32_t m_bufferID = 0;
-		uint32_t m_renderTexture = 0;
-		uint32_t m_depthStencilBuffer = 0;
+		uint32_t m_textureID = 0;
 
 		std::pair<uint16_t, uint16_t> m_size;
 	};

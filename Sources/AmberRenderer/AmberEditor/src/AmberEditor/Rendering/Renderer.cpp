@@ -3,7 +3,10 @@
 #include <AmberGL/SoftwareRenderer/AmberGL.h>
 
 #include "AmberEditor/Rendering/Settings/EPrimitiveMode.h"
+
 #include "AmberEditor/Resources/Loaders/TextureLoader.h"
+
+#include "AmberEditor/Tools/Utils/Enum.h"
 
 AmberEditor::Rendering::Renderer::Renderer(Context::SDLDriver& p_SDLDriver, Driver& p_driver) :
 m_SDLDriver(p_SDLDriver),
@@ -79,11 +82,11 @@ void AmberEditor::Rendering::Renderer::DrawMesh(Settings::EPrimitiveMode p_drawM
 
 		if (p_mesh.GetIndexCount() > 0)
 		{
-			AmberGL::DrawElements(static_cast<uint8_t>(p_drawMode), p_mesh.GetIndexCount());
+			AmberGL::DrawElements(GetEnumValue<uint16_t>(p_drawMode), p_mesh.GetIndexCount());
 		}
 		else
 		{
-			AmberGL::DrawArrays(static_cast<uint8_t>(p_drawMode), 0, p_mesh.GetVertexCount());
+			AmberGL::DrawArrays(GetEnumValue<uint16_t>(p_drawMode), 0, p_mesh.GetVertexCount());
 		}
 		p_mesh.Unbind();
 
