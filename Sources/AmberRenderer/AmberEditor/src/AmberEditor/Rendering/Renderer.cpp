@@ -8,27 +8,22 @@
 
 #include "AmberEditor/Tools/Utils/Enum.h"
 
-AmberEditor::Rendering::Renderer::Renderer(Context::SDLDriver& p_SDLDriver, Driver& p_driver) :
-m_SDLDriver(p_SDLDriver),
+AmberEditor::Rendering::Renderer::Renderer(Driver& p_driver, Context::IDisplay& p_display) :
 m_driver(p_driver),
+m_display(p_display),
 m_emptyTexture(Resources::Loaders::TextureLoader::CreateColor
 (
 	(255 << 24) | (255 << 16) | (255 << 8) | 255,
-	Resources::Settings::ETextureFilteringMode::NEAREST,
-	Resources::Settings::ETextureFilteringMode::NEAREST
-)),
-m_sdlTexture(nullptr)
+	Settings::ETextureFilteringMode::NEAREST,
+	Settings::ETextureFilteringMode::NEAREST
+))
 {
-	m_sdlTexture = SDL_CreateTexture(m_SDLDriver.GetRenderer(), SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(800), static_cast<int>(600));
-
 	//p_window.ResizeEvent.AddListener(std::bind(&Renderer::OnResize, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 AmberEditor::Rendering::Renderer::~Renderer()
 {
 	Resources::Loaders::TextureLoader::Destroy(m_emptyTexture);
-
-	SDL_DestroyTexture(m_sdlTexture);
 }
 
 void AmberEditor::Rendering::Renderer::SetClearColor(const glm::vec4& p_color)
@@ -105,20 +100,6 @@ void AmberEditor::Rendering::Renderer::DrawLine(const glm::vec3& p_point0, const
 	AmberGL::DrawLine({ p_point0 }, { p_point1 }, p_color.GetNormalizedVec4());
 }
 
-void AmberEditor::Rendering::Renderer::Render() const
-{
-	SendDataToGPU();
-
-	m_SDLDriver.RenderCopy(m_sdlTexture);
-
-	m_SDLDriver.RenderPresent();
-}
-
-void AmberEditor::Rendering::Renderer::RenderClear() const
-{
-	m_SDLDriver.RenderClear();
-}
-
 void AmberEditor::Rendering::Renderer::SetSamples(uint8_t p_samples) const
 {
 	AmberGL::SetSamples(p_samples);
@@ -126,7 +107,7 @@ void AmberEditor::Rendering::Renderer::SetSamples(uint8_t p_samples) const
 
 void AmberEditor::Rendering::Renderer::SendDataToGPU() const
 {
-	SDL_UpdateTexture(m_sdlTexture, nullptr, AmberGL::GetFrameBufferData(), AmberGL::GetFrameBufferRowSize());
+	
 }
 
 uint8_t AmberEditor::Rendering::Renderer::FetchState() const
@@ -166,11 +147,6 @@ void AmberEditor::Rendering::Renderer::ApplyStateMask(uint8_t p_mask)
 	}
 }
 
-SDL_Renderer* AmberEditor::Rendering::Renderer::GetSDLRenderer() const
-{
-	return m_SDLDriver.GetRenderer();
-}
-
 void AmberEditor::Rendering::Renderer::OnResize(uint16_t p_width, uint16_t p_height)
 {
 	//m_textureBuffer.Resize(p_width, p_height);
@@ -179,4 +155,16 @@ void AmberEditor::Rendering::Renderer::OnResize(uint16_t p_width, uint16_t p_hei
 	//SDL_DestroyTexture(m_sdlTexture);
 
 	//m_sdlTexture = SDL_CreateTexture(m_driver.GetRenderer(), SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(GLRasterizer::GetTextureBuffer().GetWidth()), static_cast<int>(GLRasterizer::GetTextureBuffer().GetHeight()));
+}
+
+
+void AmberEditor::Rendering::Renderer::DisplayPresent() const
+{
+	m_display.UpdateDisplayTexture(AmberGL::GetFrameBufferData(), AmberGL::GetFrameBufferRowSize());
+	m_display.Present();
+}
+
+void AmberEditor::Rendering::Renderer::DisplayClear() const
+{
+	m_display.Clear();
 }

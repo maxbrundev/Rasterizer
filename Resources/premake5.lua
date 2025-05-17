@@ -1,3 +1,3 @@
 project "Resources"
     kind "SharedItems"
-    files { "Models/**" }
+    files { "Editor/**" }

@@ -1,5 +1,7 @@
 #include "AmberEditor/Core/Context.h"
 
+#include "AmberEditor/Context/SDLDisplay.h"
+
 #include "AmberEditor/Tools/Globals/ServiceLocator.h"
 
 AmberEditor::Core::Context::Context()
@@ -18,13 +20,18 @@ AmberEditor::Core::Context::Context()
 
 	SDLDriver = std::make_unique<AmberEditor::Context::SDLDriver>(*Window, driverSettings);
 
-	InputManager = std::make_unique<Inputs::InputManager>(*Device);
+	Display = std::make_unique<AmberEditor::Context::SDLDisplay>(*SDLDriver, 800, 600);
 
 	Driver = std::make_unique<Rendering::Driver>();
+	
+	Renderer = std::make_unique<Rendering::Renderer>(*Driver, *Display);
 
-	Renderer = std::make_unique<Rendering::Renderer>(*SDLDriver, *Driver);
+	InputManager = std::make_unique<Inputs::InputManager>(*Device);
 
 	Tools::Globals::ServiceLocator::Provide(*Window);
 	Tools::Globals::ServiceLocator::Provide(*InputManager);
 	Tools::Globals::ServiceLocator::Provide(*Renderer);
+	Tools::Globals::ServiceLocator::Provide(ModelManager);
+	Tools::Globals::ServiceLocator::Provide(TextureManager);
+	Tools::Globals::ServiceLocator::Provide(ShaderManager);
 }

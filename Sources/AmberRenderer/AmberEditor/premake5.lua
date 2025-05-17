@@ -35,7 +35,7 @@ project "AmberEditor"
         "xcopy /Y /I /Q /D \"%{cfg.targetdir}\\*.exe\" \"%{builddir}%{cfg.platform}\\%{cfg.buildcfg}\\\"",
         "xcopy /Y /I /Q /D \"%{cfg.targetdir}\\*.dll\" \"%{builddir}%{cfg.platform}\\%{cfg.buildcfg}\\\"",
         
-        "xcopy \"%{resdir}Models\\*\" \"%{builddir}%{cfg.platform}\\%{cfg.buildcfg}\\Resources\\Models\\\" /y /i /r /e /q",
+        "xcopy \"%{resdir}Editor\\*\" \"%{builddir}%{cfg.platform}\\%{cfg.buildcfg}\\Resources\\Editor\\\" /y /i /r /e /q",
         
         "EXIT /B 0"
     }

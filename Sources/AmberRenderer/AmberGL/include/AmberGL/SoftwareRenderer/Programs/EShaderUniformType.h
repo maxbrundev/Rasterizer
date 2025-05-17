@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace AmberGL::SoftwareRenderer::Programs
 {
@@ -13,6 +13,7 @@ namespace AmberGL::SoftwareRenderer::Programs
 		VEC4,
 		MAT2,
 		MAT3,
-		MAT4
+		MAT4,
+		SAMPLER_2D
 	};
 }

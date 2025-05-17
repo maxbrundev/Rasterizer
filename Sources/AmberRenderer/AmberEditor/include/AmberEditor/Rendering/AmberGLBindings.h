@@ -13,6 +13,8 @@
 #include "Settings/EPixelFormat.h"
 #include "Settings/EPolygonMode.h"
 #include "Settings/EPrimitiveMode.h"
+#include "Settings/ERenderingCapability.h"
+#include "Settings/EUniformType.h"
 #include "Settings/EViewport.h"
 
 template<typename Enum, typename Value>
@@ -139,5 +141,42 @@ struct EnumValueTypeTraits<AmberEditor::Rendering::Settings::EViewport, uint16_t
 	static constexpr std::array<std::pair<AmberEditor::Rendering::Settings::EViewport, uint16_t>, 1> EnumMap =
 	{
 		std::pair{AmberEditor::Rendering::Settings::EViewport::VIEWPORT, AGL_VIEWPORT}
+	};
+};
+
+template <>
+struct EnumValueTypeTraits<AmberEditor::Rendering::Settings::ETextureFilteringMode, uint16_t>
+{
+	static constexpr std::array<std::pair<AmberEditor::Rendering::Settings::ETextureFilteringMode, uint16_t>, 2> EnumMap =
+	{
+		std::pair{AmberEditor::Rendering::Settings::ETextureFilteringMode::LINEAR,  AGL_LINEAR},
+		std::pair{AmberEditor::Rendering::Settings::ETextureFilteringMode::NEAREST, AGL_NEAREST}
+	};
+};
+
+template <>
+struct EnumValueTypeTraits<AmberEditor::Rendering::Settings::EWrapMode, uint16_t>
+{
+	static constexpr std::array<std::pair<AmberEditor::Rendering::Settings::EWrapMode, uint16_t>, 2> EnumMap =
+	{
+		std::pair{AmberEditor::Rendering::Settings::EWrapMode::CLAMP,  AGL_CLAMP},
+		std::pair{AmberEditor::Rendering::Settings::EWrapMode::REPEAT, AGL_REPEAT}
+	};
+};
+
+template <>
+struct EnumValueTypeTraits<AmberEditor::Rendering::Settings::EUniformType, AmberGL::SoftwareRenderer::Programs::EShaderDataType>
+{
+	static constexpr std::array<std::pair<AmberEditor::Rendering::Settings::EUniformType, AmberGL::SoftwareRenderer::Programs::EShaderDataType>, 9> EnumMap =
+	{
+		std::pair{AmberEditor::Rendering::Settings::EUniformType::INT,        AmberGL::SoftwareRenderer::Programs::EShaderDataType::INT},
+		std::pair{AmberEditor::Rendering::Settings::EUniformType::FLOAT,      AmberGL::SoftwareRenderer::Programs::EShaderDataType::FLOAT},
+		std::pair{AmberEditor::Rendering::Settings::EUniformType::VEC2,       AmberGL::SoftwareRenderer::Programs::EShaderDataType::VEC2},
+		std::pair{AmberEditor::Rendering::Settings::EUniformType::VEC3,       AmberGL::SoftwareRenderer::Programs::EShaderDataType::VEC3},
+		std::pair{AmberEditor::Rendering::Settings::EUniformType::VEC4,       AmberGL::SoftwareRenderer::Programs::EShaderDataType::VEC4},
+		std::pair{AmberEditor::Rendering::Settings::EUniformType::MAT2,       AmberGL::SoftwareRenderer::Programs::EShaderDataType::MAT2},
+		std::pair{AmberEditor::Rendering::Settings::EUniformType::MAT3,       AmberGL::SoftwareRenderer::Programs::EShaderDataType::MAT3},
+		std::pair{AmberEditor::Rendering::Settings::EUniformType::MAT4,       AmberGL::SoftwareRenderer::Programs::EShaderDataType::MAT4},
+		std::pair{AmberEditor::Rendering::Settings::EUniformType::SAMPLER_2D, AmberGL::SoftwareRenderer::Programs::EShaderDataType::SAMPLER_2D},
 	};
 };

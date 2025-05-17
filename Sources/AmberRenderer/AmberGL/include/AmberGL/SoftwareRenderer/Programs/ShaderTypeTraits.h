@@ -6,6 +6,11 @@
 
 namespace AmberGL::SoftwareRenderer::Programs
 {
+	struct Sampler2D
+	{
+		int ID;
+	};
+
 	template <typename T>
 	struct ShaderTypeTraits
 	{
@@ -28,6 +33,23 @@ namespace AmberGL::SoftwareRenderer::Programs
 	struct ShaderTypeTraits<int>
 	{
 		static constexpr Programs::EShaderDataType Type = Programs::EShaderDataType::INT;
+		static constexpr uint8_t TypeCount = 1;
+
+		static void WriteToBuffer(const int& p_value, float* p_buffer)
+		{
+			p_buffer[0] = static_cast<float>(p_value);
+		}
+
+		static int ReadFromBuffer(const float* p_buffer)
+		{
+			return static_cast<int>(p_buffer[0]);
+		}
+	};
+
+	template <>
+	struct ShaderTypeTraits<Sampler2D>
+	{
+		static constexpr Programs::EShaderDataType Type = Programs::EShaderDataType::SAMPLER_2D;
 		static constexpr uint8_t TypeCount = 1;
 
 		static void WriteToBuffer(const int& p_value, float* p_buffer)

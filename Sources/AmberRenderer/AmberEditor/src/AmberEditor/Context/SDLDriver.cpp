@@ -17,7 +17,6 @@ AmberEditor::Context::SDLDriver::SDLDriver(Window& p_window, const Settings::SDL
 AmberEditor::Context::SDLDriver::~SDLDriver()
 {
 	SDL_DestroyRenderer(m_sdlRenderer);
-
 }
 
 void AmberEditor::Context::SDLDriver::RenderClear() const

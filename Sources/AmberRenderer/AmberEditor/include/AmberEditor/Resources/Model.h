@@ -1,9 +1,13 @@
 #pragma once
 
+#include <array>
 #include <string>
 
 #include "AmberEditor/Resources/Material.h"
 #include "AmberEditor/Resources/Mesh.h"
+#include "Parsers/MaterialData.h"
+
+constexpr uint8_t MAX_MATERIAL_COUNT = 255;
 
 namespace AmberEditor::Resources::Loaders
 {
@@ -17,8 +21,13 @@ namespace AmberEditor::Resources
 		friend class Loaders::ModelLoader;
 
 	public:
+
+		using MaterialList = std::array<Resources::Material*, MAX_MATERIAL_COUNT>;
+
 		std::vector<Mesh*>& GetMeshes();
-		std::vector<Material*>& GetMaterials();
+		const MaterialList& GetMaterials() const;
+
+		void FillWithMaterial(Resources::Material& p_material);
 
 	private:
 		Model(const std::string& p_filePath);
@@ -26,9 +35,10 @@ namespace AmberEditor::Resources
 
 	public:
 		const std::string Path;
+		std::vector<Parsers::MaterialData> m_materialData;
 
 	private:
+		MaterialList m_materials;
 		std::vector<Mesh*> m_meshes;
-		std::vector<Material*> m_materials;
 	};
 }

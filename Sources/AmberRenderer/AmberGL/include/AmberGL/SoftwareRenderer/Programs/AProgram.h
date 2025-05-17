@@ -1,5 +1,6 @@
 #pragma once
 
+#include <any>
 #include <string>
 #include <unordered_map>
 
@@ -44,16 +45,37 @@ namespace AmberGL::SoftwareRenderer::Programs
 		glm::vec4 ProcessFragment();
 
 		template<typename T>
-		void SetUniform(const std::string_view p_name, const T& p_value)
+		void RegisterUniform(const std::string& p_name, const T& p_defaultValue)
+		{
+			EShaderDataType type = ShaderTypeTraits<T>::Type;
+			m_registeredUniforms[std::string(p_name)] = { type, p_defaultValue };
+		}
+
+		const std::unordered_map<std::string, std::pair<EShaderDataType, std::any>>& GetRegisteredUniforms() const
+		{
+			return m_registeredUniforms;
+		}
+
+		template<typename T>
+		void SetUniform(const std::string p_name, const T& p_value)
 		{
 			ShaderData& shaderData = m_uniforms[p_name];
 			shaderData.Type = ShaderTypeTraits<T>::Type;
 
-			ShaderTypeTraits<T>::WriteToBuffer(p_value, shaderData.Data);
+			if constexpr (std::is_same_v<T, Sampler2D>)
+			{
+				ShaderTypeTraits<Sampler2D>::WriteToBuffer(p_value.ID, shaderData.Data);
+				RegisterUniform(p_name, p_value.ID);
+			}
+			else
+			{
+				ShaderTypeTraits<T>::WriteToBuffer(p_value, shaderData.Data);
+				RegisterUniform(p_name, p_value);
+			}
 		}
 
 		template<typename T>
-		T GetUniformAs(const std::string_view p_name) const
+		T GetUniformAs(const std::string p_name) const
 		{
 			auto it = m_uniforms.find(p_name);
 
@@ -66,7 +88,7 @@ namespace AmberGL::SoftwareRenderer::Programs
 		}
 
 		template<typename T>
-		void SetFlat(const std::string_view p_name, const T& p_value)
+		void SetFlat(const std::string p_name, const T& p_value)
 		{
 			ShaderData& shaderData = m_flats[p_name];
 			shaderData.Type = ShaderTypeTraits<T>::Type;
@@ -74,7 +96,7 @@ namespace AmberGL::SoftwareRenderer::Programs
 		}
 
 		template<typename T>
-		T GetFlatAs(const std::string_view p_name) const
+		T GetFlatAs(const std::string p_name) const
 		{
 			auto it = m_flats.find(p_name);
 
@@ -85,7 +107,7 @@ namespace AmberGL::SoftwareRenderer::Programs
 		}
 
 		template<typename T>
-		void SetVarying(const std::string_view p_name, const T& p_value, uint8_t p_vertexIndex = 255)
+		void SetVarying(const std::string p_name, const T& p_value, uint8_t p_vertexIndex = 255)
 		{
 			if (p_vertexIndex == 255) p_vertexIndex = m_vertexIndex;
 			ShaderVarying& shaderVarying = m_varyings[p_name];
@@ -95,7 +117,7 @@ namespace AmberGL::SoftwareRenderer::Programs
 		}
 
 		template<typename T>
-		T GetVaryingAs(const std::string_view p_name) const
+		T GetVaryingAs(const std::string p_name) const
 		{
 			auto it = m_varyings.find(p_name);
 			if (it == m_varyings.end())
@@ -105,7 +127,7 @@ namespace AmberGL::SoftwareRenderer::Programs
 		}
 
 		template<typename T>
-		T GetVaryingAs(const std::string_view p_name, uint8_t p_vertexIndex) const
+		T GetVaryingAs(const std::string p_name, uint8_t p_vertexIndex) const
 		{
 			auto it = m_varyings.find(p_name);
 			if (it == m_varyings.end())
@@ -116,9 +138,9 @@ namespace AmberGL::SoftwareRenderer::Programs
 
 		void SetDerivatives(glm::vec2 p_dfdx, glm::vec2 p_dfdy);
 
-		glm::vec4 Texture(const std::string_view p_samplerName, const glm::vec2& p_texCoords) const;
+		glm::vec4 Texture(const std::string p_samplerName, const glm::vec2& p_texCoords) const;
 
-		std::unordered_map<std::string_view, ShaderVarying>& GetVaryings();
+		std::unordered_map<std::string, ShaderVarying>& GetVaryings();
 		uint8_t GetTypeCount(EShaderDataType p_type) const;
 
 	protected:
@@ -135,8 +157,11 @@ namespace AmberGL::SoftwareRenderer::Programs
 		glm::vec2 m_dfdy;
 
 	private:
-		std::unordered_map<std::string_view, ShaderData> m_uniforms;
-		std::unordered_map<std::string_view, ShaderData> m_flats;
-		std::unordered_map<std::string_view, ShaderVarying> m_varyings;
+		std::unordered_map<std::string, ShaderData> m_uniforms;
+		std::unordered_map<std::string, ShaderData> m_flats;
+		std::unordered_map<std::string, ShaderVarying> m_varyings;
+
+		std::unordered_map<std::string, std::pair<EShaderDataType, std::any>> m_registeredUniforms;
+
 	};
 }

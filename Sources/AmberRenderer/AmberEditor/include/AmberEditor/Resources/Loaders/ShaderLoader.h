@@ -8,7 +8,7 @@
 
 namespace AmberEditor::Resources::Loaders
 {
-	template<typename T>
+	template <typename T>
 	concept DerivedFromAProgram = std::is_base_of_v<AmberGL::SoftwareRenderer::Programs::AProgram, T>;
 
 	class ShaderLoader
@@ -16,16 +16,14 @@ namespace AmberEditor::Resources::Loaders
 	public:
 		ShaderLoader() = delete;
 
-		template<DerivedFromAProgram T>
-		static Shader* Create(const std::string& p_name)
+		//Meh..temporary 
+		template <DerivedFromAProgram T>
+		static AShader* Create()
 		{
-			T* program = new T();
-
-			return Create(p_name, program);
+			return new Shader<T>();
 		}
 
-		static Shader* Create(const std::string& p_name, AmberGL::SoftwareRenderer::Programs::AProgram* p_program);
-		static bool Destroy(Shader*& p_shaderInstance);
-		static bool Delete(Shader* p_shaderInstance);
+		static bool Destroy(AShader*& p_shaderInstance);
+		static bool Delete(AShader* p_shaderInstance);
 	};
 }

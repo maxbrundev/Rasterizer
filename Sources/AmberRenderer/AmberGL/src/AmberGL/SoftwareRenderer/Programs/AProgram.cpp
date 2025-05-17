@@ -65,7 +65,7 @@ void AmberGL::SoftwareRenderer::Programs::AProgram::SetDerivatives(glm::vec2 p_d
 	m_dfdy = p_dfdy;
 }
 
-glm::vec4 AmberGL::SoftwareRenderer::Programs::AProgram::Texture(const std::string_view p_samplerName, const glm::vec2& p_texCoords) const
+glm::vec4 AmberGL::SoftwareRenderer::Programs::AProgram::Texture(const std::string p_samplerName, const glm::vec2& p_texCoords) const
 {
 	int textureUnit = GetUniformAs<int>(p_samplerName);
 
@@ -83,7 +83,7 @@ glm::vec3 AmberGL::SoftwareRenderer::Programs::AProgram::Lambert(const glm::vec3
 	return glm::clamp(p_lightDiffuse * diffuse + p_lightAmbient, 0.0f, 1.0f);
 }
 
-std::unordered_map<std::string_view, AmberGL::SoftwareRenderer::Programs::ShaderVarying>& AmberGL::SoftwareRenderer::Programs::AProgram::GetVaryings()
+std::unordered_map<std::string, AmberGL::SoftwareRenderer::Programs::ShaderVarying>& AmberGL::SoftwareRenderer::Programs::AProgram::GetVaryings()
 {
 	return m_varyings;
 }
@@ -93,7 +93,8 @@ uint8_t AmberGL::SoftwareRenderer::Programs::AProgram::GetTypeCount(EShaderDataT
 	switch (p_type)
 	{
 	case EShaderDataType::INT:
-	case EShaderDataType::FLOAT: return 1;
+	case EShaderDataType::FLOAT:
+	case EShaderDataType::SAMPLER_2D: return 1;
 	case EShaderDataType::VEC2: return 2;
 	case EShaderDataType::VEC3: return 3;
 	case EShaderDataType::VEC4: return 4;

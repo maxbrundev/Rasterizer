@@ -7,6 +7,11 @@ AmberEditor::Rendering::Driver::Driver()
 	Initialize();
 }
 
+AmberEditor::Rendering::Driver::~Driver()
+{
+	AmberGL::Terminate();
+}
+
 void AmberEditor::Rendering::Driver::SetClearColor(const glm::vec4& p_color) const
 {
 	AmberGL::ClearColor(p_color.x, p_color.y, p_color.z, p_color.w);
@@ -72,4 +77,10 @@ int AmberEditor::Rendering::Driver::GetInt(int p_parameter) const
 void AmberEditor::Rendering::Driver::Initialize() const
 {
 	AmberGL::Initialize(800, 600);
+
+	AmberGL::Enable(AGL_DEPTH_TEST);
+	AmberGL::Enable(AGL_DEPTH_WRITE);
+	AmberGL::Enable(AGL_CULL_FACE);
+
+	AmberGL::CullFace(AGL_BACK);
 }

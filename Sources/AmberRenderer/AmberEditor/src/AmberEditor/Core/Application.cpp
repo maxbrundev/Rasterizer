@@ -4,9 +4,6 @@
 #include <glm/ext/matrix_transform.hpp>
 
 #include <AmberGL/SoftwareRenderer/AmberGL.h>
-#include <AmberGL/SoftwareRenderer/Programs/QuadNDC.h>
-#include <AmberGL/SoftwareRenderer/Programs/ShadowMapping.h>
-#include <AmberGL/SoftwareRenderer/Programs/ShadowMappingDepth.h>
 
 #include "AmberEditor/Data/Color.h"
 
@@ -14,6 +11,10 @@
 #include "AmberEditor/Resources/Model.h"
 #include "AmberEditor/Resources/Loaders/ModelLoader.h"
 #include "AmberEditor/Resources/Loaders/ShaderLoader.h"
+#include "AmberEditor/Resources/Loaders/TextureLoader.h"
+#include "AmberEditor/Resources/Shaders/QuadNDC.h"
+#include "AmberEditor/Resources/Shaders/ShadowMapping.h"
+#include "AmberEditor/Resources/Shaders/ShadowMappingDepth.h"
 
 #include "AmberEditor/Tools/Time/Clock.h"
 #include "AmberGL/SoftwareRenderer/Defines.h"
@@ -25,12 +26,8 @@ m_cameraRotation(glm::quat({0.0f, 135.0f, 0.0f})),
 m_cameraController(m_camera, m_cameraPosition, m_cameraRotation),
 m_isRunning(true)
 {
-	AmberGL::Enable(AGL_DEPTH_TEST);
-	AmberGL::Enable(AGL_DEPTH_WRITE);
-	AmberGL::Enable(AGL_CULL_FACE);
-
-	AmberGL::CullFace(AGL_BACK);
-	m_shadowDepthShaderResource = Resources::Loaders::ShaderLoader::Create<AmberGL::SoftwareRenderer::Programs::ShadowMappingDepth>("ShadowMapDepth");
+	m_context.ShaderManager.GetShader<Resources::Shaders::ShadowMappingDepth>("ShadowMapDepth");
+	m_shadowDepthShaderResource = m_context.ShaderManager.GetResource("ShadowMapDepth");
 }
 
 AmberEditor::Core::Application::~Application()
@@ -38,7 +35,6 @@ AmberEditor::Core::Application::~Application()
 	Resources::Loaders::ModelLoader::Destroy(m_currentModel);
 	Resources::Loaders::ShaderLoader::Destroy(m_shadowDepthShaderResource);
 
-	AmberGL::Terminate();
 }
 
 void AmberEditor::Core::Application::Initialize()
@@ -52,21 +48,14 @@ void AmberEditor::Core::Application::Initialize()
 		}
 
 		m_currentModel = Resources::Loaders::ModelLoader::Create(p_filePath);
-
-		for (Resources::Material* material : m_currentModel->GetMaterials())
-		{
-			material->SetShader(m_shadowDepthShaderResource);
-		}
+		m_currentModel->FillWithMaterial(m_shadowMapMaterial);
+		//Todo: quick hack to simply set the model textures, need clean.
+		Resources::Loaders::ModelLoader::GenerateModelMaterials(*m_currentModel);
 	});
 #endif
 
 	//TODO: ModelLoader instantiate related textures with flipVertically parameter at true, this result to flipped texture for this obj.
-	m_currentModel = Resources::Loaders::ModelLoader::Create("Resources/Models/cube.obj");
-
-	for (Resources::Material* material : m_currentModel->GetMaterials())
-	{
-		material->SetShader(m_shadowDepthShaderResource);
-	}
+	m_currentModel = Resources::Loaders::ModelLoader::Create("Resources/Editor/Models/Cube.obj");
 }
 
 void AmberEditor::Core::Application::Run()
@@ -124,8 +113,8 @@ void AmberEditor::Core::Application::Run()
 	AmberGL::BindBuffer(AGL_ARRAY_BUFFER, VBO);
 	AmberGL::BindVertexArray(0);
 
-	Resources::Shader* quadShaderResource = Resources::Loaders::ShaderLoader::Create<AmberGL::SoftwareRenderer::Programs::QuadNDC>("QuadNDC");
-	Resources::Shader* shadowMappingResource = Resources::Loaders::ShaderLoader::Create<AmberGL::SoftwareRenderer::Programs::ShadowMapping>("ShadowMapping");
+	auto quadShaderResource = Resources::Loaders::ShaderLoader::Create<Resources::Shaders::QuadNDC>();
+	auto shadowMappingResource = Resources::Loaders::ShaderLoader::Create<Resources::Shaders::ShadowMapping>();
 
 	//TODO: Clean Texture generation.
 	uint32_t m_shadowFBO;
@@ -158,13 +147,15 @@ void AmberEditor::Core::Application::Run()
 	quadShaderResource->SetUniform("u_DepthMap", 0);
 	AmberGL::BindTexture(AGL_TEXTURE_2D, 0);
 
-	Resources::Material shadowMapDepthMaterial;
-	shadowMapDepthMaterial.SetShader(m_shadowDepthShaderResource);
+	m_shadowMapDepthMaterial.SetShader(m_shadowDepthShaderResource);
 
-	Resources::Material shadowMapMaterial;
-	shadowMapMaterial.SetShader(shadowMappingResource);
+	m_shadowMapMaterial.SetShader(shadowMappingResource);
 
 	shadowMappingResource->SetUniform("u_DepthMap", 1);
+
+	m_currentModel->FillWithMaterial(m_shadowMapMaterial);
+	Resources::Loaders::ModelLoader::GenerateModelMaterials(*m_currentModel);
+
 	float accumulatedTime = 0.0f;
 
 	float radius = 2.0f;
@@ -184,15 +175,12 @@ void AmberEditor::Core::Application::Run()
 	{
 		m_context.Device->PollEvents();
 
-		m_context.Renderer->RenderClear();
+		m_context.Renderer->DisplayClear();
 
 		m_context.Renderer->SetClearColor(backGround.GetNormalizedVec4());
 		m_context.Renderer->Clear(true, true);
 
-		for (Resources::Material* material : m_currentModel->GetMaterials())
-		{
-			material->SetShader(m_shadowDepthShaderResource);
-		}
+		m_currentModel->FillWithMaterial(m_shadowMapDepthMaterial);
 
 		accumulatedTime += clock.GetDeltaTime();
 
@@ -202,7 +190,7 @@ void AmberEditor::Core::Application::Run()
 		lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		lightSpaceMatrix = lightProjection * lightView;
 
-		m_shadowDepthShaderResource->SetUniform("u_lightSpaceMatrix", lightSpaceMatrix);
+		m_shadowMapDepthMaterial.SetUniform("u_lightSpaceMatrix", lightSpaceMatrix);
 
 		AmberGL::BindFrameBuffer(AGL_FRAMEBUFFER, m_shadowFBO);
 		m_context.Renderer->SetViewport(0, 0, 1024, 1024);
@@ -210,15 +198,15 @@ void AmberEditor::Core::Application::Run()
 
 		glm::mat4 cubeModel(1.0f);
 		cubeModel = glm::translate(cubeModel, glm::vec3(0.0f, 3.0f, 2.0f));
-		m_shadowDepthShaderResource->SetUniform("u_Model", cubeModel);
-		m_context.Renderer->Draw(*m_currentModel, &shadowMapDepthMaterial);
+		m_shadowMapDepthMaterial.SetUniform("u_Model", cubeModel);
+		m_context.Renderer->Draw(*m_currentModel, &m_shadowMapDepthMaterial);
 
 		glm::mat4 cube2Model(1.0f);
 		cube2Model = glm::translate(cube2Model, glm::vec3(0.0f, 1.0f, 2.0f));
 		cube2Model = glm::scale(cube2Model, glm::vec3(2.0f, 0.2f, 2.0f));
 
-		m_shadowDepthShaderResource->SetUniform("u_Model", cube2Model);
-		m_context.Renderer->Draw(*m_currentModel, &shadowMapDepthMaterial);
+		m_shadowMapDepthMaterial.SetUniform("u_Model", cube2Model);
+		m_context.Renderer->Draw(*m_currentModel, &m_shadowMapDepthMaterial);
 
 		glm::mat4 planeModel(1.0f);
 		planeModel = glm::translate(planeModel, glm::vec3(0.0f, 0.0f, 0.0f));
@@ -235,32 +223,29 @@ void AmberEditor::Core::Application::Run()
 		m_context.Renderer->Clear(true, true);
 
 		m_cameraController.Update(clock.GetDeltaTime());
-		m_camera.ComputeMatrices(m_context.Window->GetSize().first, m_context.Window->GetSize().second,
-		                         m_cameraPosition, m_cameraRotation);
+		m_camera.ComputeMatrices(m_context.Window->GetSize().first, m_context.Window->GetSize().second, m_cameraPosition, m_cameraRotation);
 		const auto& view = m_camera.GetViewMatrix();
 		const auto& projection = m_camera.GetProjectionMatrix();
 
-		for (Resources::Material* material : m_currentModel->GetMaterials())
-		{
-			material->SetShader(shadowMappingResource);
-		}
+		m_currentModel->FillWithMaterial(m_shadowMapMaterial);
 
-		shadowMappingResource->SetUniform("u_View", view);
-		shadowMappingResource->SetUniform("u_Projection", projection);
-		shadowMappingResource->SetUniform("u_lightPos", lightPos);
-		shadowMappingResource->SetUniform("u_lightSpaceMatrix", lightSpaceMatrix);
-		shadowMappingResource->SetUniform("u_ViewPos", m_cameraPosition);
+		m_shadowMapMaterial.SetUniform("u_View", view);
+		m_shadowMapMaterial.SetUniform("u_Projection", projection);
+		m_shadowMapMaterial.SetUniform("u_lightPos", lightPos);
+		m_shadowMapMaterial.SetUniform("u_lightSpaceMatrix", lightSpaceMatrix);
+		m_shadowMapMaterial.SetUniform("u_ViewPos", m_cameraPosition);
 
-		shadowMappingResource->SetUniform("u_Model", cubeModel);
+		m_shadowMapMaterial.SetUniform("u_Model", cubeModel);
+
 		AmberGL::ActiveTexture(AGL_TEXTURE0 + 1);
 		AmberGL::BindTexture(AGL_TEXTURE_2D, depthMap);
-		m_context.Renderer->Draw(*m_currentModel, &shadowMapMaterial);
+		m_context.Renderer->Draw(*m_currentModel, &m_shadowMapMaterial);
 		AmberGL::BindTexture(AGL_TEXTURE_2D, 0);
 
-		shadowMappingResource->SetUniform("u_Model", cube2Model);
+		m_shadowMapMaterial.SetUniform("u_Model", cube2Model);
 		AmberGL::ActiveTexture(AGL_TEXTURE0 + 1);
 		AmberGL::BindTexture(AGL_TEXTURE_2D, depthMap);
-		m_context.Renderer->Draw(*m_currentModel, &shadowMapMaterial);
+		m_context.Renderer->Draw(*m_currentModel, &m_shadowMapMaterial);
 		AmberGL::BindTexture(AGL_TEXTURE_2D, 0);
 
 		shadowMappingResource->SetUniform("u_Model", planeModel);
@@ -281,7 +266,7 @@ void AmberEditor::Core::Application::Run()
 			AGL_LINEAR
 		);
 
-		m_context.Renderer->Render();
+		m_context.Renderer->DisplayPresent();
 		m_context.InputManager->ClearEvents();
 
 		clock.Update();

@@ -2,6 +2,7 @@
 
 AmberEditor::Resources::Model::Model(const std::string& p_filePath) : Path(p_filePath)
 {
+	m_materials.fill(nullptr);
 }
 
 AmberEditor::Resources::Model::~Model()
@@ -11,12 +12,6 @@ AmberEditor::Resources::Model::~Model()
 		delete mesh;
 		mesh = nullptr;
 	}
-
-	for (auto& material : m_materials)
-	{
-		delete material;
-		material = nullptr;
-	}
 }
 
 std::vector<AmberEditor::Resources::Mesh*>& AmberEditor::Resources::Model::GetMeshes()
@@ -24,7 +19,13 @@ std::vector<AmberEditor::Resources::Mesh*>& AmberEditor::Resources::Model::GetMe
 	return m_meshes;
 }
 
-std::vector<AmberEditor::Resources::Material*>& AmberEditor::Resources::Model::GetMaterials()
+const AmberEditor::Resources::Model::MaterialList& AmberEditor::Resources::Model::GetMaterials() const
 {
 	return m_materials;
+}
+
+void AmberEditor::Resources::Model::FillWithMaterial(Resources::Material& p_material)
+{
+	for (uint8_t i = 0; i < m_materials.size(); i++)
+		m_materials[i] = &p_material;
 }

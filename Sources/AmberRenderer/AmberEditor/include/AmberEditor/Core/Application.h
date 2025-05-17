@@ -28,8 +28,10 @@ namespace AmberEditor::Core
 
 		Resources::Model* m_currentModel = nullptr;
 	
-		Resources::Shader* m_shadowDepthShaderResource;
+		Resources::AShader* m_shadowDepthShaderResource;
 
+		Resources::Material m_shadowMapDepthMaterial;
+		Resources::Material m_shadowMapMaterial;
 		bool m_isRunning;
 	};
 }

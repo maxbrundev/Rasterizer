@@ -12,7 +12,7 @@ namespace AmberEditor::Rendering
 	{
 	public:
 		Driver();
-		~Driver() = default;
+		~Driver();
 
 		void SetClearColor(const glm::vec4& p_color) const;
 		void Clear(bool p_colorBuffer, bool p_depthBuffer) const;

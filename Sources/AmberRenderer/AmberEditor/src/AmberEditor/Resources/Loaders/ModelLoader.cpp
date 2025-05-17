@@ -1,37 +1,22 @@
 #include "AmberEditor/Resources/Loaders/ModelLoader.h"
 
+#include "AmberEditor/Managers/TextureManager.h"
 #include "AmberEditor/Resources/Loaders/TextureLoader.h"
 #include "AmberEditor/Resources/Parsers/MaterialData.h"
+#include "AmberEditor/Tools/Globals/ServiceLocator.h"
 
 AmberEditor::Resources::Parsers::OBJParser AmberEditor::Resources::Loaders::ModelLoader::OBJParser;
 std::string AmberEditor::Resources::Loaders::ModelLoader::FILE_TRACE;
 
-//TODO: Implement Resource Management classes to be RAII-compliant with resources Models / Textures / Materials.
 AmberEditor::Resources::Model* AmberEditor::Resources::Loaders::ModelLoader::Create(const std::string& p_filePath)
 {
 	FILE_TRACE = p_filePath;
 
 	Model* model = new Model(p_filePath);
 
-	std::vector<Parsers::MaterialData> materialsData;
-
-	if (OBJParser.LoadOBJ(p_filePath, model->m_meshes, materialsData))
+	if (OBJParser.LoadOBJ(p_filePath, model->m_meshes, model->m_materialData))
 	{
-		for (const Parsers::MaterialData& materialData : materialsData)
-		{
-			Texture* texture = nullptr;
-
-			if (!materialData.DiffuseTexturePath.empty())
-			{
-				texture = TextureLoader::Create(materialData.DiffuseTexturePath, Resources::Settings::ETextureFilteringMode::NEAREST, Resources::Settings::ETextureFilteringMode::NEAREST, Resources::Settings::ETextureWrapMode::REPEAT, Resources::Settings::ETextureWrapMode::REPEAT, true, true);
-			}
-
-			Material* material = new Material(materialData.Name);
-			material->SetTexture(texture);
-			model->m_materials.push_back(material);
-		}
 		return model;
-		
 	}
 
 	delete model;
@@ -64,4 +49,32 @@ bool AmberEditor::Resources::Loaders::ModelLoader::Destroy(Model*& p_modelInstan
 	}
 
 	return false;
+}
+
+void AmberEditor::Resources::Loaders::ModelLoader::GenerateModelMaterials(Model& p_model)
+{
+	uint8_t materialIndex = 0;
+
+	for (auto& materialData : p_model.m_materialData)
+	{
+		if (materialData.Name.empty())
+			continue;
+
+		Material* material = p_model.m_materials[materialIndex];
+
+		if (!materialData.DiffuseTexturePath.empty())
+		{
+			Texture* texture = Tools::Globals::ServiceLocator::Get<Managers::TextureManager>().GetResource(materialData.DiffuseTexturePath);
+
+			if (material == nullptr)
+			{
+				material = new Material();
+				material->SetName(materialData.Name);
+			}
+
+			material->SetUniform("u_DiffuseMap", texture);
+
+			p_model.m_materials[materialIndex] = material;
+		}
+	}
 }

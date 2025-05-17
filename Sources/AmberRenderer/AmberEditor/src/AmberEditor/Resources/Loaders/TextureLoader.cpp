@@ -7,11 +7,12 @@
 
 #include <AmberGL/SoftwareRenderer/AmberGL.h>
 
+#include "AmberEditor/Tools/Utils/Enum.h"
 #include "AmberEditor/Tools/Utils/String.h"
 
 std::string AmberEditor::Resources::Loaders::TextureLoader::FILE_TRACE;
 
-AmberEditor::Resources::Texture* AmberEditor::Resources::Loaders::TextureLoader::Create(std::string p_filePath, Settings::ETextureFilteringMode p_minFilter, Settings::ETextureFilteringMode p_magFilter, Settings::ETextureWrapMode p_wrapS, Settings::ETextureWrapMode p_wrapT, bool p_flipVertically, bool p_generateMipmap)
+AmberEditor::Resources::Texture* AmberEditor::Resources::Loaders::TextureLoader::Create(std::string p_filePath, Rendering::Settings::ETextureFilteringMode p_minFilter, Rendering::Settings::ETextureFilteringMode p_magFilter, Rendering::Settings::EWrapMode p_wrapS, Rendering::Settings::EWrapMode p_wrapT, bool p_flipVertically, bool p_generateMipmap)
 {
 	FILE_TRACE = p_filePath;
 
@@ -35,10 +36,10 @@ AmberEditor::Resources::Texture* AmberEditor::Resources::Loaders::TextureLoader:
 			AmberGL::GenerateMipmap(AGL_TEXTURE_2D);
 		}
 
-		AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_WRAP_S, p_wrapS);
-		AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_WRAP_T, p_wrapT);
-		AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MIN_FILTER, p_minFilter);
-		AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MAG_FILTER, p_magFilter);
+		AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_WRAP_S, GetEnumValue<uint16_t>(p_wrapS));
+		AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_WRAP_T, GetEnumValue<uint16_t>(p_wrapT));
+		AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MIN_FILTER, GetEnumValue<uint16_t>(p_minFilter));
+		AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MAG_FILTER, GetEnumValue<uint16_t>(p_magFilter));
 
 		stbi_image_free(dataBuffer);
 		AmberGL::BindTexture(AGL_TEXTURE_2D, 0);
@@ -58,7 +59,7 @@ AmberEditor::Resources::Texture* AmberEditor::Resources::Loaders::TextureLoader:
 	return nullptr;
 }
 
-AmberEditor::Resources::Texture* AmberEditor::Resources::Loaders::TextureLoader::CreateColor(uint32_t p_data, Settings::ETextureFilteringMode p_minFilter, Settings::ETextureFilteringMode p_magFilter)
+AmberEditor::Resources::Texture* AmberEditor::Resources::Loaders::TextureLoader::CreateColor(uint32_t p_data, Rendering::Settings::ETextureFilteringMode p_minFilter, Rendering::Settings::ETextureFilteringMode p_magFilter)
 {
 	uint32_t textureID;
 	AmberGL::GenTextures(1, &textureID);
@@ -68,12 +69,12 @@ AmberEditor::Resources::Texture* AmberEditor::Resources::Loaders::TextureLoader:
 
 	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_WRAP_S, AGL_REPEAT);
 	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_WRAP_T, AGL_REPEAT);
-	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MIN_FILTER, p_minFilter);
-	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MAG_FILTER, p_magFilter);
+	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MIN_FILTER,  GetEnumValue<uint16_t>(p_minFilter));
+	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MAG_FILTER,  GetEnumValue<uint16_t>(p_magFilter));
 
 	AmberGL::BindTexture(AGL_TEXTURE_2D, 0);
 
-	return new Texture("", textureID, 1, 1, 32, p_minFilter, p_magFilter, Settings::REPEAT, Settings::REPEAT, false);
+	return new Texture("", textureID, 1, 1, 32, p_minFilter, p_magFilter, Rendering::Settings::EWrapMode::REPEAT, Rendering::Settings::EWrapMode::REPEAT, false);
 }
 
 bool AmberEditor::Resources::Loaders::TextureLoader::Destroy(Texture*& p_textureInstance)

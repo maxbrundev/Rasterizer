@@ -19,3 +19,19 @@ constexpr Value GetEnumValue(Enum p_enum)
 	}
 	return Value();
 }
+
+
+template <typename Enum, typename Value>
+constexpr Enum GetValueEnum(Value p_value)
+{
+	constexpr auto enumMap = EnumValueTypeTraits<Enum, Value>::EnumMap;
+
+	for (auto enumValuePair : enumMap)
+	{
+		if (enumValuePair.second == p_value)
+		{
+			return enumValuePair.first;
+		}
+	}
+	return Enum();
+}
