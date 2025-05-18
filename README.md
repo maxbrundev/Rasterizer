@@ -40,7 +40,7 @@ A CPU-based software renderer designed to explore low-level rendering techniques
 Better Renderer with Multiple Render Passes
 ShadowMappingPass and ShadowApplicationPass composed by a Shadow Render Feature
 
-https://github.com/user-attachments/assets/d366e265-49e7-462b-98b1-be28b80809e4
+https://github.com/user-attachments/assets/7a30906a-28a6-499c-80bf-1cc8fb9387f7
 
 # AmberGL API
 An OpenGL-inspired API that encapsulates its own Rendering State and manages internal buffers to provide a streamlined interface for Drawing, handling Buffers, and processing Shaders.
