@@ -37,8 +37,7 @@ A CPU-based software renderer designed to explore low-level rendering techniques
 | ![Texture Sampling Technique](https://github.com/user-attachments/assets/50b01b40-f404-4209-8347-0063fbda3c9d) | ![Mipmap Level Detail](https://github.com/user-attachments/assets/5464680e-f90a-4d3c-80df-5717f84f0375) | ![Shadow Mapping](https://github.com/user-attachments/assets/c6dcfb1d-b6bd-4d34-8e0b-25655653ace8) ![simpleShadow](https://github.com/user-attachments/assets/b1209db6-421e-456a-b4f3-b51a14ddf993) | ![demoTest](https://github.com/user-attachments/assets/0ff270e0-2686-47db-aa85-ab7bf383bd8e) |
 
 # Work In Progress
-Better Renderer with Multiple Render Passes
-ShadowMappingPass and ShadowApplicationPass composed by a Shadow Render Feature
+Editor Renderer rework, implemented Render Passes and Render Features such as Shadow Mapping Feature
 
 https://github.com/user-attachments/assets/7a30906a-28a6-499c-80bf-1cc8fb9387f7
 
