@@ -36,6 +36,12 @@ A CPU-based software renderer designed to explore low-level rendering techniques
 | :------------------------: | :------------------------: | :------------------------: | :------------------------: |
 | ![Texture Sampling Technique](https://github.com/user-attachments/assets/50b01b40-f404-4209-8347-0063fbda3c9d) | ![Mipmap Level Detail](https://github.com/user-attachments/assets/5464680e-f90a-4d3c-80df-5717f84f0375) | ![Shadow Mapping](https://github.com/user-attachments/assets/c6dcfb1d-b6bd-4d34-8e0b-25655653ace8) ![simpleShadow](https://github.com/user-attachments/assets/b1209db6-421e-456a-b4f3-b51a14ddf993) | ![demoTest](https://github.com/user-attachments/assets/0ff270e0-2686-47db-aa85-ab7bf383bd8e) |
 
+# Work In Progress
+Better Renderer with Multiple Render Passes
+ShadowMappingPass and ShadowApplicationPass composed by a Shadow Render Feature
+
+https://github.com/user-attachments/assets/d366e265-49e7-462b-98b1-be28b80809e4
+
 # AmberGL API
 An OpenGL-inspired API that encapsulates its own Rendering State and manages internal buffers to provide a streamlined interface for Drawing, handling Buffers, and processing Shaders.
 
