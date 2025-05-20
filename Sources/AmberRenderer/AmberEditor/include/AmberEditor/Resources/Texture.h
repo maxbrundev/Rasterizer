@@ -10,11 +10,6 @@ namespace AmberEditor::Resources::Loaders
 	class TextureLoader;
 }
 
-namespace AmberEditor::Rendering
-{
-	class Renderer;
-}
-
 namespace AmberEditor::Resources
 {
 	class Texture
@@ -38,7 +33,6 @@ namespace AmberEditor::Resources
 		const Rendering::Settings::ETextureFilteringMode MagFilter;
 		const Rendering::Settings::EWrapMode WrapS;
 		const Rendering::Settings::EWrapMode WrapT;
-
-		bool HasMipmaps;
+		const bool HasMipmaps;
 	};
 }

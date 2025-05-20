@@ -47,41 +47,22 @@ namespace AmberEditor::Resources
 			if (!m_program)
 				return;
 
-			const auto& registeredUniforms = m_program->GetRegisteredUniforms();
+			auto& registeredUniforms = m_program->GetRegisteredUniforms();
 
 			uint16_t location = 0;
 
-			for (const auto& [name, typePair] : registeredUniforms)
+			for (auto& [name, typePair] : registeredUniforms)
 			{
-				const auto& [shaderDataType, defaultValue] = typePair;
+				auto& [shaderDataType, defaultValue] = typePair;
 
 				Rendering::Settings::EUniformType uniformType = GetValueEnum<Rendering::Settings::EUniformType>(shaderDataType);
 
-				std::any defaultValueTest;
-
-				switch (uniformType)
+				if (uniformType == Rendering::Settings::EUniformType::SAMPLER_2D)
 				{
-				case Rendering::Settings::EUniformType::INT: defaultValueTest = std::make_any<int>();
-					break;
-				case Rendering::Settings::EUniformType::FLOAT: defaultValueTest = std::make_any<float>();
-					break;
-				case Rendering::Settings::EUniformType::VEC2: defaultValueTest = std::make_any<glm::vec2>();
-					break;
-				case Rendering::Settings::EUniformType::VEC3: defaultValueTest = std::make_any<glm::vec3>();
-					break;
-				case Rendering::Settings::EUniformType::VEC4: defaultValueTest = std::make_any<glm::vec4>();
-					break;
-				case Rendering::Settings::EUniformType::MAT2: defaultValueTest = std::make_any<glm::mat2>();
-					break;
-				case Rendering::Settings::EUniformType::MAT3: defaultValueTest = std::make_any<glm::mat3>();
-					break;
-				case Rendering::Settings::EUniformType::MAT4: defaultValueTest = std::make_any<glm::mat4>();
-					break;
-				case Rendering::Settings::EUniformType::SAMPLER_2D: defaultValueTest = std::make_any<Texture*>(nullptr);
-					break;
+					defaultValue = std::make_any<Texture*>(nullptr);
 				}
 
-				m_uniforms.push_back({ uniformType, name, location++, defaultValueTest });
+				m_uniforms.push_back({ uniformType, name, location++, defaultValue });
 			}
 		}
 

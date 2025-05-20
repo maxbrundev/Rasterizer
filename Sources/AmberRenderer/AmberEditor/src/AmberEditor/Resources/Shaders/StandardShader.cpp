@@ -1,5 +1,13 @@
 #include "AmberEditor/Resources/Shaders/StandardShader.h"
 
+AmberEditor::Resources::Shaders::StandardShader::StandardShader()
+{
+	RegisterUniform("u_Model", glm::mat4(1.0f));
+	RegisterUniform("u_View", glm::mat4(1.0f));
+	RegisterUniform("u_Projection", glm::mat4(1.0f));
+	RegisterUniform("u_DiffuseMap", AmberGL::SoftwareRenderer::Programs::Sampler2D{0});
+}
+
 glm::vec4 AmberEditor::Resources::Shaders::StandardShader::VertexPass(const AmberGL::Geometry::Vertex& p_vertex)
 {
 	const glm::mat4 u_Model      = GetUniformAs<glm::mat4>("u_Model");

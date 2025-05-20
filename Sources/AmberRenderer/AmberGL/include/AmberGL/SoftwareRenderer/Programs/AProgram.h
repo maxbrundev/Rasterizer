@@ -27,8 +27,6 @@ namespace AmberGL::SoftwareRenderer::Programs
 		float Interpolated[16]{};
 	};
 
-	constexpr float MIPMAPS_DISTANCE_STEP = 5.0f;
-
 	class API_AMBERGL AProgram
 	{
 	public:
@@ -51,7 +49,7 @@ namespace AmberGL::SoftwareRenderer::Programs
 			m_registeredUniforms[std::string(p_name)] = { type, p_defaultValue };
 		}
 
-		const std::unordered_map<std::string, std::pair<EShaderDataType, std::any>>& GetRegisteredUniforms() const
+		std::unordered_map<std::string, std::pair<EShaderDataType, std::any>>& GetRegisteredUniforms()
 		{
 			return m_registeredUniforms;
 		}
