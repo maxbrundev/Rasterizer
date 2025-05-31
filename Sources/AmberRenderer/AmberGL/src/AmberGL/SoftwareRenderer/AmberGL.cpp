@@ -1804,7 +1804,7 @@ void AmberGL::BindFrameBuffer(uint32_t p_target, uint32_t p_frameBuffer)
 	}
 }
 
-void AmberGL::FrameBufferTexture2D(uint32_t p_target, uint32_t p_attachment, uint32_t p_textarget, uint32_t p_texture, int p_level)
+void AmberGL::FrameBufferTexture2D(uint32_t p_target, uint16_t p_attachment, uint32_t p_textarget, uint32_t p_texture, int p_level)
 {
 	if (p_target != AGL_FRAMEBUFFER)
 	{

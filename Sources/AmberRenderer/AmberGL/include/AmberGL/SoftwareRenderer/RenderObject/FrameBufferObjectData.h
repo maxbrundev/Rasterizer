@@ -55,6 +55,10 @@ namespace AmberGL::SoftwareRenderer::RenderObject
 		uint32_t ClearColor;
 		uint32_t* Data;
 
+	private:
+		std::vector<uint8_t> m_dataBuffer;
+
+	public:
 		FrameBufferObjectData(uint32_t p_width, uint32_t p_height) :
 			Width(p_width),
 			Height(p_height),
@@ -70,6 +74,8 @@ namespace AmberGL::SoftwareRenderer::RenderObject
 		{
 			delete[] Data;
 			Data = nullptr;
+
+			m_dataBuffer.clear();
 		}
 
 		void SetColor(float p_red, float p_green, float p_blue, float p_alpha)
@@ -137,13 +143,17 @@ namespace AmberGL::SoftwareRenderer::RenderObject
 			return T{};
 		}
 
-		void UpdateAttachedTextureObject(TextureObject* p_textureObject) const
+		void UpdateAttachedTextureObject(TextureObject* p_textureObject)
 		{
 			if (!p_textureObject)
 				return;
 
 			uint32_t bytes = Size * 4;
-			uint8_t* textureData = new uint8_t[bytes];
+
+			if (m_dataBuffer.size() != bytes)
+				m_dataBuffer.resize(bytes);
+
+			uint8_t* textureData = m_dataBuffer.data();
 
 			if constexpr (std::is_same<T, Depth>::value)
 			{
@@ -185,7 +195,6 @@ namespace AmberGL::SoftwareRenderer::RenderObject
 			}
 
 			std::memcpy(p_textureObject->Data8, textureData, bytes);
-			delete[] textureData;
 		}
 	};
 }

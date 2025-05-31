@@ -60,7 +60,7 @@ namespace AmberGL
 
 	API_AMBERGL void GenFrameBuffers(uint32_t p_count, uint32_t* p_frameBuffers);
 	API_AMBERGL void BindFrameBuffer(uint32_t p_target, uint32_t p_frameBuffer);
-	API_AMBERGL void FrameBufferTexture2D(uint32_t p_target, uint32_t p_attachment, uint32_t p_textarget, uint32_t p_texture, int p_level);
+	API_AMBERGL void FrameBufferTexture2D(uint32_t p_target, uint16_t p_attachment, uint32_t p_textarget, uint32_t p_texture, int p_level);
 	API_AMBERGL void DrawBuffer(uint32_t p_mode);
 	API_AMBERGL void ReadBuffer(uint32_t p_mode);
 	API_AMBERGL uint32_t* GetFrameBufferData();
