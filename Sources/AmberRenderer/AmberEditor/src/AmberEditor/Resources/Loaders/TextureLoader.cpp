@@ -65,7 +65,7 @@ AmberEditor::Resources::Texture* AmberEditor::Resources::Loaders::TextureLoader:
 	AmberGL::GenTextures(1, &textureID);
 	AmberGL::BindTexture(AGL_TEXTURE_2D, textureID);
 
-	AmberGL::TexImage2D(AGL_TEXTURE_2D, 0, AGL_RGBA8, 1, 1, 0, AGL_RGBA8 /*AGL_RGBA*/, AGL_UNSIGNED_BYTE, &p_data);
+	AmberGL::TexImage2D(AGL_TEXTURE_2D, 0, AGL_RGBA8, 1, 1, 0, AGL_RGBA8, AGL_UNSIGNED_BYTE, &p_data);
 
 	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_WRAP_S, AGL_REPEAT);
 	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_WRAP_T, AGL_REPEAT);
@@ -75,6 +75,24 @@ AmberEditor::Resources::Texture* AmberEditor::Resources::Loaders::TextureLoader:
 	AmberGL::BindTexture(AGL_TEXTURE_2D, 0);
 
 	return new Texture("", textureID, 1, 1, 32, p_minFilter, p_magFilter, Rendering::Settings::EWrapMode::REPEAT, Rendering::Settings::EWrapMode::REPEAT, false);
+}
+
+AmberEditor::Resources::Texture* AmberEditor::Resources::Loaders::TextureLoader::CreateDepth(uint32_t* p_data, uint16_t p_width, uint16_t p_height, Rendering::Settings::ETextureFilteringMode p_minFilter, Rendering::Settings::ETextureFilteringMode p_magFilter)
+{
+	uint32_t textureID;
+	AmberGL::GenTextures(1, &textureID);
+	AmberGL::BindTexture(AGL_TEXTURE_2D, textureID);
+
+	AmberGL::TexImage2D(AGL_TEXTURE_2D, 0, AGL_DEPTH_COMPONENT, p_width, p_height, 0, AGL_DEPTH_COMPONENT, AGL_FLOAT, p_data);
+
+	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_WRAP_S, AGL_REPEAT);
+	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_WRAP_T, AGL_REPEAT);
+	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MIN_FILTER, GetEnumValue<uint16_t>(p_minFilter));
+	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MAG_FILTER, GetEnumValue<uint16_t>(p_magFilter));
+
+	AmberGL::BindTexture(AGL_TEXTURE_2D, 0);
+
+	return new Texture("", textureID, p_width, p_height, 32, p_minFilter, p_magFilter, Rendering::Settings::EWrapMode::REPEAT, Rendering::Settings::EWrapMode::REPEAT, false);
 }
 
 bool AmberEditor::Resources::Loaders::TextureLoader::Destroy(Texture*& p_textureInstance)

@@ -23,9 +23,15 @@ namespace AmberEditor::Entities
 		void SetNear(float p_value);
 		void SetFar(float p_value);
 
+		void SetClearColorBuffer(bool p_value);
+		void SetClearDepthBuffer(bool p_value);
+
 		void SetClearColor(const glm::vec3& p_clearColor);
 
 		Rendering::Settings::EProjectionMode GetProjectionMode() const;
+
+		bool GetClearColorBuffer() const;
+		bool GetClearDepthBuffer() const;
 
 		float GetFov() const;
 		float GetSize() const;
@@ -51,6 +57,9 @@ namespace AmberEditor::Entities
 		float m_size;
 		float m_near;
 		float m_far;
+
+		bool m_clearColorBuffer;
+		bool m_clearDepthBuffer;
 
 		Rendering::Settings::EProjectionMode m_projectionMode;
 	};

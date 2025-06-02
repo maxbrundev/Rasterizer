@@ -4,18 +4,20 @@
 
 #include <AmberGL/SoftwareRenderer/Defines.h>
 
-#include "Settings/EBufferType.h"
-#include "Settings/EClearFlag.h"
-#include "Settings/EComparisonOperand.h"
-#include "Settings/ECullFace.h"
-#include "Settings/EFilterMode.h"
-#include "Settings/EFramebufferAttachment.h"
-#include "Settings/EPixelFormat.h"
-#include "Settings/EPolygonMode.h"
-#include "Settings/EPrimitiveMode.h"
-#include "Settings/ERenderingCapability.h"
-#include "Settings/EUniformType.h"
-#include "Settings/EViewport.h"
+#include "AmberEditor/Rendering/Settings/EBufferType.h"
+#include "AmberEditor/Rendering/Settings/EClearFlag.h"
+#include "AmberEditor/Rendering/Settings/EComparisonOperand.h"
+#include "AmberEditor/Rendering/Settings/ECullFace.h"
+#include "AmberEditor/Rendering/Settings/EFilterMode.h"
+#include "AmberEditor/Rendering/Settings/EFramebufferAttachment.h"
+#include "AmberEditor/Rendering/Settings/EPixelFormat.h"
+#include "AmberEditor/Rendering/Settings/EPolygonMode.h"
+#include "AmberEditor/Rendering/Settings/EPrimitiveMode.h"
+#include "AmberEditor/Rendering/Settings/ERenderingCapability.h"
+#include "AmberEditor/Rendering/Settings/ETextureFilteringMode.h"
+#include "AmberEditor/Rendering/Settings/EUniformType.h"
+#include "AmberEditor/Rendering/Settings/EViewport.h"
+#include "AmberEditor/Rendering/Settings/EWrapMode.h"
 
 template<typename Enum, typename Value>
 struct EnumValueTypeTraits
@@ -68,9 +70,9 @@ struct EnumValueTypeTraits<AmberEditor::Rendering::Settings::ECullFace, uint16_t
 };
 
 template <>
-struct EnumValueTypeTraits<AmberEditor::Rendering::Settings::ERenderingCapability, uint16_t>
+struct EnumValueTypeTraits<AmberEditor::Rendering::Settings::ERenderingCapability, uint8_t>
 {
-	static constexpr std::array<std::pair<AmberEditor::Rendering::Settings::ERenderingCapability, uint16_t>, 4> EnumMap =
+	static constexpr std::array<std::pair<AmberEditor::Rendering::Settings::ERenderingCapability, uint8_t>, 4> EnumMap =
 	{
 		std::pair{AmberEditor::Rendering::Settings::ERenderingCapability::DEPTH_WRITE, AGL_BACK},
 		std::pair{AmberEditor::Rendering::Settings::ERenderingCapability::DEPTH_TEST,  AGL_FRONT},

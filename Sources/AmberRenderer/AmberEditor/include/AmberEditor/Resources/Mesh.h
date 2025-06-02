@@ -13,7 +13,7 @@
 
 namespace AmberEditor::Resources
 {
-	class Mesh final : IMesh
+	class Mesh final : public IMesh
 	{
 	public:
 		Mesh(const std::vector<AmberGL::Geometry::Vertex>& p_vertices, const std::vector<uint32_t>& p_indices, uint32_t p_materialIndex);

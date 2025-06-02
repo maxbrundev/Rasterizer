@@ -28,6 +28,6 @@ namespace AmberGL::SoftwareRenderer::RenderObject
 		uint16_t CullFace = AGL_BACK;
 		uint8_t Samples;
 
-		uint8_t State;
+		uint8_t State = AGL_DEPTH_WRITE | AGL_DEPTH_TEST | AGL_CULL_FACE;
 	};
 }

@@ -22,7 +22,10 @@ AmberEditor::Core::Context::Context()
 
 	Display = std::make_unique<AmberEditor::Context::SDLDisplay>(*SDLDriver, 800, 600);
 
-	Driver = std::make_unique<Rendering::Driver>();
+	Rendering::RenderState defaultRenderState;
+	defaultRenderState.MultiSample = false;
+
+	Driver = std::make_unique<Rendering::Driver>(Rendering::Settings::DriverSettings{ defaultRenderState });
 	
 	Renderer = std::make_unique<Rendering::Renderer>(*Driver, *Display);
 

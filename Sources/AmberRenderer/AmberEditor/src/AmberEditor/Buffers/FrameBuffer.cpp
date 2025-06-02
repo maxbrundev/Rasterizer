@@ -2,26 +2,16 @@
 
 #include <AmberGL/SoftwareRenderer/AmberGL.h>
 
+#include "AmberEditor/Tools/Utils/Enum.h"
+
 AmberEditor::Buffers::FrameBuffer::FrameBuffer(uint32_t p_width, uint32_t p_height)
 {
 	AmberGL::GenFrameBuffers(1, &m_bufferID);
-	AmberGL::GenTextures(1, &m_textureID);
-
-	AmberGL::BindTexture(AGL_TEXTURE_2D, m_textureID);
-	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MAG_FILTER, AGL_NEAREST);
-	AmberGL::TexParameteri(AGL_TEXTURE_2D, AGL_TEXTURE_MIN_FILTER, AGL_NEAREST);
-	AmberGL::BindTexture(AGL_TEXTURE_2D, 0);
-
-	Bind();
-	AmberGL::FrameBufferTexture2D(AGL_FRAMEBUFFER, AGL_COLOR_ATTACHMENT, AGL_TEXTURE_2D, m_textureID, 0);
-	Unbind();
-
-	//Resize(p_width, p_height);
 }
 
 AmberEditor::Buffers::FrameBuffer::~FrameBuffer()
 {
-	//TODO DeleteBuffers
+	AmberGL::DeleteFrameBuffer(1, &m_bufferID);
 }
 
 void AmberEditor::Buffers::FrameBuffer::Bind() const
@@ -44,11 +34,6 @@ uint32_t AmberEditor::Buffers::FrameBuffer::GetID() const
 	return m_bufferID;
 }
 
-uint32_t AmberEditor::Buffers::FrameBuffer::GetTextureID() const
-{
-	return m_textureID;
-}
-
 void AmberEditor::Buffers::FrameBuffer::Blit(const FrameBuffer& p_destination, int p_sourceX0, int p_sourceY0, int p_sourceX1, int p_sourceY1, int p_destinationX0, int p_destinationY0, int p_destinationX1, int p_destinationY1, bool p_blitColor, bool p_blitDepth, bool p_useLinearFilter) const
 {
 	if (p_sourceX1 < 0) p_sourceX1 = m_size.first;
@@ -66,6 +51,11 @@ void AmberEditor::Buffers::FrameBuffer::Blit(const FrameBuffer& p_destination, i
 		p_sourceX0, p_sourceY0, p_sourceX1, p_sourceY1,
 		p_destinationX0, p_destinationY0, p_destinationX1, p_destinationY1,
 		mask, filter);
+}
+
+void AmberEditor::Buffers::FrameBuffer::Attach(const Resources::Texture* p_texture, Rendering::Settings::EFramebufferAttachment p_attachment) const
+{
+	AmberGL::FrameBufferTexture2D(AGL_FRAMEBUFFER, GetEnumValue<uint16_t>(p_attachment), AGL_TEXTURE_2D, p_texture->ID, 0);
 }
 
 void AmberEditor::Buffers::FrameBuffer::BlitToScreen(int p_sourceX0, int p_sourceY0, int p_sourceX1, int p_sourceY1, int p_destinationX0, int p_destinationY0, int p_destinationX1, int p_destinationY1, bool p_blitColor, bool p_blitDepth, bool p_useLinearFilter) const

@@ -39,7 +39,7 @@ namespace AmberGL
 	API_AMBERGL void DepthMask(bool p_flag);
 	API_AMBERGL void GetBool(uint16_t p_name, bool* p_params);
 	API_AMBERGL void GetInt(uint16_t p_name, int* p_params);
-
+	API_AMBERGL void GetFloat(uint16_t p_name, float* p_params);
 	API_AMBERGL void GenVertexArrays(uint32_t p_count, uint32_t* p_arrays);
 	API_AMBERGL void DeleteVertexArrays(uint32_t p_count, const uint32_t* p_arrays);
 	API_AMBERGL void BindVertexArray(uint32_t p_array);
@@ -63,6 +63,7 @@ namespace AmberGL
 	API_AMBERGL void FrameBufferTexture2D(uint32_t p_target, uint16_t p_attachment, uint32_t p_textarget, uint32_t p_texture, int p_level);
 	API_AMBERGL void DrawBuffer(uint32_t p_mode);
 	API_AMBERGL void ReadBuffer(uint32_t p_mode);
+	API_AMBERGL void DeleteFrameBuffer(uint32_t p_count, const uint32_t* p_buffer);
 	API_AMBERGL uint32_t* GetFrameBufferData();
 	API_AMBERGL uint32_t GetFrameBufferRowSize();
 

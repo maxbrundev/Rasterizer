@@ -15,6 +15,7 @@
 #include "AmberEditor/Managers/TextureManager.h"
 
 #include "AmberEditor/Rendering/Renderer.h"
+#include "AmberEditor/SceneSystem/SceneManager.h"
 
 namespace AmberEditor::Core
 {
@@ -36,5 +37,7 @@ namespace AmberEditor::Core
 		AmberEditor::Managers::ModelManager ModelManager;
 		AmberEditor::Managers::TextureManager TextureManager;
 		AmberEditor::Managers::ShaderManager ShaderManager;
+
+		AmberEditor::SceneSystem::SceneManager sceneManager;
 	};
 }

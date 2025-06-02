@@ -12,8 +12,11 @@ m_fov(60.0f),
 m_size(5.0f),
 m_near(0.1f),
 m_far(100.0f),
+m_clearColorBuffer(true),
+m_clearDepthBuffer(true),
 m_projectionMode(Rendering::Settings::EProjectionMode::PERSPECTIVE)
 {
+	SetClearColor({ 0.1921569f, 0.3019608f, 0.4745098f });
 }
 
 void AmberEditor::Entities::Camera::ComputeMatrices(uint16_t p_windowWidth, uint16_t p_windowHeight, const glm::vec3& p_position, const glm::quat& p_rotation)
@@ -55,6 +58,26 @@ void AmberEditor::Entities::Camera::SetNear(float p_value)
 void AmberEditor::Entities::Camera::SetFar(float p_value)
 {
 	m_far = p_value;
+}
+
+void AmberEditor::Entities::Camera::SetClearColorBuffer(bool p_value)
+{
+	m_clearColorBuffer = p_value;
+}
+
+void AmberEditor::Entities::Camera::SetClearDepthBuffer(bool p_value)
+{
+	m_clearDepthBuffer = p_value;
+}
+
+bool AmberEditor::Entities::Camera::GetClearColorBuffer() const
+{
+	return m_clearColorBuffer;
+}
+
+bool AmberEditor::Entities::Camera::GetClearDepthBuffer() const
+{
+	return m_clearDepthBuffer;
 }
 
 void AmberEditor::Entities::Camera::SetClearColor(const glm::vec3& p_clearColor)

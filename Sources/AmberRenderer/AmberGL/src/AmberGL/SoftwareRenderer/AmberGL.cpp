@@ -1873,6 +1873,19 @@ void AmberGL::ReadBuffer(uint32_t p_mode)
 	//TODO
 }
 
+void AmberGL::DeleteFrameBuffer(uint32_t p_count, const uint32_t* p_buffer)
+{
+	for (uint32_t i = 0; i < p_count; i++)
+	{
+		uint32_t id = p_buffer[i];
+
+		FrameBufferObjects.erase(id);
+
+		if (CurrentFrameBuffer == id)
+			CurrentFrameBuffer = 0;
+	}
+}
+
 uint32_t* AmberGL::GetFrameBufferData()
 {
 	return ActiveColorBuffer->Data;
@@ -2280,7 +2293,8 @@ void AmberGL::GetBool(uint16_t p_name, bool* p_params)
 
 void AmberGL::GetInt(uint16_t p_name, int* p_params)
 {
-	if (!p_params) return;
+	if (!p_params) 
+		return;
 
 	switch (p_name)
 	{
@@ -2292,6 +2306,12 @@ void AmberGL::GetInt(uint16_t p_name, int* p_params)
 	case AGL_POINT:
 		*p_params = RenderContext.PolygonMode;
 		break;
+	case AGL_DEPTH_FUNC:
+		*p_params = RenderContext.DepthFunc;
+		break;
+	case AGL_POLYGON:
+		*p_params = RenderContext.PolygonMode;
+		break;
 	case AGL_VIEWPORT:
 		p_params[0] = RenderContext.Viewport.X;
 		p_params[1] = RenderContext.Viewport.Y;
@@ -2300,6 +2320,25 @@ void AmberGL::GetInt(uint16_t p_name, int* p_params)
 		break;
 	default:
 		*p_params = -1;
+		break;
+	}
+}
+
+void AmberGL::GetFloat(uint16_t p_name, float* p_params)
+{
+	if (!p_params) 
+		return;
+
+	switch (p_name)
+	{
+	case AGL_LINE_WIDTH:
+		*p_params = RenderContext.LineWidth;
+		break;
+	case AGL_POINT_SIZE:
+		*p_params = RenderContext.PointSize;
+		break;
+	default:
+		*p_params = -1.0f;
 		break;
 	}
 }

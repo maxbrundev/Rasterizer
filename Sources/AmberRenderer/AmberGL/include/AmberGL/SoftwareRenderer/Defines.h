@@ -79,3 +79,8 @@ constexpr uint8_t AGL_TEXTURE0 = 0;
 
 // Viewport (0x0D00 range)
 #define AGL_VIEWPORT 0x0D00
+
+#define AGL_LINE_WIDTH 0x0E00
+#define AGL_POINT_SIZE 0x0E01
+#define AGL_DEPTH_FUNC 0x0E02
+#define AGL_POLYGON 0x0E03

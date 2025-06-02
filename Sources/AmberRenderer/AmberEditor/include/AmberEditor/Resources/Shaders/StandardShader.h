@@ -7,7 +7,7 @@ namespace AmberEditor::Resources::Shaders
 	class StandardShader : public AmberGL::SoftwareRenderer::Programs::AProgram
 	{
 	public:
-		StandardShader() = default;
+		StandardShader();
 		~StandardShader() override = default;
 
 	protected:
