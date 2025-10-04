@@ -36,6 +36,28 @@ A CPU-based software renderer designed to explore low-level rendering techniques
 | :------------------------: | :------------------------: | :------------------------: | :------------------------: |
 | ![Texture Sampling Technique](https://github.com/user-attachments/assets/50b01b40-f404-4209-8347-0063fbda3c9d) | ![Mipmap Level Detail](https://github.com/user-attachments/assets/5464680e-f90a-4d3c-80df-5717f84f0375) | ![Shadow Mapping](https://github.com/user-attachments/assets/c6dcfb1d-b6bd-4d34-8e0b-25655653ace8) ![simpleShadow](https://github.com/user-attachments/assets/b1209db6-421e-456a-b4f3-b51a14ddf993) | ![demoTest](https://github.com/user-attachments/assets/0ff270e0-2686-47db-aa85-ab7bf383bd8e) |
 
+# What am I cooking?
+
+- Tile-based rasterization ✅ *(code cleanup in progress)*
+
+<img width="962" height="572" alt="Screenshot 2025-10-04 170604" src="https://github.com/user-attachments/assets/331f6605-abaa-42f3-a0fa-5ffa91a12ff5" />
+
+- Frame Debugger ✅
+
+<img width="962" height="572" alt="Screenshot 2025-10-04 172109" src="https://github.com/user-attachments/assets/f3fd1555-3759-4642-8f12-a70d3ee3bd92" />
+
+- Major optimization pass ✅ Stable 30+ FPS on old CPU *(included in tile-based update)*
+
+- Real back buffer implementation ✅
+
+- Uniform Buffer Objects (UBOs) ✅
+
+- Full rasterization/API rework to match modern Vulkan-like architecture 🔄
+
+- Templated `Program<Uniforms, Varyings, Flats>` 🔄 *(part of the rework)*
+
+- More Rendering Debug tools 🔄 
+
 # AmberGL API
 An OpenGL-inspired API that encapsulates its own Rendering State and manages internal buffers to provide a streamlined interface for Drawing, handling Buffers, and processing Shaders.
 
