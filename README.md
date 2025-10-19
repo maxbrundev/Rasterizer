@@ -1,5 +1,5 @@
 <p align="center" style="margin-bottom: 0;">
-  <img width="820" height="312" alt="AmberGL_logo" src="https://github.com/user-attachments/assets/ebaa5574-5de7-4503-8dca-f5f1dba136b0" />
+  <img width="820" height="312" alt="AmberGL_logo" src="https://github.com/user-attachments/assets/467e7d9c-8cbf-4295-8920-6077ccd28f50" />
 </p>
 
 <p align="center">
@@ -50,16 +50,16 @@ A CPU-based software renderer designed to explore low-level rendering techniques
 
 - PBR Shading, Uniforms unbind fixed ✅
 
-<img width="962" height="572" alt="Screenshot 2025-10-19 174929" src="https://github.com/user-attachments/assets/157b0bcd-b0b7-4f24-a7d0-5bd7c9398cfc" />
+<img width="962" height="572" alt="Screenshot 2025-10-19 174929" src="https://github.com/user-attachments/assets/8d4dc827-04af-4c74-9bae-2a5c9270a7f3" />
 
-<img width="962" height="572" alt="Screenshot 2025-10-19 174950" src="https://github.com/user-attachments/assets/55beae35-a962-48b7-a302-6f4bf5559ff7" />
+<img width="962" height="572" alt="Screenshot 2025-10-19 174950" src="https://github.com/user-attachments/assets/47b53953-d02c-428b-bf15-817521a688d1" />
 
-<img width="962" height="572" alt="Screenshot 2025-10-19 175214" src="https://github.com/user-attachments/assets/443c1f3e-09b8-4045-bbdd-7e604586932e" />
+<img width="962" height="572" alt="Screenshot 2025-10-19 175214" src="https://github.com/user-attachments/assets/9d1487e6-38ef-4dd2-8391-6b67c842e46e" />
 
 - Depth debug post process on Unit Quad ✅
 
-<img width="962" height="572" alt="Screenshot 2025-10-19 175117" src="https://github.com/user-attachments/assets/e2f5314b-1d89-4398-9690-3452f356850f" />
-<img width="962" height="572" alt="Screenshot 2025-10-19 175054" src="https://github.com/user-attachments/assets/0cfa4248-5efd-47b6-b5af-57aa0e45fe65" />
+<img width="962" height="572" alt="Screenshot 2025-10-19 175117" src="https://github.com/user-attachments/assets/798b1d98-8b66-4b03-9bf2-8cc4bca43918" />
+<img width="962" height="572" alt="Screenshot 2025-10-19 175054" src="https://github.com/user-attachments/assets/83208f08-ba67-4e71-8681-1c52de882d16" />
 
 - Real back buffer implementation ✅
 
