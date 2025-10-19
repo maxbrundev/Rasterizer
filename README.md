@@ -1,5 +1,5 @@
 <p align="center" style="margin-bottom: 0;">
-  <img src="https://github.com/user-attachments/assets/1e35c508-19b7-438e-b4b4-05a6911461c6" alt="Logo" />
+  <img width="820" height="312" alt="AmberGL_logo" src="https://github.com/user-attachments/assets/ebaa5574-5de7-4503-8dca-f5f1dba136b0" />
 </p>
 
 <p align="center">
@@ -47,6 +47,19 @@ A CPU-based software renderer designed to explore low-level rendering techniques
 <img width="962" height="572" alt="Screenshot 2025-10-04 172109" src="https://github.com/user-attachments/assets/f3fd1555-3759-4642-8f12-a70d3ee3bd92" />
 
 - Major optimization pass ✅ Stable 30+ FPS on old CPU *(included in tile-based update)*
+
+- PBR Shading, Uniforms unbind fixed ✅
+
+<img width="962" height="572" alt="Screenshot 2025-10-19 174929" src="https://github.com/user-attachments/assets/157b0bcd-b0b7-4f24-a7d0-5bd7c9398cfc" />
+
+<img width="962" height="572" alt="Screenshot 2025-10-19 174950" src="https://github.com/user-attachments/assets/55beae35-a962-48b7-a302-6f4bf5559ff7" />
+
+<img width="962" height="572" alt="Screenshot 2025-10-19 175214" src="https://github.com/user-attachments/assets/443c1f3e-09b8-4045-bbdd-7e604586932e" />
+
+- Depth debug post process on Unit Quad ✅
+
+<img width="962" height="572" alt="Screenshot 2025-10-19 175117" src="https://github.com/user-attachments/assets/e2f5314b-1d89-4398-9690-3452f356850f" />
+<img width="962" height="572" alt="Screenshot 2025-10-19 175054" src="https://github.com/user-attachments/assets/0cfa4248-5efd-47b6-b5af-57aa0e45fe65" />
 
 - Real back buffer implementation ✅
 
