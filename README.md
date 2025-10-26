@@ -56,6 +56,8 @@ A CPU-based software renderer designed to explore low-level rendering techniques
 
 <img width="962" height="572" alt="Screenshot 2025-10-19 175214" src="https://github.com/user-attachments/assets/9d1487e6-38ef-4dd2-8391-6b67c842e46e" />
 
+<img width="962" height="572" alt="Screenshot 2025-10-22 234603" src="https://github.com/user-attachments/assets/1ab6b438-e124-44de-8bfa-1f2c5dee85e0" />
+
 - Depth debug post process on Unit Quad ✅
 
 <img width="962" height="572" alt="Screenshot 2025-10-19 175117" src="https://github.com/user-attachments/assets/798b1d98-8b66-4b03-9bf2-8cc4bca43918" />
