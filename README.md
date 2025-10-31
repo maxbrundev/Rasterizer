@@ -38,6 +38,8 @@ A CPU-based software renderer designed to explore low-level rendering techniques
 
 # What am I cooking?
 
+https://github.com/user-attachments/assets/aab1a08e-3081-4486-8463-6d82576127e2
+
 - Tile-based rasterization ✅ *(code cleanup in progress)*
 
 <img width="962" height="572" alt="Screenshot 2025-10-04 170604" src="https://github.com/user-attachments/assets/331f6605-abaa-42f3-a0fa-5ffa91a12ff5" />
@@ -46,7 +48,7 @@ A CPU-based software renderer designed to explore low-level rendering techniques
 
 <img width="962" height="572" alt="Screenshot 2025-10-04 172109" src="https://github.com/user-attachments/assets/f3fd1555-3759-4642-8f12-a70d3ee3bd92" />
 
-- Major optimization pass ✅ Stable 30+ FPS on old CPU *(included in tile-based update)*
+- Major optimization pass ✅ Stable 30+ FPS on old CPU without shadow mapping *(included in tile-based update)*
 
 - PBR Shading, Uniforms unbind fixed ✅
 
