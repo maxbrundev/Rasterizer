@@ -60,6 +60,9 @@ https://github.com/user-attachments/assets/aab1a08e-3081-4486-8463-6d82576127e2
 
 <img width="962" height="572" alt="Screenshot 2025-10-22 234603" src="https://github.com/user-attachments/assets/1ab6b438-e124-44de-8bfa-1f2c5dee85e0" />
 
+- Stencil Buffer ✅
+<img width="962" height="572" alt="Screenshot 2025-11-06 142407" src="https://github.com/user-attachments/assets/1915032c-5852-4d89-b249-0fc31f24777c" />
+
 - Depth debug post process on Unit Quad ✅
 
 <img width="962" height="572" alt="Screenshot 2025-10-19 175117" src="https://github.com/user-attachments/assets/798b1d98-8b66-4b03-9bf2-8cc4bca43918" />
