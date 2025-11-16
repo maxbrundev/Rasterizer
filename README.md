@@ -45,6 +45,10 @@ A CPU-based software renderer designed to explore low-level rendering techniques
 | :------------------------: | :------------------------: | :------------------------: | :------------------------: |
 | ![Texture Sampling Technique](https://github.com/user-attachments/assets/50b01b40-f404-4209-8347-0063fbda3c9d) | ![Mipmap Level Detail](https://github.com/user-attachments/assets/5464680e-f90a-4d3c-80df-5717f84f0375) | ![Shadow Mapping](https://github.com/user-attachments/assets/c6dcfb1d-b6bd-4d34-8e0b-25655653ace8) ![simpleShadow](https://github.com/user-attachments/assets/b1209db6-421e-456a-b4f3-b51a14ddf993) | ![demoTest](https://github.com/user-attachments/assets/0ff270e0-2686-47db-aa85-ab7bf383bd8e) |
 
+| Tile-Based Rasterization Shading | PBR Shading | Stencil Buffer | 32-bit Textures |
+| :------------------------: | :------------------------: | :------------------------: | :------------------------: |
+| ![Tile-Based](https://github.com/user-attachments/assets/c98b8512-e792-446b-9723-035124399a95) | ![PBR](https://github.com/user-attachments/assets/7d97fe00-9603-467d-9d73-0dfc315f31e5) | ![Stencil Outline](https://github.com/user-attachments/assets/5d3f73f2-4d97-4c8a-8b69-46b7c8f382c1) | ![Depth Tetxure](https://github.com/user-attachments/assets/cbd13651-7f07-4189-90fd-744d13057883)
+
 ## ⚠️ Disclaimer
 This is a personal learning project created to deep dive into low-level rendering and the rasterization pipeline. The primary goals are to achieve a complete rendering pipeline and provide an OpenGL-like API while keeping the rasterization code understandable and educational.
 
