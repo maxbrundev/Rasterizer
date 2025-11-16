@@ -1,0 +1,18 @@
+# Blender 4.3.2 MTL File: 'None'
+# www.blender.org
+
+newmtl lambert1.003
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.500000 0.500000 0.500000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+
+map_Kd lava_rocks_01_color_4k.png
+map_Bump lava_rocks_01_normal_gl_4k.png
+map_ao lava_rocks_01_ambient_occlusion_4k.png
+map_Disp lava_rocks_01_height_4k.png
+map_Pr lava_rocks_01_roughness_4k.png
