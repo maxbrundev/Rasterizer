@@ -13,19 +13,28 @@
 A CPU-based software renderer designed to explore low-level rendering techniques and principles. This project implements various rasterization features without relying on hardware acceleration, making it a great educational and experimentation project for graphics programming.
 
 # Features
+- **OpenGL-like API** (familiar function names and workflow)
+- Tile-Based multithreaded Rasterization
 - Triangle Rasterization
 - Line Rasterization
-- Point
-- Texture Mapping
+- Point Rasterization
+- Face Culling
+- Alpha Blending
 - Clipping
-- Mipmapping based on texture derivates
+- Depth Buffer
+- Stencil Buffer
+- Framebuffer Objects (FBO)
+- Uniform Buffer Objects (UBO)
+- VAO/VBO/Index Buffers
+- Double Buffering
+- Programmable Shaders (Vertex & Fragment)
+- Texture Mapping
+- Mipmapping based on texture derivatives (dFdx, dFdy)
 - MSAA
-- Vertex pass
-- Fragment pass
-- Depth Writing
-- Depth Testing
-- Shadow Mapping 
-- OBJ Parsing  
+- Shadow Mapping
+- Frame Debugger
+- Perspective-correct line width and point size ✨ (unique feature, not supported on OpenGL, Vulkan and DirectX)
+- OBJ Parsing (with .mtl file parsing)
 
 | Primitive Mode | Polygone Mode | Clipping | Model Rasterization | Multisample Anti-Aliasing |
 | :------------------------: | :------------------------: | :------------------------: | :------------------------: | :------------------------: |
@@ -35,6 +44,22 @@ A CPU-based software renderer designed to explore low-level rendering techniques
 | Mipmapping | Texture Coordinates Derivates | Shadow Mapping | Complete Rasterization Feature Set |
 | :------------------------: | :------------------------: | :------------------------: | :------------------------: |
 | ![Texture Sampling Technique](https://github.com/user-attachments/assets/50b01b40-f404-4209-8347-0063fbda3c9d) | ![Mipmap Level Detail](https://github.com/user-attachments/assets/5464680e-f90a-4d3c-80df-5717f84f0375) | ![Shadow Mapping](https://github.com/user-attachments/assets/c6dcfb1d-b6bd-4d34-8e0b-25655653ace8) ![simpleShadow](https://github.com/user-attachments/assets/b1209db6-421e-456a-b4f3-b51a14ddf993) | ![demoTest](https://github.com/user-attachments/assets/0ff270e0-2686-47db-aa85-ab7bf383bd8e) |
+
+## ⚠️ Disclaimer
+This is a personal learning project created to deep dive into low-level rendering and the rasterization pipeline. The primary goals are to achieve a complete rendering pipeline and provide an OpenGL-like API while keeping the rasterization code understandable and educational.
+
+As such, there are many areas that could be optimized but haven't been, by design or time constraints:
+* Duplicate functions exist for different approaches (tile-based vs. non-tile-based rendering, various line algorithms, etc.) to allow side-by-side comparison and experimentation
+* Most code is not SIMD-optimized to maintain readability
+* Architecture prioritizes learning and experimentation over "production-ready" implementations
+
+Performance and optimization have been intentionally deprioritized in favor of clarity and educational value. That said, the tile-based multithreaded approach still achieves 30+ FPS on relatively old CPUs with simple scenes (without shadow mapping, using standard shaders).
+
+**Future Direction:**  
+The next phase of this project will involve reworking the entire AmberGL API to mimic modern graphics APIs (Vulkan/DirectX 12) with features like explicit command buffer recording/submission, swap chain management with multiple buffering strategies, and a more explicit resource binding model. This initial implementation serves as a foundation for learning and experimentation, while future milestones will focus on API modernization and deep optimization.
+
+**Final Goal:**  
+The ultimate objective is to ship a complete mini game. While this is technically possible with the current state of the project, it would require game engine features (entity-component system, scene management, etc.) which wasn't the initial focus. However, I'm intentionally avoiding the trap of building a generic engine that never gets finished. Once the API modernization and optimization work is complete, minimal game engine features will be added, just enough to support a concrete game idea. The engine will then be tailored to that specific project rather than attempting to be a general-purpose solution.
 
 # What am I cooking?
 
