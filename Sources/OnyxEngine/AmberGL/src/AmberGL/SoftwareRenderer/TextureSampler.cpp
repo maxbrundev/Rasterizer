@@ -145,25 +145,24 @@ uint8_t AmberGL::SoftwareRenderer::TextureSampler::ComputeMipmapLevel(const Rend
 		return 0;
 
 	glm::vec2 textureSize(p_textureObject->Width, p_textureObject->Height);
+
 	glm::vec2 tcDx = p_dfdx * textureSize;
 	glm::vec2 tcDy = p_dfdy * textureSize;
 
-	// Compute the maximum rate of change (matching standard GPU behavior)
 	float deltaMaxSqr = std::max(
 		tcDx.x * tcDx.x + tcDx.y * tcDx.y,
 		tcDy.x * tcDy.x + tcDy.y * tcDy.y
 	);
 
-	// Handle edge cases
-	if (deltaMaxSqr <= 0.0f) {
-		return 0; // Use highest detail level for zero or negative derivatives
+	if (deltaMaxSqr <= 0.0f) 
+	{
+		return 0;
 	}
 
-	// Compute mip level using log2 of the maximum derivative
 	float level = 0.5f * std::log2(deltaMaxSqr);
 
-	// Clamp to valid mipmap range
 	int maxMipLevel = static_cast<int>(std::floor(std::log2(std::max(p_textureObject->Width, p_textureObject->Height))));
+
 	level = std::clamp(level, 0.0f, static_cast<float>(maxMipLevel));
 
 	return static_cast<uint8_t>(std::round(level));
@@ -236,8 +235,7 @@ glm::vec4 AmberGL::SoftwareRenderer::TextureSampler::SampleBilinear(const uint8_
 	return color;
 }
 
-glm::vec4 AmberGL::SoftwareRenderer::TextureSampler::SampleNearest(const float* p_data, uint32_t p_width,
-	uint32_t p_height, float p_x, float p_y)
+glm::vec4 AmberGL::SoftwareRenderer::TextureSampler::SampleNearest(const float* p_data, uint32_t p_width, uint32_t p_height, float p_x, float p_y)
 {
 	int x = static_cast<int>(std::round(p_x));
 	int y = static_cast<int>(std::round(p_y));
@@ -245,19 +243,17 @@ glm::vec4 AmberGL::SoftwareRenderer::TextureSampler::SampleNearest(const float* 
 	x = glm::clamp(x, 0, static_cast<int>(p_width) - 1);
 	y = glm::clamp(y, 0, static_cast<int>(p_height) - 1);
 
-	y = (p_height - 1) - y; // Flip Y
+	y = (p_height - 1) - y;
 
 	const uint32_t index = y * p_width + x;
 	float value = p_data[index];
 
-	// R32F returns single channel as grayscale
 	return glm::vec4(value, value, value, 1.0f);
 }
 
-glm::vec4 AmberGL::SoftwareRenderer::TextureSampler::SampleBilinear(const float* p_data, uint32_t p_width,
-	glm::uint32_t p_height, float p_x, float p_y)
+glm::vec4 AmberGL::SoftwareRenderer::TextureSampler::SampleBilinear(const float* p_data, uint32_t p_width, glm::uint32_t p_height, float p_x, float p_y)
 {
-	p_y = (p_height - 1.0f) - p_y; // Flip Y
+	p_y = (p_height - 1.0f) - p_y;
 
 	int x0 = static_cast<int>(std::floor(p_x));
 	int y0 = static_cast<int>(std::floor(p_y));
@@ -277,12 +273,7 @@ glm::vec4 AmberGL::SoftwareRenderer::TextureSampler::SampleBilinear(const float*
 	float c10 = p_data[idx10];
 	float c11 = p_data[idx11];
 
-	// Bilinear interpolation
-	float value = (1.0f - fracX) * (1.0f - fracY) * c00 +
-		fracX * (1.0f - fracY) * c10 +
-		(1.0f - fracX) * fracY * c01 +
-		fracX * fracY * c11;
+	float value = (1.0f - fracX) * (1.0f - fracY) * c00 + fracX * (1.0f - fracY) * c10 + (1.0f - fracX) * fracY * c01 + fracX * fracY * c11;
 
-	// R32F returns single channel as grayscale
 	return glm::vec4(value, value, value, 1.0f);
 }
