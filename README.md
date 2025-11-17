@@ -535,5 +535,18 @@ To generate the project, execute `GenerateProject.bat`. By default, `GeneratePro
 ![clipping](https://github.com/user-attachments/assets/b2ac8825-3ba7-47fa-930d-39986438a02c)  
 *Frustum plane distances have been reduced to highlight clipping*
 
+# Special Thanks
+Special thanks to **Gustavo Pezzi** for our discussions and for sharing an excellent [**article**](https://fabiensanglard.net/polygon_codec/), which greatly helped me implement clipping **in Clip Space instead of the usual View Space** found in most resources.  
+
+Special thanks as well to **Nikita Lisitsa**, who consistently shares great [**articles**](https://lisyarus.github.io/blog/) and inspiring gifs / videos of his personal projects.
+
+# Resources & References
+- [**The Barycentric Conspiracy**](https://fgiesen.wordpress.com/2013/02/06/the-barycentric-conspirac/)
+- [**Scratchapixel: Rasterization**](https://www.scratchapixel.com/lessons/3d-basic-rendering/rasterization-practical-implementation/overview-rasterization-algorithm.html)
+- [**Software Rasterization Algorithms for Filling Triangles**](https://www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html)
+- [**Sutherland–Hodgman algorithm**](https://en.wikipedia.org/wiki/Sutherland%e2%80%93Hodgman_algorithm)
+- [**Triangle Rasterization with scanline**](https://joshbeam.com/articles/triangle_rasterization/) *-I am not using Scanline but it's for the culture*
+- [**Tile-based Rasterization**](https://tayfunkayhan.wordpress.com/2019/07/26/chasing-triangles-in-a-tile-based-rasterizer/) *- I personnaly did not implemented TR/TA Corner Testing, full SIMD Rasterization in my project yet*
+
 # Licence
 This project is licenced under an MIT Licence.
