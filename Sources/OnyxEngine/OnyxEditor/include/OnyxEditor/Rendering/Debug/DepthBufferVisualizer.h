@@ -11,6 +11,7 @@ namespace OnyxEditor::Rendering::Debug
 		~DepthBufferVisualizer();
 
 		void Initialize();
+		void CopyDepthBuffer(uint32_t p_textureID, int p_x, int p_y, int p_width, int p_height);
 		void CopyCurrentDepthBuffer(uint32_t p_width, uint32_t p_height);
 		void Cleanup();
 
@@ -22,7 +23,5 @@ namespace OnyxEditor::Rendering::Debug
 		uint32_t m_depthTextureID;
 		bool m_initialized;
 	};
-
-	// Guilherme's exact function signature
-	void CopyDepthBuffer(uint32_t p_textureID, int p_x, int p_y, int p_width, int p_height);
+	
 }

@@ -14,10 +14,10 @@ OnyxEditor::Rendering::Debug::DepthBufferVisualizer::~DepthBufferVisualizer()
 	Cleanup();
 }
 
-void OnyxEditor::Rendering::Debug::CopyDepthBuffer(uint32_t p_textureID, int p_x, int p_y, int p_width, int p_height)
+void OnyxEditor::Rendering::Debug::DepthBufferVisualizer::CopyDepthBuffer(uint32_t p_textureID, int p_x, int p_y, int p_width, int p_height)
 {
 	AmberGL::BindTexture(AGL_TEXTURE_2D, p_textureID);
-	AmberGL::ReadBuffer(AGL_BACK); // Ensure we are reading from the back buffer.
+	AmberGL::ReadBuffer(AGL_BACK);
 	AmberGL::CopyTexImage2D(AGL_TEXTURE_2D, 0, AGL_DEPTH_COMPONENT, p_x, p_y, p_width, p_height, 0);
 }
 

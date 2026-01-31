@@ -62,6 +62,10 @@ artifacts/
 StyleCopReport.xml
 
 # Files built by Visual Studio
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.vcxitems
 *_i.c
 *_p.c
 *_i.h
@@ -88,6 +92,8 @@ StyleCopReport.xml
 *.pidb
 *.svclog
 *.scc
+*.sln
+*.slnx
 
 # Chutzpah Test files
 _Chutzpah*
